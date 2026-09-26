@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "checks": {
+    "homepage_desktop": {
+      "result": "passed",
+      "method": "ui_automation",
+      "checked_at": "2026-09-26T23:49:48.168122+08:00",
+      "scope": "promo_ui",
+      "input_sha256": "31892ebae411468e5f17669bb8aa58689d1a1feb2c1dc1727d29d2cfe4fe8995",
+      "evidence": "perf/promotion-verification.json",
+      "evidence_sha256": "0f0fbe7e669aaa2144846d3f22dd92b89c8ca7da4ecbf59f83ac1d80004a0be1"
+    },
+    "homepage_mobile": {
+      "result": "passed",
+      "method": "ui_automation",
+      "checked_at": "2026-09-26T23:49:48.168245+08:00",
+      "scope": "promo_ui",
+      "input_sha256": "31892ebae411468e5f17669bb8aa58689d1a1feb2c1dc1727d29d2cfe4fe8995",
+      "evidence": "perf/promotion-verification.json",
+      "evidence_sha256": "0f0fbe7e669aaa2144846d3f22dd92b89c8ca7da4ecbf59f83ac1d80004a0be1"
+    },
+    "media_playback": {
+      "result": "passed",
+      "method": "ui_automation",
+      "checked_at": "2026-09-26T23:49:48.168306+08:00",
+      "scope": "media",
+      "input_sha256": "463d013642dded913fa17a93dbf9c1f1908033bb6345b7e8d1a4037a2fb8aabc",
+      "evidence": "perf/promotion-verification.json",
+      "evidence_sha256": "0f0fbe7e669aaa2144846d3f22dd92b89c8ca7da4ecbf59f83ac1d80004a0be1"
+    }
+  }
+}
