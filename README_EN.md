@@ -70,7 +70,7 @@ Exit codes: `0` success, `1` collection failure, `2` invalid arguments. CPU samp
 
 | Download | Idle memory | Idle CPU | First CPU reading after app setup (single run) |
 |---|---|---|---|
-| **1.6 MB** (installed 1.8 MB) | **14.7 MB** | **0.85%** | **1.3 s** |
+| **1.6 MB** (installed 1.8 MB) | **14.7 MB** | **0.86%** | **1.3 s** |
 
 Native AppKit; no third-party runtime or network requests; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes.
 

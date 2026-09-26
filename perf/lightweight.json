@@ -12,16 +12,16 @@
   "version": "0.1.0",
   "data": "公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；启动后静置45秒，M4/16 GiB 当前日常负载",
   "idle": {
-    "process": "18347",
+    "process": "30165",
     "footprint_mb": 14.0,
     "main_footprint_mb": 14.0,
-    "cpu_pct": 0.85,
-    "main_cpu_pct": 0.85,
+    "cpu_pct": 0.86,
+    "main_cpu_pct": 0.86,
     "processes": [
       {
-        "pid": 18347,
+        "pid": 30165,
         "name": "main",
-        "cpu_pct": 0.849,
+        "cpu_pct": 0.859,
         "footprint_peak_mb": 14.0
       }
     ],
