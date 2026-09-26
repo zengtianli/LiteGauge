@@ -3,15 +3,27 @@
 import hashlib
 import json
 from pathlib import Path
-import urllib.request
+import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = 'https://litegauge.tianli.cyou/'
 
 def get(url, headers=None):
-    req = urllib.request.Request(url, headers={'User-Agent': 'LiteGauge-Release-Check', **(headers or {})})
-    with urllib.request.urlopen(req, timeout=45) as response:
-        return response.status, dict(response.headers), response.read()
+    # curl tolerates the local network proxy's interrupted HTTP responses better
+    # than urllib; retries are bounded and only perform read-only GETs.
+    with tempfile.TemporaryDirectory(prefix='litegauge-verify-') as directory:
+        folder = Path(directory)
+        command = ['curl', '--silent', '--show-error', '--fail-with-body', '--location',
+                   '--retry', '2', '--retry-all-errors', '--max-time', '45',
+                   '--user-agent', 'LiteGauge-Release-Check', '--dump-header', str(folder/'headers'),
+                   '--output', str(folder/'body'), '--write-out', '%{http_code}']
+        for key, value in (headers or {}).items():
+            command.extend(['--header', key+': '+value])
+        result = subprocess.run(command + [url], capture_output=True, text=True, check=True)
+        lines = (folder/'headers').read_text().strip().split('\n\n')[-1].splitlines()
+        response_headers = dict(line.split(': ', 1) for line in lines if ': ' in line)
+        return int(result.stdout), response_headers, (folder/'body').read_bytes()
 
 site = ROOT / 'dist/site'
 for path in sorted(site.rglob('*')):

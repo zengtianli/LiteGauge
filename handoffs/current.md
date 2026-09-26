@@ -1,41 +1,56 @@
 # 轻仪 LiteGauge · 当前交付
 
-2026-09-26。用户要求自建极简 CPU/内存/磁盘菜单栏监控，随后用 Stats 截图明确要求紧凑布局，并同意改名后安装、两款均保留。
+2026-09-26。用户要求极简 CPU/内存/磁盘监控、紧凑菜单栏、改名且保留 Stats；随后授权 GitHub 与 product-homepage 推广。
 
-## 已交付
+## 当前入口
 
-- 名称：轻仪（LiteGauge）0.1.0 (1)，bundle `cyou.tianli.litegauge`。
-- 安装 `/Applications/LiteGauge.app`，正式普通模式正在运行；`~/.local/bin/litegauge` 与键位登记已接线。Stats.app 与其原运行实例保留。
-- 项目源目录沿用本轮初建的 `~/Apps/tlstats`，产品机器登记为 `litegauge`；Apps 中英文目标地图已更新。
-- 菜单栏固定 56 pt（初版 210 pt）：CPU 标签和百分比上下两行，内存/磁盘各一条竖向占用条。点击显示完整数值、内存压力、交换空间、磁盘剩余量。
-- CPU/内存 2 秒采样，磁盘容量 60 秒缓存；菜单展开立即刷新磁盘。睡眠/锁屏采用叠加状态，全部解除后恢复采样。
-- 无网络、第三方运行依赖或 shell 采集；GUI 与 CLI 共用数据层。自用原型，不公开发布或推广、不自动加入登录项。
-- 旧 TLStats 开发实例已退出，旧构建包可回溯移至废纸篓；只留下正在用的 LiteGauge 和 Stats。
+- 官网：<https://litegauge.tianli.cyou/>
+- 源码：<https://github.com/zengtianli/LiteGauge>，MIT，中文 README / 对应英文 README。
+- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.1.0>
+- 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
+- 安装 /Applications/LiteGauge.app，普通模式运行；Stats 的安装、运行与登录项保留。
+- 源目录沿用 ~/Apps/tlstats，登记 id/family 为 litegauge。
 
-## 实测与证据
+## 发行与验证
 
-M4 / 16 GiB，macOS 27.2。安装版静置至少 45 秒，菜单收起，采样 60 秒；CPU 窗口内不查 footprint，结束后单独取 3 次内存峰值。
+0.1.0 (1)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。ZIP 1,626,948 bytes，DMG 2,129,632 bytes；均 Developer ID 签名、Apple 公证 Accepted、票据已装订。最终可执行 SHA256：5f86b96672c3325f2d2ca2e194e5b98741c0abe608cf8ab3961acd45d17beb95。
 
-| 项目 | 轻仪 | Stats 3.0.17 |
-|---|---:|---:|
-| phys_footprint（十进制 MB） | 14.7 | 143.7 |
-| 平均 CPU（100% 为一个核心） | 0.82% | 2.43% |
+perf/build-receipt.json 包围实际 bash scripts/package-release.sh 构建生成；安装版与 receipt 一致。发布元数据见 release/latest.json。独立解包、Gatekeeper、公证票据、DMG 内容、CLI JSON/错误码、干净源码副本构建已验；14 项核心测试和 GitHub CI 通过。未在真实 macOS 14 设备运行。
 
-两者同期按各自配置运行；轻仪 CPU/内存 2 秒、磁盘 60 秒，Stats CPU/RAM/Disk 默认 1 秒。不是同功能、同刷新率性能基准。
+注意 bash build.sh 会覆盖 build/LiteGauge.app 为 ad-hoc 本机包。app_sop build-receipt 会真正执行传入命令；发行包必须传实际签名公证构建，不能给旧包填来源。
 
-安装后实际磁盘占用 1,806,336 bytes。进程内启动至首个有效 CPU 差分约 1.1 秒，含 1 秒采样窗口，单次值；完整冷启动多次统计未测。
+## 实测
 
-事实源 `perf/lightweight.json`；`perf/build-receipt.json` 绑定实际源代码输入、安装包版本和可执行 SHA256。README 数字块由现有 `perf_block.py` 生成。原始样本与真实离屏图在忽略入库的 `perf/raw/`。
+M4 / 16 GiB，macOS 27.2，最终公证版菜单收起，启动后静置 45 秒，CPU 采样 60 秒，footprint 在窗口后取 3 次。
 
-## 验证
+- ZIP 1.6 MB，安装约 1.8 MB。
+- phys_footprint 14.0 MiB，即十进制 14.7 MB。
+- CPU 平均 0.86%，100% 为一个核心。
+- 同源码版本进程初始化至首个 CPU 差分单次约 1.3 秒，含 1 秒采样等待；完整冷启动多次统计未测。
 
-- 核心测试 14 项通过；错误 CPU 公式的隔离变异被拒绝。
-- 安装包与构建 receipt 的可执行 SHA256、图标逐字节一致；安装后的 CLI JSON 与真实内存/磁盘数据、参数错误退出码已检查。
-- 56 pt 指示器在 0/22/100% 下的浅色、深色背景检查通过；实际 AppKit 面板离屏渲染已检查。
-- CUA 原生界面读取超时；本轮没有自动点击真实菜单、验证菜单快捷键或执行实际睡眠/唤醒。叠加睡眠状态已做逻辑测试。
+唯一事实源 perf/lightweight.json；官网、README、目录卡片均读取。早期与 Stats 的不同刷新设置样本不作为公开竞品基准。共享 perf_block 的 MiB/MB 与 CPU 精度修复通过门户 76 项测试、20 个子测试，由工作区自动同步提交 203a6b5 收录。
 
-## 尚未达到的优化目标
+## 界面与素材
 
-初始 CPU 目标 0.3% 尚未达到，`project.yaml` 的预算保留 0.3%，SOP 因此继续标红；这不是宣称已完成全部轻量化指标。已定位主要开销为系统菜单栏重绘；纯数据采集 1,000 次约 3 ms CPU。自定义绘制对照没有明显收益，已撤回，保留简单模板位图实现。没有通过悄悄降低刷新频率来填目标数字。
+菜单栏 56 pt：CPU 上下两行，内存/磁盘各一根竖条。CPU/内存 2 秒、磁盘 60 秒；睡眠/锁屏暂停。bash scripts/capture-media.sh 使用正式 StatusRenderer、SummaryView、MetricsSampler 离屏制作，不创建窗口或合成输入。
 
-安装与发布检查通过；素材/推广页对该自用原型不适用。后续性能优化沿现有事实源，任何收益须同口径复测。用户明确“都保留”，不要卸载 Stats。两款同时运行时总开销会相加；如用户决定日常只开轻仪，再处理 Stats 的运行与登录项。
+截图为固定示例值；24 秒视频是实时采样的同源原生界面演示，分 CPU/内存/磁盘三段，有中文烧录字幕、VTT、海报。页面明确不是鼠标操作录屏。原片/样本在忽略入库的 build/media/，公开产物/记录在 docs/media/。浏览器已确认线上视频播放至 24 秒、readyState 4、无错误，HTTP Range 206。
+
+原生 CUA 获取 LiteGauge 仍超时，未自动验证真实菜单点击、键盘动作或真实睡眠/唤醒。逻辑测试和离屏界面不证明这些动作已测。
+
+## 发布维护
+
+- App：scripts/package-release.sh（凭据走环境和标准私钥路径）→ 实测 → README 数字块 → 提交 → GitHub Release。
+- 官网：python3 scripts/build-site.py → dist/site/；公开元数据可用 --release release/latest.json。scripts/deploy-site.sh 上传临时目录后切换，保留 previous。
+- scripts/verify-site.py 逐文件核线上内容、ZIP/DMG SHA256、视频 206；浏览器播放独立验证。
+- 首次 DNS / 8443 Origin Rule / 受管 nginx / 分类与部署登记已完成。CF 写接口曾截断响应，回读确认生效后续跑后续步骤，没有重复创建。
+- 本机代理偶发截断 urllib 响应；verifier 用系统 curl 有界重试只读 GET，完整哈希检查仍保留。
+- 门户沿 apps-portal/site/deploy.sh；上线前 VPS 备份 /var/backups/litegauge-launch-20260926-153646/。
+
+## 未达到的目标
+
+初始 CPU 预算 0.3% 仍未达到，project.yaml 保留目标，不能为标绿抬高预算。保持两秒采样没有发现足以保证达到 0.3% 的低风险改动。
+
+perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终 bitmap 版热点或归因 accessibility。当前 image/AX 更新已有整数值去重，详情只在菜单展开时更新。后续可独立测按实际条形像素高度去重图片；CPU 数字仍常变，收益未知，不在推广发布中临时改渲染方案。
+
+机器 SOP 的性能预算仍需处理；不宣称全部轻量化目标已达成。
