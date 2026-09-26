@@ -52,15 +52,25 @@ def performance_section(perf: dict, release: dict) -> str:
     speed_unit = "" if ms is None else "s" if float(ms) >= 1000 else "ms"
     speed_label = speed.get("label", "启动或关键操作")
     speed_note = speed.get("method", "未提供本版本的速度测量。")
+    if speed.get("key") == "first_sample":
+        speed_label = "首个 CPU 读数"
+        speed_note = "应用初始化后首次有效读数，含采样等待；单次记录，不代表完整冷启动。"
     cards = [
         ("download", mb(download), "MB" if download is not None else "", "安装包", f"下载文件；安装后占用 {mb(installed)} MB。"),
         ("memory", mb(memory), "MB" if memory is not None else "", "空闲内存", "phys_footprint，活动监视器内存列同口径。"),
         ("cpu", "未测" if cpu is None else f"{float(cpu):.2f}".rstrip("0").rstrip("."), "%" if cpu is not None else "", "空闲 CPU", f"菜单收起，{idle.get('window_s', '未知')} 秒采样窗平均占用。"),
         ("speed", speed_value, speed_unit, speed_label, speed_note),
     ]
+    def card_note(metric: str, note: str) -> str:
+        result = escape(note)
+        if metric == "download" and installed is not None:
+            value = escape(mb(installed) + " MB")
+            result = result.replace(value, "<span data-perf-metric='installed'>" + value + "</span>")
+        return result
+
     rendered = "".join(
         "<article><p class='perf-value' data-perf-metric='" + metric + "'><strong>" + escape(value) + "</strong> " + escape(unit) + "</p>"
-        "<h3>" + escape(label) + "</h3><p>" + escape(note) + "</p></article>"
+        "<h3>" + escape(label) + "</h3><p>" + card_note(metric, note) + "</p></article>"
         for metric, value, unit, label, note in cards
     )
     method = " · ".join(str(perf[key]) for key in ("device", "measured_at") if perf.get(key))

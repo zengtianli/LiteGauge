@@ -5,7 +5,7 @@
   "size": {
     "installed_bytes": 1826816,
     "installed_mb": 1.74,
-    "download_bytes": 1626944,
+    "download_bytes": 1626948,
     "download_mb": 1.55
   },
   "compare": [],
@@ -30,7 +30,7 @@
   },
   "artifact": {
     "bundle_id": "cyou.tianli.litegauge",
-    "executable_sha256": "487f5afb36f149b9b60a889fabcc97025c1877fe0e43edded942174341f08154",
+    "executable_sha256": "5f86b96672c3325f2d2ca2e194e5b98741c0abe608cf8ab3961acd45d17beb95",
     "distribution": "Developer ID signed and Apple notarized v0.1.0 release"
   },
   "speed_gui": [

@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "filename": "LiteGauge-0.1.0-arm64.zip",
+  "sha256": "56e24380e6f1e9b6f026c414f55acaf59924e9697330d25edeee614746473fa3",
+  "bytes": 1626948,
+  "download_url": "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.zip",
+  "notarized": true,
+  "minimum_macos": "14.0",
+  "architecture": "arm64",
+  "signing": "Developer ID Application with hardened runtime",
+  "notarization_id": "68e64810-c3f7-46ea-827b-16d7f5685d0c",
+  "dmg": {
+    "filename": "LiteGauge-0.1.0-arm64.dmg",
+    "sha256": "67153ed4b82534569038b7f27ec5d5e29463f1ec6f65cd331ebb95bc74b9176c",
+    "bytes": 2129632,
+    "download_url": "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.dmg",
+    "notarization_id": "d6b7f18a-cc1d-418d-9e8b-710f02237001"
+  },
+  "build": "1",
+  "source_commit": "26b0fe119db287b0d0df88205c883d9300a659fb",
+  "executable_sha256": "5f86b96672c3325f2d2ca2e194e5b98741c0abe608cf8ab3961acd45d17beb95"
+}
