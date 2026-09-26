@@ -38,7 +38,15 @@ Disk values use decimal GB and the startup Data volume's APFS container capacity
 Performance evidence lives in `perf/lightweight.json`. The shared script's `footprint_mb` is MiB; values displayed as MB are converted to decimal.
 
 <!-- lightweight:start -->
-Performance measurement of the current build is in progress. See `perf/lightweight.json`.
+## Resource use
+
+| Installed | Idle memory | Idle CPU | First CPU reading after app setup (single run) |
+|---|---|---|---|
+| **1.8 MB** | **14 MB** | **0.8%** | **1.3 s** |
+
+Native AppKit; no third-party runtime or network requests; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes.
+
+<sub>v0.1.0 · Mac16,12 / Apple M4 / macOS 27.2 · Installed build, menu closed, 56-point compact status item; 2-second CPU/memory and 60-second disk updates. Settled at least 45 seconds before a 60-second CPU window; footprint sampled separately afterward. · measured 2026-09-26. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 ## Verification

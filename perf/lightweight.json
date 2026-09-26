@@ -1,0 +1,96 @@
+{
+  "product": "litegauge",
+  "measured_at": "2026-09-26",
+  "device": "Mac16,12 / Apple M4 / macOS 27.2",
+  "size": {
+    "installed_bytes": 1806336,
+    "installed_mb": 1.72
+  },
+  "compare": [
+    {
+      "product": "Stats",
+      "version": "3.0.17",
+      "idle": {
+        "process": "86792",
+        "footprint_mb": 137.0,
+        "main_footprint_mb": 137.0,
+        "cpu_pct": 2.43,
+        "main_cpu_pct": 2.43,
+        "processes": [
+          {
+            "pid": 86792,
+            "name": "main",
+            "cpu_pct": 2.432,
+            "footprint_peak_mb": 137.0
+          }
+        ],
+        "window_s": 60,
+        "scope": "主进程 + XPC 辅助进程 + 子进程合计"
+      },
+      "size": {
+        "installed_bytes": 18583552
+      },
+      "scope": "同一台机器同期60秒；两者按各自当前配置运行。轻仪CPU/内存2秒、磁盘60秒；Stats CPU/RAM/Disk默认1秒。不是同功能、同刷新频率评测。"
+    }
+  ],
+  "version": "0.1.0",
+  "data": "安装版；菜单收起，CPU/内存每2秒、磁盘每60秒；启动后静置45秒，M4/16 GiB 当前日常负载",
+  "idle": {
+    "process": "4084",
+    "footprint_mb": 14.0,
+    "main_footprint_mb": 14.0,
+    "cpu_pct": 0.82,
+    "main_cpu_pct": 0.82,
+    "processes": [
+      {
+        "pid": 4084,
+        "name": "main",
+        "cpu_pct": 0.816,
+        "footprint_peak_mb": 14.0
+      }
+    ],
+    "window_s": 60,
+    "scope": "主进程 + XPC 辅助进程 + 子进程合计"
+  },
+  "artifact": {
+    "bundle_id": "cyou.tianli.litegauge",
+    "executable_sha256": "678880e0f142406f4994d71cde6e9cdc6906012c70ab2ff48ea2490fd8cb8804"
+  },
+  "speed_gui": [
+    {
+      "key": "first_sample",
+      "label": "进程内首个 CPU 数值（单次）",
+      "label_en": "First CPU reading after app setup (single run)",
+      "median_ms": 1278.6,
+      "runs": 1,
+      "headline": true,
+      "method": "AppDelegate 初始化至首个有效 CPU 差分；非完整冷启动；含1秒采样窗口"
+    }
+  ],
+  "speed_cold_start": {
+    "status": "未测",
+    "reason": "本轮保留用户正在试用的菜单栏，未反复关闭应用做完整冷启动统计。"
+  },
+  "why": "原生 AppKit；无第三方运行依赖和网络请求；CPU/内存共用2秒采样器，磁盘容量缓存60秒；数值变化时才重绘。",
+  "why_en": "Native AppKit; no third-party runtime or network requests; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes.",
+  "data_en": "Installed build, menu closed, 56-point compact status item; 2-second CPU/memory and 60-second disk updates. Settled at least 45 seconds before a 60-second CPU window; footprint sampled separately afterward.",
+  "background": [],
+  "targets": {
+    "memory_decimal_mb": 30,
+    "cpu_pct": 0.3,
+    "note": "CPU 为初始优化目标；以 idle.cpu_pct 的实际值判定，不把目标写成实测。"
+  },
+  "menu_bar": {
+    "width_points": 56,
+    "previous_width_points": 210,
+    "layout": "CPU上下两行，内存与磁盘各一根竖条"
+  },
+  "host_loadavg": "{ 3.52 3.55 3.51 }",
+  "verification": {
+    "core_tests": 14,
+    "cli": "Installed CLI JSON and errors verified",
+    "mutation": "Incorrect CPU formula rejected",
+    "ui": "Real panel rendered offscreen; 0/22/100 percent compact indicator checked on light/dark backgrounds",
+    "native_ui": "CUA read timed out; actual menu clicking and real sleep/wake cycle not automated in this session"
+  }
+}

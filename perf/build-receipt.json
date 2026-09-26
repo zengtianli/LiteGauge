@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-09-26T23:15:10+08:00",
+  "artifact": {
+    "bundle_id": "cyou.tianli.litegauge",
+    "version": "0.1.0",
+    "build": "1",
+    "executable": "Contents/MacOS/LiteGauge",
+    "sha256": "678880e0f142406f4994d71cde6e9cdc6906012c70ab2ff48ea2490fd8cb8804"
+  },
+  "source": {
+    "input_globs": [
+      "Sources/**",
+      "Tests/**",
+      "Info.plist",
+      "icon/AppIcon.icns",
+      "build.sh"
+    ],
+    "sha256": "04b5a0d2f98c3b03448f3985921387daf14863cd345acce3e5e9a01d6169150d",
+    "file_count": 7,
+    "commit": "db6c162fda0f9847b6f0c9d3a1bf5976c9cc11d7",
+    "dirty_scope": "组件当前 Git 工作树；跨仓/软链输入的实际内容由 sha256 核验",
+    "dirty": false
+  },
+  "build_command_sha256": "235e3fb8fc09bfdddfa608c55b54f82fb8d57d10cf28833058fb1f25cc75b691"
+}
