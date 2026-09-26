@@ -1,0 +1,35 @@
+name: 错误报告 / Bug report
+description: 提供环境与复现步骤，帮助定位问题 / Share your environment and reproduction steps.
+title: '[Bug] '
+body:
+  - type: input
+    id: version
+    attributes:
+      label: LiteGauge 版本 / Version
+      placeholder: '0.1.0'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: macOS 与芯片 / macOS and chip
+      placeholder: 'macOS 14.7, Apple M1'
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 预期与实际结果 / Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 错误信息、截图或 CLI 输出 / Error, screenshot, or CLI output
+      description: 提交前移除个人信息；不需要完整系统日志。 / Remove personal information; full system logs are not required.

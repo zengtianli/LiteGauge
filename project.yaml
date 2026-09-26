@@ -5,12 +5,25 @@ form: mac
 lifecycle: active
 bundle_id: cyou.tianli.litegauge
 origin: own
-description: 自用极简菜单栏 CPU、内存、启动磁盘监控，原生 AppKit，共享采集 CLI。
+description: 极简菜单栏 CPU、内存、启动磁盘监控，原生 AppKit，共享采集 CLI。
+surfaces:
+  - type: vhost
+    id: litegauge.tianli.cyou
+    host: vps
+    note: 公开静态产品主页；root=/var/www/litegauge
 key_scripts:
   - build.sh
   - scripts/install.sh
 sop:
-  promo: false
+  promo: true
+  promo_url: https://litegauge.tianli.cyou/
+  media:
+    - docs/media/
+  media_meta: docs/media/manifest.json
+  capture: bash scripts/capture-media.sh
+  release: release/latest.json
+  site_build: python3 scripts/build-site.py
+  site_deploy: bash scripts/deploy-site.sh
   test: bash build.sh --test-only
   ui:
     - Sources/App.swift

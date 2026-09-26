@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "recorded_at": "2026-09-26T23:27:37.832662+08:00",
+  "method": "Production AppKit views rendered offscreen; 24 seconds of real MetricsSampler readings. No synthetic clicks or desktop screen recording.",
+  "screenshots": "Deterministic fixture: CPU 22%, memory 10/16 GiB, disk 180/500 GB free. Same production renderer.",
+  "coverage": [
+    "Compact 56-point status indicator",
+    "CPU updates at 2-second cadence",
+    "Memory pressure and swap",
+    "Disk remaining capacity"
+  ],
+  "not_covered": [
+    "Finder installation",
+    "Actual menu clicks and keyboard actions",
+    "Actual sleep/wake cycle"
+  ],
+  "sources_sha256": {
+    "Sources/App.swift": "9a9838c05e8fcada08dde346e4d7fafc12a06be78d0265fe16e2ed1d367c7666",
+    "Sources/Metrics.swift": "ff61fba7acd1cc0dabb3f2fcdbea2e4d8509ef80047280fa1a37f69745e2135f"
+  },
+  "raw": "build/media/frames/",
+  "samples": "build/media/samples.json",
+  "clips": [
+    {
+      "start": 0,
+      "end": 8,
+      "topic": "CPU and status item"
+    },
+    {
+      "start": 8,
+      "end": 16,
+      "topic": "Memory pressure"
+    },
+    {
+      "start": 16,
+      "end": 24,
+      "topic": "Disk remaining capacity"
+    }
+  ]
+}
