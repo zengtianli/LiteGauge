@@ -1,0 +1,30 @@
+name: litegauge
+display_name: 轻仪 LiteGauge
+family: litegauge
+form: mac
+lifecycle: active
+bundle_id: cyou.tianli.litegauge
+origin: own
+description: 自用极简菜单栏 CPU、内存、启动磁盘监控，原生 AppKit，共享采集 CLI。
+key_scripts:
+  - build.sh
+  - scripts/install.sh
+sop:
+  promo: false
+  test: bash build.sh --test-only
+  ui:
+    - Sources/App.swift
+  source:
+    - Sources/**
+    - Tests/**
+    - Info.plist
+    - icon/AppIcon.icns
+    - build.sh
+  test_inputs:
+    - Tests/**
+  measure:
+    app: /Applications/LiteGauge.app
+    launch: false
+  budget:
+    cpu: 0.3
+    memory_mb: 30

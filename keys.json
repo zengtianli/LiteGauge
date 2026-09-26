@@ -1,0 +1,4 @@
+[
+  {"component":"LiteGauge","mode":"app:LiteGauge","key":"⌘R","description":"菜单打开时立即刷新"},
+  {"component":"LiteGauge","mode":"app:LiteGauge","key":"⌘Q","description":"菜单打开时退出轻仪"}
+]

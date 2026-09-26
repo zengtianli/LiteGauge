@@ -1,0 +1,16 @@
+{
+  "provider": "OpenAI image_gen (built-in)",
+  "source": "GeneratedSource.png",
+  "source_sha256": "5315d5037108f77ba2b97e37343b26f902135248ee0d71ea2e039c72ccf1adf9",
+  "crop": [
+    150,
+    150,
+    1100,
+    1100
+  ],
+  "tile_size": 832,
+  "radius": 188,
+  "canvas": 1024,
+  "fallback_reason": "Seedream TLS connection failed after the existing client retried; no Seedream image produced.",
+  "prompt": "Centered warm white ceramic tile; three translucent jade and teal performance meter bars; no text; transparent outside tile."
+}
