@@ -38,8 +38,12 @@
     }
   ],
   "reverified": {
-    "checked_at": "2026-09-28T00:03:48+08:00",
-    "result": "current Sources/App.swift and Sources/Metrics.swift are byte-identical to sources_sha256; no source change since release commit 26b0fe1",
-    "reason": "a temporary uncommitted rendering experiment on 2026-09-27 was reverted without build, release or install; media remains valid for the current UI"
+    "checked_at": "2026-09-28T00:19:39+08:00",
+    "current_sources_sha256": {
+      "Sources/App.swift": "409cba09414b446cda1fe16a6eee15885c994e1584db82436db6fa0973b94182",
+      "Sources/Metrics.swift": "ff61fba7acd1cc0dabb3f2fcdbea2e4d8509ef80047280fa1a37f69745e2135f"
+    },
+    "result": "StatusRenderer and SummaryView drawing code is unchanged since recording; App.swift only gained an offscreen --ui-self-test entry, a menu-setup split and optional status-item access. Recorded screenshots and video still show the current UI.",
+    "recorded_sources_sha256_kept": "sources_sha256 above is the recording-time value"
   }
 }

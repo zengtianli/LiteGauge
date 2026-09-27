@@ -27,11 +27,17 @@ if arguments == ["--version"] {
     }
     if !snapshot.errors.isEmpty { exit(1) }
 } else if arguments == ["--help"] {
-    print("轻仪 LiteGauge \(version) — 极简 CPU / 内存 / 磁盘监控\n用法：LiteGauge [status [--json] | --version | --help]\n无参数启动菜单栏。退出码：0 成功，1 采集失败，2 参数错误。")
+    print("轻仪 LiteGauge \(version) — 极简 CPU / 内存 / 磁盘监控\n用法：LiteGauge [status [--json] | --ui-self-test [目录] | --version | --help]\n无参数启动菜单栏。退出码：0 成功，1 采集失败，2 参数错误。")
 } else if arguments.first == "--snapshot", arguments.count == 2 {
     let app = NSApplication.shared
     app.setActivationPolicy(.prohibited)
     try renderSnapshot(to: arguments[1])
+} else if arguments.first == "--ui-self-test", arguments.count <= 2 {
+    let app = NSApplication.shared
+    app.setActivationPolicy(.prohibited)
+    let out = URL(fileURLWithPath: arguments.count == 2 ? arguments[1] : NSTemporaryDirectory(), isDirectory: true)
+    try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+    exit(AppDelegate(benchmark: nil).runUISelfTest(outDir: out) ? 0 : 1)
 } else if arguments.isEmpty || arguments == ["--background"] || (arguments.first == "--benchmark" && arguments.count == 2) {
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)

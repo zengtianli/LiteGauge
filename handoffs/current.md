@@ -86,3 +86,10 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - 实测线上 https://litegauge.tianli.cyou/：1280 桌面与 390 iPhone UA 整页截图逐段目视正常、无横向溢出；页面内 video 静音播放至 24/24 s、ended、无错误，三段字幕按时切换。记录 perf/acceptance/homepage-media.json（截图 png 仅本机，被 .git/info/exclude 忽略）。已写 delivery-evidence homepage_desktop/homepage_mobile/media_playback；monitor 回读 coverage 只剩 native_ui。
 - 相邻问题（未修，不在本仓库）：demo.zh.vtt 以 application/octet-stream 下发，WebKit 能读，Firefox 等可能要求 text/vtt；应在 VPS nginx 的 MIME 映射补 vtt。页脚 AppIcon.png 708 KB 用于 44/88 px 显示，可在下次站点构建时出小尺寸图。
 - 00:11 另一写入方（Chapter 自动验收）在 perf/acceptance/ 生成 homepage_*/media_playback/icon_review 的 .json/.log/.png，并把 delivery-evidence 对应四项改指向它们；本会话未改动、未提交这些文件。本会话的 homepage-media.json、icon-review.json 仍保留为独立原件。
+
+## 2026-09-28 固定验收脚本（sop.accept）
+
+- App 新增 `LiteGauge --ui-self-test [目录]`（Sources/App.swift 扩展 + main.swift 入口）：不建状态项、不开窗、不合成输入；离屏构建真实菜单/面板/指示器，直接调用 menuWillOpen、「立即刷新」动作（NSApp.sendAction）、menuDidClose、暂停/恢复，断言 12 项并存截图。反向验证：把刷新改成不强制读磁盘时 refresh_updates_cpu_and_disk 失败、退出 1。
+- scripts/accept/{functionality,recovery,privacy,native_ui}.sh 登记于 project.yaml sop.accept（只提交了 accept 块；他人对 project.yaml 的整文件缩进改动仍未提交）。四个脚本经 scripts/accept/_build.sh 加锁构建当前源码一次、各用临时副本，因为 app_sop accept 并行运行，直接共用 build/LiteGauge.app 会互相覆盖签名。
+- `app_sop.py accept --app litegauge --all`：除 installed_icon（本人确认）外 8 项 passed；monitor coverage 为空。`--benchmark` 测试实例 GUI 启动冒烟正常（首个 CPU 读数约 1.07 s，随即结束）。
+- 代价：源码变了，ship 阶段显示当前源码与装机/发布 0.1.0 不同，perf 的 input-binding 再次失效（被测装机版其实未变）。需要发 0.1.1（公证）+ 装机后重测；均需授权。media 已在 manifest 记 reverified（绘制代码未改）。

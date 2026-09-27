@@ -58,8 +58,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let menu = NSMenu()
     private let queue = DispatchQueue(label: "cyou.tianli.litegauge.sampler", qos: .utility)
     private let sampler = MetricsSampler()
-    private var timer: DispatchSourceTimer?
-    private var latest: MetricsSnapshot?
+    fileprivate var timer: DispatchSourceTimer?
+    fileprivate var latest: MetricsSnapshot?
     private var observers: [NSObjectProtocol] = []
     private var distributedObservers: [NSObjectProtocol] = []
     private var samplingState = SamplingState()
@@ -67,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let launchTime = ProcessInfo.processInfo.systemUptime
     private var didReportReady = false
     private var menuOpen = false
-    private var lastTitle = ""
+    fileprivate var lastTitle = ""
     private let summary = SummaryView(frame: NSRect(x: 0, y: 0, width: 304, height: 276))
 
     init(benchmark: String?) { self.benchmark = benchmark }
@@ -85,6 +85,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.imageScaling = .scaleNone
         statusItem.button?.toolTip = "从左到右：CPU、内存、磁盘已用比例 · 点击查看数值"
         statusItem.button?.setAccessibilityLabel("轻仪：CPU、内存、磁盘")
+        buildMenu()
+        statusItem.menu = menu
+        startObservingSleep()
+        requestSample(forceDisk: true)
+        startTimer()
+    }
+
+    private func buildMenu() {
         menu.delegate = self
         let panel = NSMenuItem()
         panel.view = summary
@@ -100,7 +108,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let quit = NSMenuItem(title: "退出轻仪", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
-        statusItem.menu = menu
+    }
+
+    private func startObservingSleep() {
         let center = NSWorkspace.shared.notificationCenter
         for (name, reason) in [(NSWorkspace.willSleepNotification, "sleep"), (NSWorkspace.screensDidSleepNotification, "screen")] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in self?.setPaused(true, reason: reason) })
@@ -111,8 +121,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let distributed = DistributedNotificationCenter.default()
         distributedObservers.append(distributed.addObserver(forName: .init("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in self?.setPaused(true, reason: "lock") })
         distributedObservers.append(distributed.addObserver(forName: .init("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in self?.setPaused(false, reason: "lock") })
-        requestSample(forceDisk: true)
-        startTimer()
     }
 
     private func startTimer() {
@@ -137,8 +145,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let title = MetricFormat.status(snapshot)
         if lastTitle != title {
             lastTitle = title
-            statusItem.button?.image = StatusRenderer.image(cpu: snapshot.cpuPercent, memory: snapshot.memory?.percent, disk: snapshot.disk?.usedPercent)
-            statusItem.button?.setAccessibilityValue(title)
+            statusItem?.button?.image = StatusRenderer.image(cpu: snapshot.cpuPercent, memory: snapshot.memory?.percent, disk: snapshot.disk?.usedPercent)
+            statusItem?.button?.setAccessibilityValue(title)
         }
         if menuOpen { summary.update(snapshot) }
         if !didReportReady, snapshot.cpuPercent != nil {
@@ -189,7 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 }
 
 final class SummaryView: NSView {
-    private var snapshot: MetricsSnapshot?
+    private(set) var snapshot: MetricsSnapshot?
     override var isFlipped: Bool { true }
 
     func update(_ snapshot: MetricsSnapshot) {
@@ -266,4 +274,88 @@ func renderSnapshot(to path: String) throws {
         throw NSError(domain: "LiteGauge", code: 1)
     }
     try png.write(to: URL(fileURLWithPath: path))
+}
+
+// In-process UI self-test: the real menu, panel and indicator are built offscreen and their action
+// code paths are called directly. No status item, window, focus change or synthesized input.
+extension AppDelegate {
+    func runUISelfTest(outDir: URL) -> Bool {
+        var checks: [String: Bool] = [:]
+        func wait(_ seconds: Double, until done: () -> Bool) -> Bool {
+            let end = Date().addingTimeInterval(seconds)
+            while !done() && Date() < end { RunLoop.main.run(until: Date().addingTimeInterval(0.05)) }
+            return done()
+        }
+        func png(_ view: NSView, _ name: String) -> Int {
+            let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)!
+            view.cacheDisplay(in: view.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?.write(to: outDir.appendingPathComponent(name))
+            var ink = 0
+            for x in stride(from: 0, to: rep.pixelsWide, by: 2) { for y in stride(from: 0, to: rep.pixelsHigh, by: 2) {
+                if let c = rep.colorAt(x: x, y: y), c.alphaComponent > 0.1 { ink += 1 } } }
+            return ink
+        }
+        summary.appearance = NSAppearance(named: .aqua)
+        buildMenu()
+        let items = menu.items
+        let refresh = items.first { $0.title == "立即刷新" }, quit = items.first { $0.title == "退出轻仪" }
+        let activity = items.first { $0.title == "打开活动监视器…" }
+        checks["menu_structure"] = items.count == 6 && items[0].view === summary && refresh != nil && quit != nil && activity != nil
+        checks["shortcuts_cmd_r_q"] = refresh?.keyEquivalent == "r" && quit?.keyEquivalent == "q"
+            && refresh?.keyEquivalentModifierMask == .command && quit?.keyEquivalentModifierMask == .command
+        checks["actions_wired"] = [refresh, quit, activity].allSatisfy { item in
+            guard let item, let action = item.action, let target = item.target as? NSObject else { return false }
+            return target === self && target.responds(to: action) }
+        checks["panel_initial_reading"] = summary.snapshot == nil && png(summary, "native-ui-panel-initial.png") > 0
+
+        // Opening the menu: AppKit calls menuWillOpen, which shows the latest reading and forces a sample.
+        menuWillOpen(menu)
+        checks["open_samples_panel"] = wait(5) { summary.snapshot?.memory != nil && summary.snapshot?.disk != nil }
+        let firstDisk = summary.snapshot?.disk?.sampledAt
+        Thread.sleep(forTimeInterval: 1.1)
+        // "立即刷新" (⌘R) dispatches this action; call it the same way AppKit's menu would.
+        if let refresh, let action = refresh.action { NSApp.sendAction(action, to: refresh.target, from: refresh) }
+        checks["refresh_updates_cpu_and_disk"] = wait(5) {
+            summary.snapshot?.cpuPercent != nil && (summary.snapshot?.disk?.sampledAt ?? .distantPast) > (firstDisk ?? .distantFuture) }
+        let label = summary.accessibilityLabel() ?? ""
+        checks["panel_accessibility_values"] = label.contains("CPU") && label.contains("内存") && label.contains("磁盘剩余")
+        checks["panel_renders"] = png(summary, "native-ui-panel.png") > 1000
+        checks["indicator_tracks_reading"] = lastTitle == MetricFormat.status(latest!) && lastTitle.contains("%")
+
+        // Closing the menu stops panel updates; the indicator keeps updating.
+        menuDidClose(menu)
+        let frozen = summary.snapshot?.sampledAt
+        let before = latest?.sampledAt
+        Thread.sleep(forTimeInterval: 0.2)
+        requestSample(forceDisk: false)
+        checks["closed_menu_stops_panel_updates"] = wait(5) { latest?.sampledAt != before } && summary.snapshot?.sampledAt == frozen
+
+        // Sleep, screen sleep and lock each pause sampling; sampling resumes only when all clear.
+        startTimer()
+        setPaused(true, reason: "lock"); setPaused(true, reason: "screen")
+        let paused = timer == nil
+        setPaused(false, reason: "screen")
+        let stillPaused = timer == nil
+        setPaused(false, reason: "lock")
+        checks["pause_resume"] = paused && stillPaused && timer != nil
+        timer?.cancel(); timer = nil
+
+        // Indicator: empty vs full bars differ in drawn ink; unavailable readings still draw the outline.
+        func indicator(_ c: Double?, _ m: Double?, _ d: Double?, _ name: String) -> Int {
+            let view = NSImageView(frame: NSRect(origin: .zero, size: StatusRenderer.size))
+            view.image = StatusRenderer.image(cpu: c, memory: m, disk: d)
+            view.imageScaling = .scaleNone
+            return png(view, name)
+        }
+        let empty = indicator(0, 0, 0, "native-ui-indicator-0.png"), full = indicator(100, 100, 100, "native-ui-indicator-100.png")
+        let none = indicator(nil, nil, nil, "native-ui-indicator-unavailable.png")
+        checks["indicator_bars_scale"] = full > empty && empty > 0 && none > 0
+
+        let ok = checks.values.allSatisfy { $0 }
+        let result: [String: Any] = ["ok": ok, "checks": checks, "screenshots": ["native-ui-panel-initial.png", "native-ui-panel.png",
+            "native-ui-indicator-0.png", "native-ui-indicator-100.png", "native-ui-indicator-unavailable.png"],
+            "not_covered": ["physical menu-bar click and AppKit menu tracking", "opening Activity Monitor", "actual quit", "real sleep/wake notifications"]]
+        if let data = try? JSONSerialization.data(withJSONObject: result, options: .sortedKeys) { print(String(decoding: data, as: UTF8.self)) }
+        return ok
+    }
 }
