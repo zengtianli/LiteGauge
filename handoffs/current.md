@@ -79,3 +79,9 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - 模型逐张查看 1024 原图与 icns 实际 16/32/64/128/256 px（深浅四种底色，16/32 另放大 6 倍），记录与图片在 perf/acceptance/icon-review*.{json,png}；已写 delivery-evidence icon_review（icon 绑定 86e77dbb…9850），monitor 回读后不再列为缺项。
 - 观察：32 px 起三柱清晰，16 px 可辨；浅底小尺寸瓷砖边缘对比弱。provenance 显示为 Seedream 失败后的 OpenAI 生图兜底，与共享默认提供方不同，如需统一可以后用 Seedream 重做（不在本次范围）。
 - perf/delivery-evidence.json 混有 Chapter 写入的 installed_icon 记录，仍未提交，留工作树。
+
+## 2026-09-28 产品材料：主页与演示播放
+
+- 新增 scripts/page-probe.swift：WebKit 离屏检查线上页（屏幕外无边框窗口、忽略鼠标、.prohibited 策略，不抢焦点）。纯无窗口 WKWebView 不加载 <video>（readyState 0），必须挂在窗口里。
+- 实测线上 https://litegauge.tianli.cyou/：1280 桌面与 390 iPhone UA 整页截图逐段目视正常、无横向溢出；页面内 video 静音播放至 24/24 s、ended、无错误，三段字幕按时切换。记录 perf/acceptance/homepage-media.json（截图 png 仅本机，被 .git/info/exclude 忽略）。已写 delivery-evidence homepage_desktop/homepage_mobile/media_playback；monitor 回读 coverage 只剩 native_ui。
+- 相邻问题（未修，不在本仓库）：demo.zh.vtt 以 application/octet-stream 下发，WebKit 能读，Firefox 等可能要求 text/vtt；应在 VPS nginx 的 MIME 映射补 vtt。页脚 AppIcon.png 708 KB 用于 44/88 px 显示，可在下次站点构建时出小尺寸图。

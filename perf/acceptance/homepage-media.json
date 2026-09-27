@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-28T00:10:43+08:00",
+  "url": "https://litegauge.tianli.cyou/",
+  "tool": "scripts/page-probe.swift (WebKit WKWebView, offscreen, no focus/input)",
+  "homepage_desktop": {
+    "viewport_width": 1280,
+    "metrics": {
+      "title": "轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态",
+      "innerWidth": 1280,
+      "scrollWidth": 1263,
+      "scrollHeight": 3911,
+      "images": 4,
+      "broken": [
+        "https://litegauge.tianli.cyou/assets/AppIcon.png"
+      ],
+      "overflowing": 0,
+      "video": {
+        "src": "",
+        "tracks": 1,
+        "poster": "https://litegauge.tianli.cyou/media/demo-poster.jpg"
+      },
+      "h1": "看清状态，\n留住空间。",
+      "downloads": [
+        "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.zip",
+        "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.zip",
+        "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.zip"
+      ]
+    },
+    "screenshot": "perf/acceptance/homepage-desktop.png (local, png ignored)",
+    "visual_review": "model reviewed full-page screenshot: header icon/nav, hero, download button with 1.6 MB/Apple Silicon/macOS 14 note, lightweight cards 1.6 MB/14.7 MB/0.86%/1.3 s with scope note, demo video poster, 3-step install, first-open notice, FAQ, footer; layout intact, no broken visuals.",
+    "note": "metrics 'broken' lists the loading=lazy footer AppIcon.png sampled before scroll; it is visible in the full-height screenshot and returns HTTP 200 image/png."
+  },
+  "homepage_mobile": {
+    "viewport_width": 390,
+    "user_agent": "iPhone Safari 18",
+    "metrics": {
+      "title": "轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态",
+      "innerWidth": 390,
+      "scrollWidth": 373,
+      "scrollHeight": 5029,
+      "images": 4,
+      "broken": [
+        "https://litegauge.tianli.cyou/assets/AppIcon.png"
+      ],
+      "overflowing": 0,
+      "video": {
+        "src": "",
+        "tracks": 1,
+        "poster": "https://litegauge.tianli.cyou/media/demo-poster.jpg"
+      },
+      "h1": "看清状态，\n留住空间。",
+      "downloads": [
+        "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.zip",
+        "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.zip",
+        "https://github.com/zengtianli/LiteGauge/releases/download/v0.1.0/LiteGauge-0.1.0-arm64.zip"
+      ]
+    },
+    "screenshot": "perf/acceptance/homepage-mobile.png (local, png ignored)",
+    "visual_review": "single-column layout, no horizontal overflow (scrollWidth 373 <= 390, 0 elements past viewport), text readable, cards wrap 2-up, install steps and FAQ stack correctly."
+  },
+  "media_playback": {
+    "source": "https://litegauge.tianli.cyou/media/demo.mp4",
+    "muted_autoplay_in_page_video_element": true,
+    "polls": [
+      {
+        "currentTime": 3.985059041988976,
+        "duration": 24,
+        "readyState": 4,
+        "ended": false,
+        "paused": false,
+        "error": null,
+        "videoWidth": 1280,
+        "events": [
+          "playing@0.00",
+          "play-ok"
+        ],
+        "cues": 3,
+        "activeCue": "左侧 CPU 百分比，右侧两条依次表示内存、磁盘已用比例。"
+      },
+      {
+        "currentTime": 9.305100000675846,
+        "duration": 24,
+        "readyState": 4,
+        "ended": false,
+        "paused": false,
+        "error": null,
+        "videoWidth": 1280,
+        "events": [
+          "playing@0.00",
+          "play-ok"
+        ],
+        "cues": 3,
+        "activeCue": "详情同时显示内存压力和交换空间，占用高不一定代表内存不足。"
+      },
+      {
+        "currentTime": 14.623226875658482,
+        "duration": 24,
+        "readyState": 4,
+        "ended": false,
+        "paused": false,
+        "error": null,
+        "videoWidth": 1280,
+        "events": [
+          "playing@0.00",
+          "play-ok"
+        ],
+        "cues": 3,
+        "activeCue": "详情同时显示内存压力和交换空间，占用高不一定代表内存不足。"
+      },
+      {
+        "currentTime": 19.956731416674742,
+        "duration": 24,
+        "readyState": 4,
+        "ended": false,
+        "paused": false,
+        "error": null,
+        "videoWidth": 1280,
+        "events": [
+          "playing@0.00",
+          "play-ok"
+        ],
+        "cues": 3,
+        "activeCue": "磁盘详情显示剩余空间；日常点击菜单或按 ⌘R 可立即刷新。"
+      },
+      {
+        "currentTime": 24,
+        "duration": 24,
+        "readyState": 4,
+        "ended": true,
+        "paused": true,
+        "error": null,
+        "videoWidth": 1280,
+        "events": [
+          "playing@0.00",
+          "play-ok",
+          "ended@24.00"
+        ],
+        "cues": 3,
+        "activeCue": null
+      }
+    ],
+    "http_range": "206 video/mp4",
+    "subtitles": "3 cues loaded from demo.zh.vtt; active cue text changed at the three sections",
+    "note": "demo.zh.vtt is served as application/octet-stream; WebKit loaded it, other browsers not checked. Fix belongs to the VPS nginx MIME map (not deployed in this session)."
+  },
+  "limits": [
+    "Real Chrome/Safari window not used; WebKit offscreen engine only.",
+    "Page numbers reflect the 0.1.0 measurement; perf re-measure is pending separately."
+  ]
+}
