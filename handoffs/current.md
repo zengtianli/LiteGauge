@@ -93,3 +93,4 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - scripts/accept/{functionality,recovery,privacy,native_ui}.sh 登记于 project.yaml sop.accept（只提交了 accept 块；他人对 project.yaml 的整文件缩进改动仍未提交）。四个脚本经 scripts/accept/_build.sh 加锁构建当前源码一次、各用临时副本，因为 app_sop accept 并行运行，直接共用 build/LiteGauge.app 会互相覆盖签名。
 - `app_sop.py accept --app litegauge --all`：除 installed_icon（本人确认）外 8 项 passed；monitor coverage 为空。`--benchmark` 测试实例 GUI 启动冒烟正常（首个 CPU 读数约 1.07 s，随即结束）。
 - 代价：源码变了，ship 阶段显示当前源码与装机/发布 0.1.0 不同，perf 的 input-binding 再次失效（被测装机版其实未变）。需要发 0.1.1（公证）+ 装机后重测；均需授权。media 已在 manifest 记 reverified（绘制代码未改）。
+- 收尾回读：coverage 为空（media_playback 在 manifest 变更后重跑 accept 通过）。剩余 stale：perf input-binding（需重测）、media「录制后界面源码又改了 1 次」（按提交时间判断，需 capture-media.sh 重录并重新部署官网）、ship 三项（需发版+装机；「未提交改动」来自他人未提交的 project.yaml 缩进）。
