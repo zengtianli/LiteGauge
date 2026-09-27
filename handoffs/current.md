@@ -94,3 +94,9 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - `app_sop.py accept --app litegauge --all`：除 installed_icon（本人确认）外 8 项 passed；monitor coverage 为空。`--benchmark` 测试实例 GUI 启动冒烟正常（首个 CPU 读数约 1.07 s，随即结束）。
 - 代价：源码变了，ship 阶段显示当前源码与装机/发布 0.1.0 不同，perf 的 input-binding 再次失效（被测装机版其实未变）。需要发 0.1.1（公证）+ 装机后重测；均需授权。media 已在 manifest 记 reverified（绘制代码未改）。
 - 收尾回读：coverage 为空（media_playback 在 manifest 变更后重跑 accept 通过）。剩余 stale：perf input-binding（需重测）、media「录制后界面源码又改了 1 次」（按提交时间判断，需 capture-media.sh 重录并重新部署官网）、ship 三项（需发版+装机；「未提交改动」来自他人未提交的 project.yaml 缩进）。
+
+## 2026-09-28 重录素材
+
+- `bash scripts/capture-media.sh`（离屏、同源渲染）重录：menubar.png / panel.png 与旧版逐字节相同（渲染未变），demo.mp4 / demo-poster.jpg / manifest 按当前源码与实时采样重新生成，提交 c8e0f99。check-only 回读 media 阶段 ok，media_playback accept 通过，coverage 为空。
+- 线上官网仍是旧视频（线上 sha 462f46aa… = 旧版；本地新版 dbe5c61e…）；需按授权 `python3 scripts/build-site.py && bash scripts/deploy-site.sh` 后线上一致。
+- 仍需授权：装机（build-receipt stale）、发版 0.1.1（带 --ui-self-test）、装机后空闲重测 perf。
