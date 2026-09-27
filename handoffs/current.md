@@ -54,3 +54,10 @@ M4 / 16 GiB，macOS 27.2，最终公证版菜单收起，启动后静置 45 秒�
 perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终 bitmap 版热点或归因 accessibility。当前 image/AX 更新已有整数值去重，详情只在菜单展开时更新。后续可独立测按实际条形像素高度去重图片；CPU 数字仍常变，收益未知，不在推广发布中临时改渲染方案。
 
 机器 SOP 的性能预算仍需处理；不宣称全部轻量化目标已达成。
+
+## 2026-09-27 装机核对（Chapter 授权装机）
+
+- 用户决定本次接受空闲 CPU 0.86% 超出 0.3% 目标，不修。会话中途试做的菜单栏原地重绘改动已撤回，未提交、未测定收益；如以后要优化，热点线索是每 2 秒换 NSImage 触发状态项布局与 3 块屏幕 replicant 快照（sample 所见）。
+- 源码自 26b0fe1 起未变，/Applications/LiteGauge.app 已是当前版本的公证发行版：可执行 SHA256 与 build-receipt 一致，codesign/spctl（Notarized Developer ID）/stapler 通过，安装包 AppIcon.icns 与 icon/AppIcon.icns 字节一致。因此未重装，没有退出或替换正在运行的实例（PID 30165），CLI 软链与登录项未动。
+- installed_icon 待用户在 Chapter 确认 Dock/Finder 实际显示；未代写通过。当前 installed_icon 绑定 cb805e27…e40e。
+- build/LiteGauge.app 已按 HEAD 重建为本机 ad-hoc 包（忽略入库）。
