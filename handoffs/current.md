@@ -100,3 +100,10 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - `bash scripts/capture-media.sh`（离屏、同源渲染）重录：menubar.png / panel.png 与旧版逐字节相同（渲染未变），demo.mp4 / demo-poster.jpg / manifest 按当前源码与实时采样重新生成，提交 c8e0f99。check-only 回读 media 阶段 ok，media_playback accept 通过，coverage 为空。
 - 线上官网仍是旧视频（线上 sha 462f46aa… = 旧版；本地新版 dbe5c61e…）；需按授权 `python3 scripts/build-site.py && bash scripts/deploy-site.sh` 后线上一致。
 - 仍需授权：装机（build-receipt stale）、发版 0.1.1（带 --ui-self-test）、装机后空闲重测 perf。
+
+## 2026-09-28 维护：build-receipt / 发版前置
+
+- 仅剩 ship.build-receipt（需装机）与 release（本人决定）；本轮禁止装机/发版，未做。验收 coverage 为空，perf input-binding 待装机后空闲重测。
+- 0.1.0 之后唯一源码变更：0337de4（`--ui-self-test` 离屏自检 + 固定验收脚本），用户可见行为不变。
+- 若发 0.1.1：版本号在 Info.plist（CFBundleShortVersionString 0.1.0、CFBundleVersion 1）、Sources/main.swift `let version`、scripts/capture-media.sh 的 manifest version；release-notes 草稿一句即可：「新增内置离屏界面自检 `LiteGauge --ui-self-test`，用于自动验收；菜单栏、面板与采样行为不变。」随后 `bash scripts/package-release.sh` → 装机 → `app_sop.py run --app litegauge --stage ship --check-only` → 空闲时 `--stage perf --now` → 官网 build/deploy（同时带上已重录的视频）。
+- 若不发版只装自用：`bash build.sh` 后替换 /Applications（需先退出运行中的轻仪），再按 app_sop build-receipt 以实际构建命令生成 receipt；此时装机版与公开发布版不同，需在 receipt 中如实标注。
