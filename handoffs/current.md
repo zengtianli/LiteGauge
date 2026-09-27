@@ -9,7 +9,7 @@
 - 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.1.0>
 - 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
 - 安装 /Applications/LiteGauge.app，普通模式运行；Stats 的安装、运行与登录项保留。
-- 源目录沿用 ~/Apps/tlstats，登记 id/family 为 litegauge。
+- 源目录 ~/Apps/litegauge（2026-09-27 由 tlstats 改名），登记 id/family 为 litegauge。
 
 ## 发行与验证
 
