@@ -73,3 +73,9 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - 成因：2026-09-27 23:46 监测看到了我临时（未提交、已撤回）的渲染实验，app_sop 记下 perf/media 的 input-binding 失效；该标记在证据文件本身更新前不会自动清除，即使源码已回到发布版。
 - media：核对 docs/media/manifest.json 的 sources_sha256 与当前源码逐字节一致、26b0fe1 后无源码变更，写入 manifest 的 reverified 记录（manifest 不发布到官网）。随后 `app_sop.py run --stage media --stage promo --check-only` 通过，media/promo 均 ok。
 - perf：未处理。perf/lightweight.json 被官网直接链接，只为清标记改它会让线上副本过期；需要真实重测。重测受空闲门限制（接电源、HID 空闲 ≥600 s）；本会话用户在用机（HID 空闲约 2 s），未采样。条目带 auto=measure，定时 monitor --fix-changed 在空闲时会自动重测已安装版；或空闲时手动 `~/Dev/.venv/bin/python ~/Apps/chapter/engine/app_sop.py run --app litegauge --stage perf --now`。重测后官网的 lightweight.json 与数字需按既有授权重新部署。
+
+## 2026-09-28 图标审阅 icon_review
+
+- 模型逐张查看 1024 原图与 icns 实际 16/32/64/128/256 px（深浅四种底色，16/32 另放大 6 倍），记录与图片在 perf/acceptance/icon-review*.{json,png}；已写 delivery-evidence icon_review（icon 绑定 86e77dbb…9850），monitor 回读后不再列为缺项。
+- 观察：32 px 起三柱清晰，16 px 可辨；浅底小尺寸瓷砖边缘对比弱。provenance 显示为 Seedream 失败后的 OpenAI 生图兜底，与共享默认提供方不同，如需统一可以后用 Seedream 重做（不在本次范围）。
+- perf/delivery-evidence.json 混有 Chapter 写入的 installed_icon 记录，仍未提交，留工作树。

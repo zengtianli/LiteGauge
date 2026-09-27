@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "check": "icon_review",
+  "method": "manual (model inspected each image)",
+  "checked_at": "2026-09-28T00:06:00+08:00",
+  "inputs": {
+    "icon/AppIcon.png": "1beb45f8416a92e5b2f42deb68730f7e967a6fa1de7591ba025b6c561fc96c83",
+    "icon/AppIcon.icns": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f",
+    "icon/provenance.json": "6d9e9420385364b0300b204568103913f9647c6078bfebc8baf4a39c8dcac255"
+  },
+  "viewed": [
+    "icon/AppIcon.png at 1024 px",
+    "sizes extracted from icon/AppIcon.icns with iconutil: 16, 32, 64 (32@2x), 128, 256 px at native pixels on light #F6F6F6, #ECECEC, dark #1E1E1E, #3C3C46 -> perf/acceptance/icon-review-sizes.png",
+    "16 and 32 px enlarged 6x nearest-neighbour on light and dark -> perf/acceptance/icon-review-16-32-zoom.png"
+  ],
+  "findings": {
+    "subject": "warm white ceramic tile with three rising jade-to-teal glass bars; reads as a performance meter, fits a CPU/memory/disk monitor",
+    "small_sizes": "three bars remain distinct at 32 px and above; at 16 px they merge into a green-teal rising block but the silhouette is still recognisable",
+    "light_background": "on very light backgrounds the white tile edge is low-contrast at 16/32 px; bars carry recognition",
+    "dark_background": "tile stands out clearly; no dark fringe",
+    "edges_margin": "alpha bbox 96..928 on 1024 canvas (832 tile, 96 margin), transparent outside rounded corners, no baked backdrop or second base",
+    "text": "no letters, numbers, watermark or badge"
+  },
+  "limits": [
+    "provenance records OpenAI image_gen as a fallback because Seedream TLS failed; the shared default provider is Seedream. Style is consistent with the ceramic/glass family, but this is not a Seedream image.",
+    "Dock/Finder display is a separate check (installed_icon)."
+  ],
+  "result": "passed"
+}
