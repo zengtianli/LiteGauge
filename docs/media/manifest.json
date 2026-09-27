@@ -36,5 +36,10 @@
       "end": 24,
       "topic": "Disk remaining capacity"
     }
-  ]
+  ],
+  "reverified": {
+    "checked_at": "2026-09-28T00:03:48+08:00",
+    "result": "current Sources/App.swift and Sources/Metrics.swift are byte-identical to sources_sha256; no source change since release commit 26b0fe1",
+    "reason": "a temporary uncommitted rendering experiment on 2026-09-27 was reverted without build, release or install; media remains valid for the current UI"
+  }
 }

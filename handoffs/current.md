@@ -67,3 +67,9 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - functionality / recovery / privacy 已对已安装公证版（可执行 SHA256 5f86b966…）真实执行，原件在 perf/acceptance/{functionality,recovery,privacy}.txt，已写入 perf/delivery-evidence.json（business 绑定 97cce2d7…8740）。Chapter monitor 回读：这三项已不在缺项 coverage 中。
 - perf/delivery-evidence.json 同时含 Chapter 记录的本人 installed_icon 确认（及 perf/installed-icon-review.json），两者都未由本会话提交，留工作树。
 - native_ui 未过：本会话没有 Computer Use，按硬约束不能合成点击/按键；打开状态栏菜单会接管用户的鼠标键盘输入。需在有 Computer Use 的会话里点状态项、看面板、⌘R 刷新、Esc 关闭、⌘Q 前停下，再写 method ui_automation 或由本人手测后写 manual。
+
+## 2026-09-28 资源与性能 input-binding
+
+- 成因：2026-09-27 23:46 监测看到了我临时（未提交、已撤回）的渲染实验，app_sop 记下 perf/media 的 input-binding 失效；该标记在证据文件本身更新前不会自动清除，即使源码已回到发布版。
+- media：核对 docs/media/manifest.json 的 sources_sha256 与当前源码逐字节一致、26b0fe1 后无源码变更，写入 manifest 的 reverified 记录（manifest 不发布到官网）。随后 `app_sop.py run --stage media --stage promo --check-only` 通过，media/promo 均 ok。
+- perf：未处理。perf/lightweight.json 被官网直接链接，只为清标记改它会让线上副本过期；需要真实重测。重测受空闲门限制（接电源、HID 空闲 ≥600 s）；本会话用户在用机（HID 空闲约 2 s），未采样。条目带 auto=measure，定时 monitor --fix-changed 在空闲时会自动重测已安装版；或空闲时手动 `~/Dev/.venv/bin/python ~/Apps/chapter/engine/app_sop.py run --app litegauge --stage perf --now`。重测后官网的 lightweight.json 与数字需按既有授权重新部署。
