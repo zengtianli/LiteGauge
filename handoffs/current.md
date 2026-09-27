@@ -85,3 +85,4 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - 新增 scripts/page-probe.swift：WebKit 离屏检查线上页（屏幕外无边框窗口、忽略鼠标、.prohibited 策略，不抢焦点）。纯无窗口 WKWebView 不加载 <video>（readyState 0），必须挂在窗口里。
 - 实测线上 https://litegauge.tianli.cyou/：1280 桌面与 390 iPhone UA 整页截图逐段目视正常、无横向溢出；页面内 video 静音播放至 24/24 s、ended、无错误，三段字幕按时切换。记录 perf/acceptance/homepage-media.json（截图 png 仅本机，被 .git/info/exclude 忽略）。已写 delivery-evidence homepage_desktop/homepage_mobile/media_playback；monitor 回读 coverage 只剩 native_ui。
 - 相邻问题（未修，不在本仓库）：demo.zh.vtt 以 application/octet-stream 下发，WebKit 能读，Firefox 等可能要求 text/vtt；应在 VPS nginx 的 MIME 映射补 vtt。页脚 AppIcon.png 708 KB 用于 44/88 px 显示，可在下次站点构建时出小尺寸图。
+- 00:11 另一写入方（Chapter 自动验收）在 perf/acceptance/ 生成 homepage_*/media_playback/icon_review 的 .json/.log/.png，并把 delivery-evidence 对应四项改指向它们；本会话未改动、未提交这些文件。本会话的 homepage-media.json、icon-review.json 仍保留为独立原件。
