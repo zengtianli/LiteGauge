@@ -1,0 +1,43 @@
+## run_at 2026-09-28T00:00:28+08:00  pid 30165 uptime 01-00:21:52
+## network sockets of running app (lsof -i)
+count: 0
+## open regular files outside system/app bundle
+/
+## linked libraries
+/usr/lib/libSystem.B.dylib
+/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics
+/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText
+/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation
+/usr/lib/libobjc.A.dylib
+/usr/lib/swift/libswiftCore.dylib
+/usr/lib/swift/libswiftCoreFoundation.dylib
+/usr/lib/swift/libswiftCoreImage.dylib
+/usr/lib/swift/libswiftDarwin.dylib
+/usr/lib/swift/libswiftDispatch.dylib
+/usr/lib/swift/libswiftIOKit.dylib
+/usr/lib/swift/libswiftMetal.dylib
+/usr/lib/swift/libswiftOSLog.dylib
+/usr/lib/swift/libswiftObjectiveC.dylib
+/usr/lib/swift/libswiftQuartzCore.dylib
+/usr/lib/swift/libswiftSpatial.dylib
+/usr/lib/swift/libswiftUniformTypeIdentifiers.dylib
+/usr/lib/swift/libswiftXPC.dylib
+/usr/lib/swift/libswiftos.dylib
+/usr/lib/swift/libswiftsimd.dylib
+/usr/lib/swift/libswiftCoreGraphics.dylib
+## network/URL API symbols imported
+none
+## embedded http(s) URLs in binary
+none
+## entitlements
+none
+## privacy usage strings in Info.plist
+none
+## preferences/containers/app support written
+ls: ~/Library/Application Support/LiteGauge: No such file or directory
+ls: ~/Library/Containers/cyou.tianli.litegauge: No such file or directory
+ls: ~/Library/Preferences/cyou.tianli.litegauge.plist: No such file or directory
+## source scan for shell/process/network/write APIs
+  Sources/App.swift:150:                    try? bytes.write(to: URL(fileURLWithPath: benchmark), options: .atomic)
+  Sources/App.swift:268:    try png.write(to: URL(fileURLWithPath: path))

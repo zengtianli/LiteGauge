@@ -1,0 +1,13 @@
+## run_at 2026-09-28T00:00:17+08:00
+## invalid arguments are rejected with exit 2, no partial output on stdout
+未知参数；用 --help 查看用法。
+exit=2
+未知参数；用 --help 查看用法。
+exit=2
+未知参数；用 --help 查看用法。
+exit=2
+## second GUI instance while the installed one runs (PID 30165)
+second instance exited by itself, exit=0 after 0s
+## running instance unaffected: 30165 /Applications/LiteGauge.app/Contents/MacOS/LiteGauge
+## pause/resume and baseline logic (unit tests: lock+screen pause reasons, wake resets CPU baseline, tick wraparound, zero delta -> unavailable, memory underflow guard)
+PASS 14 checks
