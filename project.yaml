@@ -1,5 +1,7 @@
 name: litegauge
-display_name: 轻仪 LiteGauge
+name_en: LiteGauge
+name_zh: 轻仪
+display_name: LiteGauge · 轻仪
 family: litegauge
 form: mac
 lifecycle: active
