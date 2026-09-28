@@ -1,49 +1,19 @@
 {
   "product": "litegauge",
-  "measured_at": "2026-09-26",
+  "measured_at": "2026-09-29",
   "device": "Mac16,12 / Apple M4 / macOS 27.2",
   "size": {
-    "installed_bytes": 1826816,
-    "installed_mb": 1.74,
-    "download_bytes": 1626948,
-    "download_mb": 1.55
+    "installed_bytes": 1851392,
+    "installed_mb": 1.77
   },
   "compare": [],
-  "version": "0.1.0",
+  "version": "0.1.1 (2)",
   "data": "公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；启动后静置45秒，M4/16 GiB 当前日常负载",
-  "idle": {
-    "process": "30165",
-    "footprint_mb": 14.0,
-    "main_footprint_mb": 14.0,
-    "cpu_pct": 0.86,
-    "main_cpu_pct": 0.86,
-    "processes": [
-      {
-        "pid": 30165,
-        "name": "main",
-        "cpu_pct": 0.859,
-        "footprint_peak_mb": 14.0
-      }
-    ],
-    "window_s": 60,
-    "scope": "主进程 + XPC 辅助进程 + 子进程合计"
-  },
   "artifact": {
     "bundle_id": "cyou.tianli.litegauge",
     "executable_sha256": "5f86b96672c3325f2d2ca2e194e5b98741c0abe608cf8ab3961acd45d17beb95",
     "distribution": "Developer ID signed and Apple notarized v0.1.0 release"
   },
-  "speed_gui": [
-    {
-      "key": "first_sample",
-      "label": "进程内首个 CPU 数值（单次）",
-      "label_en": "First CPU reading after app setup (single run)",
-      "median_ms": 1302.9,
-      "runs": 1,
-      "headline": true,
-      "method": "AppDelegate 初始化至首个有效 CPU 差分；非完整冷启动；含1秒采样窗口"
-    }
-  ],
   "speed_cold_start": {
     "status": "未测",
     "reason": "首个CPU差分已测；未反复关闭常驻试用软件做完整冷启动统计。"
@@ -51,7 +21,6 @@
   "why": "原生 AppKit；无第三方运行依赖和网络请求；CPU/内存共用2秒采样器，磁盘容量缓存60秒；数值变化时才重绘。",
   "why_en": "Native AppKit; no third-party runtime or network requests; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes.",
   "data_en": "Notarized release; menu closed; CPU/memory every 2 seconds and disk every 60 seconds. Settled 45 seconds before a 60-second CPU window; footprint sampled separately afterward.",
-  "background": [],
   "targets": {
     "memory_decimal_mb": 30,
     "cpu_pct": 0.3,
@@ -69,5 +38,92 @@
     "mutation": "Incorrect CPU formula rejected",
     "ui": "Real panel rendered offscreen; 0/22/100 percent compact indicator checked on light/dark backgrounds",
     "native_ui": "CUA read timed out; actual menu clicking and real sleep/wake cycle not automated in this session"
-  }
+  },
+  "history": [
+    {
+      "section": "version",
+      "replaced_on": "2026-09-29",
+      "reason": "装机：安装了轻量化后的新构建",
+      "value": "0.1.0"
+    },
+    {
+      "section": "idle",
+      "version": "0.1.0",
+      "replaced_on": "2026-09-29",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": {
+        "process": "30165",
+        "footprint_mb": 14.0,
+        "main_footprint_mb": 14.0,
+        "cpu_pct": 0.86,
+        "main_cpu_pct": 0.86,
+        "processes": [
+          {
+            "pid": 30165,
+            "name": "main",
+            "cpu_pct": 0.859,
+            "footprint_peak_mb": 14.0
+          }
+        ],
+        "window_s": 60,
+        "scope": "主进程 + XPC 辅助进程 + 子进程合计"
+      }
+    },
+    {
+      "section": "speed_gui",
+      "version": "0.1.0",
+      "replaced_on": "2026-09-29",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": [
+        {
+          "key": "first_sample",
+          "label": "进程内首个 CPU 数值（单次）",
+          "label_en": "First CPU reading after app setup (single run)",
+          "median_ms": 1302.9,
+          "runs": 1,
+          "headline": true,
+          "method": "AppDelegate 初始化至首个有效 CPU 差分；非完整冷启动；含1秒采样窗口"
+        }
+      ]
+    },
+    {
+      "section": "background",
+      "version": "0.1.0",
+      "replaced_on": "2026-09-29",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": []
+    },
+    {
+      "section": "size",
+      "version": "0.1.0",
+      "replaced_on": "2026-09-29",
+      "reason": "版本变化；旧安装包大小不沿用",
+      "value": {
+        "installed_bytes": 1826816,
+        "installed_mb": 1.74,
+        "download_bytes": 1626948,
+        "download_mb": 1.55
+      }
+    }
+  ],
+  "idle": {
+    "process": "/Applications/LiteGauge.app",
+    "footprint_mb": 23.0,
+    "main_footprint_mb": 23.0,
+    "cpu_pct": 0.98,
+    "main_cpu_pct": 0.98,
+    "processes": [
+      {
+        "name": "main",
+        "cpu_pct": 0.985,
+        "footprint_peak_mb": 23.0
+      }
+    ],
+    "window_s": 60,
+    "settle_s": null,
+    "measured_at": "2026-09-29",
+    "method": "对已长时间运行的实例直接 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
+    "load": "负载均值 3.48 28.30 87.90；total = 4096.00M  used = 3411.00M  free = 685.00M"
+  },
+  "env_note": "2026-09-29 主会话逐个顺序测量，负载均值 3.67 34.35 94.60；total = 4096.00M  used = 3411.00M  free = 685.00M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值"
 }
