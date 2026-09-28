@@ -23,7 +23,7 @@ media = root / 'docs/media'
 磁盘详情显示剩余空间；日常点击菜单或按 ⌘R 可立即刷新。
 ''')
 sources = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [root/'Sources/App.swift', root/'Sources/Metrics.swift']}
-manifest = {'version': '0.1.0', 'recorded_at': datetime.datetime.now().astimezone().isoformat(),
+manifest = {'version': '0.1.1', 'recorded_at': datetime.datetime.now().astimezone().isoformat(),
     'method': 'Production AppKit views rendered offscreen; 24 seconds of real MetricsSampler readings. No synthetic clicks or desktop screen recording.',
     'screenshots': 'Deterministic fixture: CPU 22%, memory 10/16 GiB, disk 180/500 GB free. Same production renderer.',
     'coverage': ['Compact 56-point status indicator', 'CPU updates at 2-second cadence', 'Memory pressure and swap', 'Disk remaining capacity'],

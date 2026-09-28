@@ -23,7 +23,7 @@ A stacked CPU label and percentage are followed by two vertical bars for memory 
 
 Requires **Apple Silicon (M1 or newer) and macOS 14 or later**. Intel builds are not currently provided. The application interface is in Chinese.
 
-1. Download `LiteGauge-0.1.0-arm64.dmg` from [Releases](https://github.com/zengtianli/LiteGauge/releases/latest).
+1. Download `LiteGauge-0.1.1-arm64.dmg` from [Releases](https://github.com/zengtianli/LiteGauge/releases/latest).
 2. Open the DMG and drag `LiteGauge.app` into `Applications`.
 3. Launch LiteGauge from Applications and check the top menu bar. There is no Dock icon or regular main window.
 

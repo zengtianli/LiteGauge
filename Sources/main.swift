@@ -1,7 +1,7 @@
 import AppKit
 
 let arguments = Array(CommandLine.arguments.dropFirst())
-let version = "0.1.0"
+let version = "0.1.1"
 
 func printJSON<T: Encodable>(_ value: T) throws {
     let encoder = JSONEncoder()

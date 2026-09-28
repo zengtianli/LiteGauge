@@ -23,7 +23,7 @@ CPU 标签与百分比上下排列，右侧两根竖条依次表示内存、磁�
 
 需要 **Apple Silicon（M1 或更新）与 macOS 14 或更新版本**。当前不提供 Intel 构建，应用界面为中文。
 
-1. 在 [Releases](https://github.com/zengtianli/LiteGauge/releases/latest) 下载 `LiteGauge-0.1.0-arm64.dmg`。
+1. 在 [Releases](https://github.com/zengtianli/LiteGauge/releases/latest) 下载 `LiteGauge-0.1.1-arm64.dmg`。
 2. 打开 DMG，将 `LiteGauge.app` 拖到 `Applications`。
 3. 在「应用程序」中打开 LiteGauge，在屏幕顶部菜单栏查看读数。它没有 Dock 图标或普通主窗口。
 
