@@ -107,3 +107,11 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - 0.1.0 之后唯一源码变更：0337de4（`--ui-self-test` 离屏自检 + 固定验收脚本），用户可见行为不变。
 - 若发 0.1.1：版本号在 Info.plist（CFBundleShortVersionString 0.1.0、CFBundleVersion 1）、Sources/main.swift `let version`、scripts/capture-media.sh 的 manifest version；release-notes 草稿一句即可：「新增内置离屏界面自检 `LiteGauge --ui-self-test`，用于自动验收；菜单栏、面板与采样行为不变。」随后 `bash scripts/package-release.sh` → 装机 → `app_sop.py run --app litegauge --stage ship --check-only` → 空闲时 `--stage perf --now` → 官网 build/deploy（同时带上已重录的视频）。
 - 若不发版只装自用：`bash build.sh` 后替换 /Applications（需先退出运行中的轻仪），再按 app_sop build-receipt 以实际构建命令生成 receipt；此时装机版与公开发布版不同，需在 receipt 中如实标注。
+
+## 2026-09-28 发布 0.1.1 (2) 并装机（本人长期授权）
+
+- 版本：Info.plist 0.1.1 / build 2、main.swift、capture-media 清单版本、README 下载文件名、release-notes（3d47e2a）。`app_sop.py build-receipt ... --build-command "bash scripts/package-release.sh"` 包裹签名公证打包：App 与 DMG 公证 Accepted（473cf45c…、66bcc693…），receipt commit 3d47e2a、dirty=false，可执行 e5dca53e…。
+- 装机：TERM 退出旧实例（PID 30165）→ 旧包移到 ~/.Trash/litegauge-0.1.0-20260928/ → ditto 新包 → `open -g -j` 后台重启；CLI 软链不变，无登录项。已装 `--version` 0.1.1，可执行哈希与 receipt 一致。install.sh 在已安装时拒绝覆盖，所以按其步骤手工替换。
+- 推送 2371333..779f30b（17 个本组件提交，无本机路径）；触发 GitHub「Core tests」CI，779f30b 已 success；无部署触发。GitHub Release v0.1.1 为 Latest，含 ZIP/DMG/SHA256SUMS，下载 ZIP 哈希与 release/latest.json 一致。gh 的 --target 须传完整 SHA，短 SHA 报 422。
+- app_sop check-only：ship 全部 ok（build-receipt/install/release），test ok；accept 8/9 passed，homepage_desktop 在系统负载均值 300–900 时两次“无界面浏览器超时”。
+- 未做：官网部署。build-site.py 拒绝在 release 与 perf 版本不一致时生成（“measure this release first”），需先对已装 0.1.1 空闲低负载实测 → 更新 README 数字块 → `bash scripts/deploy-site.sh`（同时上线已重录视频与 0.1.1 下载）。当前官网仍指向 0.1.0 下载（v0.1.0 资产仍在，链接有效）。
