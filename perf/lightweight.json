@@ -4,23 +4,25 @@
   "device": "Mac16,12 / Apple M4 / macOS 27.2",
   "size": {
     "installed_bytes": 1851392,
-    "installed_mb": 1.77
+    "installed_mb": 1.77,
+    "download_bytes": 1638655,
+    "download_mb": 1.56
   },
   "compare": [],
   "version": "0.1.1 (2)",
-  "data": "公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；启动后静置45秒，M4/16 GiB 当前日常负载",
+  "data": "公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；测量已连续运行约13小时的常驻实例（非刚启动），M4/16 GiB 日常负载",
   "artifact": {
     "bundle_id": "cyou.tianli.litegauge",
-    "executable_sha256": "5f86b96672c3325f2d2ca2e194e5b98741c0abe608cf8ab3961acd45d17beb95",
-    "distribution": "Developer ID signed and Apple notarized v0.1.0 release"
+    "executable_sha256": "e5dca53e1130d47180d99f8d93bab1a1a7ba6b0cfae7764060fea32ea5919a04",
+    "distribution": "Developer ID signed and Apple notarized v0.1.1 release"
   },
   "speed_cold_start": {
     "status": "未测",
-    "reason": "首个CPU差分已测；未反复关闭常驻试用软件做完整冷启动统计。"
+    "reason": "首个 CPU 读数已测 5 次；完整冷启动需退出常驻实例，未做。"
   },
   "why": "原生 AppKit；无第三方运行依赖和网络请求；CPU/内存共用2秒采样器，磁盘容量缓存60秒；数值变化时才重绘。",
   "why_en": "Native AppKit; no third-party runtime or network requests; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes.",
-  "data_en": "Notarized release; menu closed; CPU/memory every 2 seconds and disk every 60 seconds. Settled 45 seconds before a 60-second CPU window; footprint sampled separately afterward.",
+  "data_en": "Notarized release; menu closed; CPU/memory every 2 seconds and disk every 60 seconds. Measured on the resident instance after about 13 hours of running (not freshly launched); 60-second CPU window, footprint read in the same pass.",
   "targets": {
     "memory_decimal_mb": 30,
     "cpu_pct": 0.3,
@@ -125,5 +127,25 @@
     "method": "对已长时间运行的实例直接 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
     "load": "负载均值 3.48 28.30 87.90；total = 4096.00M  used = 3411.00M  free = 685.00M"
   },
-  "env_note": "2026-09-29 主会话逐个顺序测量，负载均值 3.67 34.35 94.60；total = 4096.00M  used = 3411.00M  free = 685.00M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值"
+  "env_note": "2026-09-29 主会话逐个顺序测量，负载均值 3.67 34.35 94.60；total = 4096.00M  used = 3411.00M  free = 685.00M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
+  "speed_gui": [
+    {
+      "key": "first_sample",
+      "label": "进程内首个 CPU 数值（5 次中位）",
+      "label_en": "First CPU reading after app setup (median of 5)",
+      "median_ms": 1238.4,
+      "runs": 5,
+      "raw_ms": [
+        1312.8,
+        1239.7,
+        1234.0,
+        1234.7,
+        1238.4
+      ],
+      "headline": true,
+      "method": "已装 0.1.1 以 --benchmark 启动测试实例（后台、不抢焦点），AppDelegate 初始化至首个有效 CPU 差分；非完整冷启动；含 1 秒采样窗口",
+      "load": "负载均值 3.54 25.58 84.50",
+      "measured_at": "2026-09-29"
+    }
+  ]
 }

@@ -45,6 +45,7 @@ sop:
   measure:
     app: /Applications/LiteGauge.app
     launch: false
+    running: /Applications/LiteGauge.app/Contents/MacOS/LiteGauge
   budget:
     cpu: 0.3
     memory_mb: 30

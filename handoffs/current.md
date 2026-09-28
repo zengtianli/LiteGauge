@@ -120,3 +120,10 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 
 - 系统负载均值 702/489/292（10 核），HID 空闲 3 s；占用靠前的是 diskimagesiod、Microsoft Word、Shadowrocket、iOS 模拟器运行时进程，均与本产品无关。
 - perf（0.1.1 重测）与 homepage_desktop（builtin 无界面浏览器超时）仍卡在同一环境条件，未重试、未改验收方式；官网部署依赖 perf 重测。条件满足后依次：`app_sop.py run --app litegauge --stage perf --now` → `app_sop.py accept --app litegauge --check homepage_desktop --json` → `bash scripts/deploy-site.sh`。
+
+## 2026-09-29 0.1.1 性能重测与官网上线
+
+- 01:56 空闲门满足（HID 空闲 ≥600 s，负载 ~4）。首次 `app_sop run --stage perf` 失败：sop.measure 为 launch:false 但缺 `running`，batch_measure 拿不到 PID；补 `running: /Applications/LiteGauge.app/Contents/MacOS/LiteGauge` 后成功，app_sop 自动提交并推送 6312872（仅 perf/lightweight.json，无 CI 触发）。
+- 结果（已装公证 0.1.1，已连续运行约 13 小时的常驻实例）：空闲 CPU 0.98%（目标 0.3%，用户已接受超标），footprint 23.0 MiB = 24.1 MB（0.1.0 刚启动 45 s 时 14.0 MiB；差异来自长时间运行，未查是否增长型问题）。安装包 ZIP 1.64 MB、安装后 1.85 MB；首个 CPU 读数 5 次中位 1238 ms（--benchmark 测试实例）。data/data_en 改为如实描述“常驻约 13 小时、非刚启动”。
+- README 数字块由 perf_block.py 重新生成；`bash scripts/deploy-site.sh` 两次（第二次为改正说明），verify-site 逐文件、ZIP/DMG 哈希与视频 206 通过；线上 demo.mp4 与本地重录版一致。
+- 相邻：内存随运行时间从 14 → 23 MiB，可在空闲时对新启动实例做 1 小时/12 小时两点对照，确认是否持续增长。apps.tianli.cyou 产品卡由门户组件消费本仓库 perf，门户部署不在本组件范围。

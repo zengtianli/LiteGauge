@@ -68,13 +68,13 @@ JSON 字段为 `cpuPercent`、`memory`、`disk`、`sampledAt`、`errors`。字�
 <!-- lightweight:start -->
 ## 资源占用
 
-| 安装包 | 空闲内存 | 空闲 CPU | 进程内首个 CPU 数值（单次） |
+| 安装包 | 空闲内存 | 空闲 CPU | 进程内首个 CPU 数值（5 次中位） |
 |---|---|---|---|
-| **1.6 MB**（装好后 1.8 MB） | **14.7 MB** | **0.86%** | **1.3 s** |
+| **1.6 MB**（装好后 1.9 MB） | **24.1 MB** | **0.98%** | **1.2 s** |
 
 原生 AppKit；无第三方运行依赖和网络请求；CPU/内存共用2秒采样器，磁盘容量缓存60秒；数值变化时才重绘。
 
-<sub>v0.1.0 · Mac16,12 / Apple M4 / macOS 27.2 · 公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；启动后静置45秒，M4/16 GiB 当前日常负载 · 2026-09-26。数字来自所列设备实测，版本更新后重新测量。内存口径为 phys_footprint；CPU 为 60 秒采样窗内 CPU 时间 ÷ 墙钟；大小按十进制 MB。原始数据见 [perf/lightweight.json](perf/lightweight.json)。</sub>
+<sub>v0.1.1 (2) · Mac16,12 / Apple M4 / macOS 27.2 · 公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；测量已连续运行约13小时的常驻实例（非刚启动），M4/16 GiB 日常负载 · 2026-09-29。数字来自所列设备实测，版本更新后重新测量。内存口径为 phys_footprint；CPU 为 60 秒采样窗内 CPU 时间 ÷ 墙钟；大小按十进制 MB。原始数据见 [perf/lightweight.json](perf/lightweight.json)。</sub>
 <!-- lightweight:end -->
 
 这组数据来自所列设备和刷新设置，并不保证每台 Mac 都相同。首个 CPU 数值的耗时包含采样等待，不等于完整冷启动耗时。
