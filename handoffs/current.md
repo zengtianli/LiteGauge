@@ -127,3 +127,4 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - 结果（已装公证 0.1.1，已连续运行约 13 小时的常驻实例）：空闲 CPU 0.98%（目标 0.3%，用户已接受超标），footprint 23.0 MiB = 24.1 MB（0.1.0 刚启动 45 s 时 14.0 MiB；差异来自长时间运行，未查是否增长型问题）。安装包 ZIP 1.64 MB、安装后 1.85 MB；首个 CPU 读数 5 次中位 1238 ms（--benchmark 测试实例）。data/data_en 改为如实描述“常驻约 13 小时、非刚启动”。
 - README 数字块由 perf_block.py 重新生成；`bash scripts/deploy-site.sh` 两次（第二次为改正说明），verify-site 逐文件、ZIP/DMG 哈希与视频 206 通过；线上 demo.mp4 与本地重录版一致。
 - 相邻：内存随运行时间从 14 → 23 MiB，可在空闲时对新启动实例做 1 小时/12 小时两点对照，确认是否持续增长。apps.tianli.cyou 产品卡由门户组件消费本仓库 perf，门户部署不在本组件范围。
+- 收尾：`accept --all` 9 项 passed（含 cli_entry），check-only 仅剩 promo.card：apps.tianli.cyou 目录卡片仍显示 0.1.0 数字，需门户组件 apps-portal 用 `bash ~/Apps/apps-portal/site/deploy.sh` 重新部署（本组件以外，未做）。
