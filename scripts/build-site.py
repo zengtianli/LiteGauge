@@ -4,6 +4,8 @@
 Release values come from build/release/release.json; resource measurements come
 only from perf/lightweight.json. The small local renderer follows the shared
 app-lightweight metric contract without importing a machine-local workspace.
+facts.json (the portal's published numbers) comes from the shared generator in
+the apps-portal checkout when present; a bare clone builds the page without it.
 """
 from __future__ import annotations
 
@@ -20,6 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE_URL = "https://litegauge.tianli.cyou"
 GITHUB_URL = "https://github.com/zengtianli/LiteGauge"
 MEDIA = ("menubar.png", "panel.png", "demo.mp4", "demo-poster.jpg", "demo.zh.vtt")
+PORTAL_SITE = Path.home() / "Apps/apps-portal/site"
+PRODUCT_ID = "litegauge"  # products.yaml id / portal card data-product
 
 
 def read_json(path: Path) -> dict:
@@ -86,6 +90,19 @@ def performance_section(perf: dict, release: dict) -> str:
         "<a href='lightweight.json'>查看实测证据</a>。</p>"
         + ("<p class='measurement-limit'>" + escape(limit_text) + "</p>" if limit_text else "") + "</section>"
     )
+
+
+def write_facts(output: Path, version: str) -> None:
+    """Publish facts.json at the homepage root so it deploys with this page."""
+    if not (PORTAL_SITE / "product_facts.py").is_file():
+        print("facts.json not written — shared generator unavailable: " + str(PORTAL_SITE), file=sys.stderr)
+        return
+    sys.path.insert(0, str(PORTAL_SITE))
+    import product_facts
+    facts = product_facts.from_repo(ROOT, product_id=PRODUCT_ID, icon="assets/AppIcon.png")
+    if facts["version"] != version:
+        raise ValueError(f"facts.json version {facts['version']} (sop.release) differs from the page's v{version}")
+    product_facts.write(output, facts)
 
 
 def build(args: argparse.Namespace) -> None:
@@ -168,6 +185,7 @@ def build(args: argparse.Namespace) -> None:
         public_release["dmg"] = {key: release["dmg"][key] for key in ("filename", "sha256", "bytes", "download_url")}
     (output / "release.json").write_text(json.dumps(public_release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     shutil.copy2(perf_path, output / "lightweight.json")
+    write_facts(output, str(release["version"]))
     (output / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n", encoding="utf-8")
     (output / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>{SITE_URL}/</loc></url></urlset>\n', encoding="utf-8")
     print(f"Built {output.relative_to(ROOT)}/index.html for v{release['version']}")
