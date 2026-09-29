@@ -128,3 +128,7 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - README 数字块由 perf_block.py 重新生成；`bash scripts/deploy-site.sh` 两次（第二次为改正说明），verify-site 逐文件、ZIP/DMG 哈希与视频 206 通过；线上 demo.mp4 与本地重录版一致。
 - 相邻：内存随运行时间从 14 → 23 MiB，可在空闲时对新启动实例做 1 小时/12 小时两点对照，确认是否持续增长。apps.tianli.cyou 产品卡由门户组件消费本仓库 perf，门户部署不在本组件范围。
 - 收尾：`accept --all` 9 项 passed（含 cli_entry），check-only 仅剩 promo.card：apps.tianli.cyou 目录卡片仍显示 0.1.0 数字，需门户组件 apps-portal 用 `bash ~/Apps/apps-portal/site/deploy.sh` 重新部署（本组件以外，未做）。
+
+## 2026-09-29 facts.json 上线
+
+- 另一会话提交 757c0d1：build-site.py 从本产品 perf/lightweight.json 与 release 记录生成站点根 facts.json，门户卡片与 Chapter 读取它。本轮按授权 `bash scripts/deploy-site.sh` 重新部署，verify-site 含 facts.json 逐文件通过；线上 facts.json 为 0.1.1 (2)：安装包 1.6 MB / 装后 1.9 MB、内存 24.1 MB、CPU 0.98%、速度 1.2 s。以后重测只需重新部署本主页，门户卡片随之更新。
