@@ -6,4 +6,4 @@
 
 - **[产品主页与安装教程](https://litegauge.tianli.cyou/)**
 - 适用于 Apple Silicon，macOS 14 或更新系统；App 与 DMG 均已 Developer ID 签名并经 Apple 公证。
-- 无网络请求、无第三方运行依赖；免费，MIT 开源。资源实测见 README 与 `perf/lightweight.json`（当前数字测于 0.1.0，本版运行路径未变）。SHA256SUMS 可核对下载完整性。
+- 无网络请求、无第三方运行依赖；免费，MIT 开源。资源实测见 README 与 `perf/lightweight.json`（2026-09-29 在已安装的 0.1.1 公证版上重测）。SHA256SUMS 可核对下载完整性。

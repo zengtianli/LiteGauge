@@ -17,7 +17,7 @@ A stacked CPU label and percentage are followed by two vertical bars for memory 
 - **Three focused readings.** CPU and memory update every 2 seconds; disk capacity every 60 seconds. Open the menu or press ⌘R to refresh immediately.
 - **Native and offline.** Swift + AppKit, no third-party runtime dependencies, network requests, shell-based polling, or account.
 - **Less background work.** Periodic collection pauses during system sleep, display sleep, and screen lock. CPU sampling resets on resume, and the menu bar updates only when visible integer values change.
-- **Ready for scripts.** The same executable provides `status --json`; GUI and CLI share their data collection code.
+- **Ready for scripts and agents.** The same executable provides `status --json`, `watch` for readings at the app's cadence, and `app status` for the menu-bar instance; GUI and CLI share their collection code and colour thresholds.
 
 ## Download and install
 
@@ -44,26 +44,68 @@ The native menu supports arrow keys and Return. No global shortcuts are register
 
 ## Command line
 
-The installed app includes the CLI; no separate runtime is required:
+The CLI and the menu-bar app are the same executable and read from the same collection layer (`Sources/Metrics.swift`). The pressure levels and the 90% disk threshold that colour the panel live in that layer too, so the levels the CLI reports match the panel colours. The installed app includes the CLI; no separate runtime is required:
 
 ```sh
-/Applications/LiteGauge.app/Contents/MacOS/LiteGauge status
 /Applications/LiteGauge.app/Contents/MacOS/LiteGauge status --json
-/Applications/LiteGauge.app/Contents/MacOS/LiteGauge --help
 ```
 
-Optionally add a shorter command; inspect any existing entry before replacing it:
+Optionally add a shorter command (`bash scripts/install.sh` adds it on first install; inspect any existing entry before replacing it):
 
 ```sh
 mkdir -p "$HOME/.local/bin"
 ln -s /Applications/LiteGauge.app/Contents/MacOS/LiteGauge "$HOME/.local/bin/litegauge"
-# After adding ~/.local/bin to PATH:
-litegauge status --json
 ```
 
-JSON fields are `cpuPercent`, `memory`, `disk`, `sampledAt`, and `errors`. Byte counts are integers and dates use ISO 8601. CPU usage is normalized across the entire processor, from 0 to 100%. Unavailable readings are empty; collection failures appear in `errors`.
+After adding `~/.local/bin` to PATH:
 
-Exit codes: `0` success, `1` collection failure, `2` invalid arguments. CPU sampling takes approximately one second; `--help` and `--version` return immediately.
+```sh
+litegauge status                   # one reading: CPU / memory / disk (about 1 s of sampling)
+litegauge status --json            # the same as one JSON object
+litegauge watch --count 5 --json   # stream at the app's cadence (every 2 s by default), one JSON object per line (NDJSON)
+litegauge watch --interval 10      # one text line every 10 s until Ctrl-C
+litegauge app status --json        # whether the menu-bar instance runs: pid, bundle path, version
+litegauge app quit --dry-run       # show which instance would quit; use --yes to quit it (same as ⌘Q)
+litegauge app quit --yes --pid 123 # quit only the menu-bar instance with pid 123
+litegauge --version --json
+litegauge --help                   # also -h or help; --help / -h after any command or flag only prints help and runs nothing
+```
+
+`watch`, `app`, `--version --json`, and the level, percentage, and error-code fields below were added after 0.1.1 (current source, shipping with the next release). The released 0.1.1 provides `status [--json]`, `--version`, and `--help`. These also take effect with the next release: `-h`, `help`, and `--help` after a command print help (0.1.1 exits 2), and `litegauge` with no arguments only prints usage (0.1.1 goes down the menu-bar app launch path).
+
+Each record of `status --json` and `watch --json`:
+
+| Field | Meaning |
+|---|---|
+| `ok` | `true` when `errors` is empty |
+| `sampledAt` | Sample time, ISO 8601 |
+| `cpuPercent` | Usage normalized across the whole processor, 0–100%; `null` before a baseline exists |
+| `memory.totalBytes` / `usedBytes` / `compressedBytes` / `swapUsedBytes` | Integer bytes; used memory excludes reclaimable cache; swap is `null` if unreadable |
+| `memory.percent` | Memory used, the menu-bar memory bar |
+| `memory.pressureLevel` | System memory pressure: `normal`, `elevated`, `critical`, `unknown`; `memory.pressure` is the Chinese label |
+| `memory.level` | Panel colour: `normal` green, `warning` orange, `critical` red |
+| `disk.totalBytes` / `availableBytes` | Capacity and free space of the APFS container holding the startup Data volume |
+| `disk.usedPercent` | Disk used, the menu-bar disk bar |
+| `disk.level` / `disk.warnAbovePercent` | `warning` above `warnAbovePercent` (90), when the panel bar turns orange |
+| `disk.mountPoint` / `disk.volume` | The mount point read, `/System/Volumes/Data`; Chinese display name |
+| `disk.sampledAt` | When the disk was read; like the app, `watch` re-reads it every 60 seconds |
+| `errors` / `errorCodes` | The error text the panel shows; stable codes `cpu_unavailable`, `memory_unavailable`, `disk_unavailable` |
+
+Missing readings are written as `null`; every key is always present. `app status --json` reports `running`, `instances[]` (`pid`, `bundlePath`, `version`, `build`, `launchedAt`, `sameBundleAsCLI`), and the `cli` bundle the command itself runs from; `app quit --json` reports `targets`, `stillRunning`, `dryRun`, and `pid`. Both count only instances with a menu-bar item (`.accessory` processes that have finished launching); offscreen acceptance runs such as `--ui-self-test` and `--snapshot` are neither listed nor quit.
+
+Exit codes: `0` success; `1` collection failure (`ok: false`) or `app quit` could not finish within 5 seconds; `2` invalid arguments (stderr only). `--help` and `--version` return immediately. `litegauge` with no arguments prints usage and exits 2; it never starts the menu-bar app. Start the app from Applications or with `open -g -j /Applications/LiteGauge.app`.
+
+| Menu-bar app | Command line |
+|---|---|
+| Menu-bar CPU percentage, memory and disk bars, accessibility value | First line of `status`; `cpuPercent`, `memory.percent`, `disk.usedPercent` |
+| Detail panel: memory use and pressure colour, swap, free disk and the 90% warning | Lines 2–3 of `status`; `memory.*`, `disk.*` and their `level` |
+| Updates every 2 seconds, disk every 60 seconds | `watch` |
+| ⌘R refresh | Every `status` is a fresh sample including disk (it does not refresh the running menu-bar item) |
+| "Unavailable" on read failure | `errors` / `errorCodes`, exit code 1 |
+| ⌘Q quit | `app quit --yes` (check the target with `--dry-run` first) |
+| Whether the menu-bar item is there | `app status` |
+
+GUI-only: clicking to open the menu, arrow-key menu navigation, "Open Activity Monitor" (use `ps` or `top` from the command line), and the automatic pause during sleep and screen lock (internal app behaviour with no user action). Development and acceptance flags `--ui-self-test`, `--snapshot`, `--benchmark`, and `--background` are listed in `--help`.
 
 <!-- lightweight:start -->
 ## Resource use
@@ -113,7 +155,7 @@ bash build.sh --test-only
 bash scripts/install.sh  # First install to /Applications, plus ~/.local/bin/litegauge
 ```
 
-Tests cover CPU deltas and wraparound, memory accounting and underflow, disk caching and refresh, overlapping sleep/lock state, and live system reads. `Sources/Metrics.swift` provides shared collection, `Sources/App.swift` implements the interface, and `Sources/main.swift` handles entry points.
+Tests cover CPU deltas and wraparound, memory accounting and underflow, disk caching and refresh, overlapping sleep/lock state, pressure levels and colour thresholds, JSON fields, command-line parsing, `watch` streaming, and live system reads. `Sources/Metrics.swift` provides shared collection (including levels and thresholds), `Sources/App.swift` implements the interface, `Sources/CLI.swift` parses commands and formats output, and `Sources/main.swift` handles entry points.
 
 Release maintainers can use `scripts/package-release.sh` to build signed, notarized ZIP and DMG artifacts. Set `CODE_SIGN_IDENTITY`, then use `NOTARY_PROFILE`, or `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `NOTARY_KEY_FILE`. Outputs include `build/release/release.json` and `SHA256SUMS`. Never commit credentials.
 

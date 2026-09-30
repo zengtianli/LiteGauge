@@ -17,7 +17,7 @@ CPU 标签与百分比上下排列，右侧两根竖条依次表示内存、磁�
 - **专注三项数据。** CPU/内存每 2 秒更新，磁盘容量每 60 秒更新；展开菜单或按 ⌘R 立即刷新。
 - **原生且离线。** Swift + AppKit，无第三方运行依赖、不联网、不启动 shell 采集；无需账号。
 - **减少后台工作。** 屏幕休眠、系统睡眠或锁屏时暂停周期采集，恢复后重建 CPU 基线；可见整数变化时才更新菜单栏。
-- **也能用于脚本。** 同一个程序提供 `status --json`，GUI 与 CLI 共用采集逻辑。
+- **也能用于脚本和 agent。** 同一个程序提供 `status --json`、按 App 节奏连续输出的 `watch`，以及查询菜单栏实例的 `app status`；GUI 与 CLI 共用采集逻辑和配色阈值。
 
 ## 下载与安装
 
@@ -44,26 +44,68 @@ CPU 标签与百分比上下排列，右侧两根竖条依次表示内存、磁�
 
 ## 命令行
 
-安装应用后即可使用，无需另装运行环境：
+命令行和菜单栏是同一个程序，读数来自同一采集层（`Sources/Metrics.swift`）；面板配色用的压力等级和磁盘 90% 阈值也在这一层，所以命令行报告的等级与面板颜色一致。安装应用后即可使用，无需另装运行环境：
 
 ```sh
-/Applications/LiteGauge.app/Contents/MacOS/LiteGauge status
 /Applications/LiteGauge.app/Contents/MacOS/LiteGauge status --json
-/Applications/LiteGauge.app/Contents/MacOS/LiteGauge --help
 ```
 
-可选地添加简短命令（如果已有同名文件，请先检查）：
+可选地添加简短命令（`bash scripts/install.sh` 首次安装时会自动添加；已有同名文件时请先检查）：
 
 ```sh
 mkdir -p "$HOME/.local/bin"
 ln -s /Applications/LiteGauge.app/Contents/MacOS/LiteGauge "$HOME/.local/bin/litegauge"
-# 将 ~/.local/bin 加入 PATH 后：
-litegauge status --json
 ```
 
-JSON 字段为 `cpuPercent`、`memory`、`disk`、`sampledAt`、`errors`。字节值为整数，时间为 ISO 8601；CPU 为整个处理器归一化的 0–100% 使用率。缺少有效采样时，相关数值为空；错误会写入 `errors`。
+将 `~/.local/bin` 加入 PATH 后：
 
-退出码：`0` 成功，`1` 采集失败，`2` 参数错误。CLI 的 CPU 差分需要约 1 秒采样，`--help` 和 `--version` 立即返回。
+```sh
+litegauge status                   # 一次读数：CPU / 内存 / 磁盘（采样约 1 秒）
+litegauge status --json            # 同上，输出一个 JSON 对象
+litegauge watch --count 5 --json   # 按 App 节奏（默认每 2 秒）连续输出，每行一个 JSON（NDJSON）
+litegauge watch --interval 10      # 每 10 秒一行文本，Ctrl-C 结束
+litegauge app status --json        # 菜单栏实例是否在运行：pid、bundle 路径与版本
+litegauge app quit --dry-run       # 查看将退出哪个实例；换成 --yes 才实际退出（与 ⌘Q 相同）
+litegauge app quit --yes --pid 123 # 只退出 pid 为 123 的菜单栏实例
+litegauge --version --json
+litegauge --help                   # 也可用 -h、help；任一命令或参数后加 --help / -h 也只显示帮助，不执行
+```
+
+`watch`、`app`、`--version --json` 与下表中的等级、百分比、错误代码字段在 0.1.1 之后加入（当前源码，随下一版发布）；已发布的 0.1.1 提供 `status [--json]`、`--version` 和 `--help`。以下行为也从下一版起生效：`-h`、`help` 与「命令后加 `--help`」显示帮助（0.1.1 中退出 2），`litegauge` 不带参数只打印用法（0.1.1 中会走启动菜单栏 App 的路径）。
+
+`status --json` 与 `watch --json` 的每条记录：
+
+| 字段 | 含义 |
+|---|---|
+| `ok` | `errors` 为空时为 `true` |
+| `sampledAt` | 采样时间，ISO 8601 |
+| `cpuPercent` | 整个处理器归一化的 0–100% 使用率；尚无基线时为 `null` |
+| `memory.totalBytes` / `usedBytes` / `compressedBytes` / `swapUsedBytes` | 整数字节；已用量扣除可回收缓存，交换读取失败时为 `null` |
+| `memory.percent` | 内存已用比例，即菜单栏的内存竖条 |
+| `memory.pressureLevel` | 系统内存压力：`normal`、`elevated`、`critical`、`unknown`；`memory.pressure` 为对应中文标签 |
+| `memory.level` | 面板配色：`normal` 绿、`warning` 橙、`critical` 红 |
+| `disk.totalBytes` / `availableBytes` | 启动盘 Data 卷所在 APFS 容器的容量与可用空间 |
+| `disk.usedPercent` | 磁盘已用比例，即菜单栏的磁盘竖条 |
+| `disk.level` / `disk.warnAbovePercent` | 已用超过 `warnAbovePercent`（90）时为 `warning`，面板进度条变橙 |
+| `disk.mountPoint` / `disk.volume` | 读取的挂载点 `/System/Volumes/Data`；中文显示名 |
+| `disk.sampledAt` | 磁盘读取时间；`watch` 与 App 一样每 60 秒重读一次 |
+| `errors` / `errorCodes` | 面板显示的错误文字；稳定代码 `cpu_unavailable`、`memory_unavailable`、`disk_unavailable` |
+
+缺少的读数写为 `null`，键始终存在。`app status --json` 输出 `running`、`instances[]`（`pid`、`bundlePath`、`version`、`build`、`launchedAt`、`sameBundleAsCLI`）和命令行自身所在的 `cli` 包；`app quit --json` 输出 `targets`、`stillRunning`、`dryRun`、`pid`。两者只计入带菜单栏图标的实例（已完成启动的 `.accessory` 进程）；`--ui-self-test`、`--snapshot` 等离屏验收进程不列出，也不会被退出。
+
+退出码：`0` 成功；`1` 采集失败（`ok: false`），或 `app quit` 未能在 5 秒内退出；`2` 参数错误（只写 stderr）。`--help` 与 `--version` 立即返回。`litegauge` 不带参数只打印用法并退出 2，不会启动菜单栏 App；启动 App 请从「应用程序」打开，或运行 `open -g -j /Applications/LiteGauge.app`。
+
+| 菜单栏 App | 命令行 |
+|---|---|
+| 菜单栏 CPU 百分比、内存与磁盘竖条、无障碍读数 | `status` 首行；`cpuPercent`、`memory.percent`、`disk.usedPercent` |
+| 详情面板：内存用量与压力颜色、交换空间、磁盘剩余与 90% 提醒 | `status` 第 2–3 行；`memory.*`、`disk.*` 及其 `level` |
+| 每 2 秒更新，磁盘每 60 秒 | `watch` |
+| ⌘R 立即刷新 | `status` 每次都是含磁盘的新采样（不会让运行中的菜单栏刷新） |
+| 读取失败显示“不可用” | `errors` / `errorCodes`，退出码 1 |
+| ⌘Q 退出 | `app quit --yes`（先用 `--dry-run` 查看目标） |
+| 菜单栏图标是否在 | `app status` |
+
+只在界面里做的操作：点击展开菜单、方向键浏览菜单、「打开活动监视器」（命令行直接用 `ps` 或 `top`），以及睡眠、锁屏时自动暂停采样（App 内部行为，没有用户操作）。开发与验收参数 `--ui-self-test`、`--snapshot`、`--benchmark`、`--background` 见 `--help`。
 
 <!-- lightweight:start -->
 ## 资源占用
@@ -113,7 +155,7 @@ bash build.sh --test-only
 bash scripts/install.sh  # 首次安装到 /Applications，并添加 ~/.local/bin/litegauge
 ```
 
-测试覆盖 CPU 差分与溢出、内存扣除与下溢、磁盘缓存与刷新、睡眠/锁屏叠加状态及真实系统读取。`Sources/Metrics.swift` 为 GUI/CLI 共用采集层，`Sources/App.swift` 负责菜单栏与详情，`Sources/main.swift` 处理入口。
+测试覆盖 CPU 差分与溢出、内存扣除与下溢、磁盘缓存与刷新、睡眠/锁屏叠加状态、压力等级与配色阈值、JSON 字段、命令行参数解析、`watch` 连续输出及真实系统读取。`Sources/Metrics.swift` 为 GUI/CLI 共用采集层（含等级与阈值），`Sources/App.swift` 负责菜单栏与详情，`Sources/CLI.swift` 负责命令解析与输出，`Sources/main.swift` 处理入口。
 
 发布维护者可使用 `scripts/package-release.sh` 构建签名、公证的 ZIP 与 DMG。通过环境变量提供 `CODE_SIGN_IDENTITY`，并配置 `NOTARY_PROFILE`，或 `ASC_KEY_ID`、`ASC_ISSUER_ID` 和 `NOTARY_KEY_FILE`。脚本输出 `build/release/release.json` 与 `SHA256SUMS`；凭据不得提交。
 

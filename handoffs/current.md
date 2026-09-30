@@ -6,20 +6,22 @@
 
 - 官网：<https://litegauge.tianli.cyou/>
 - 源码：<https://github.com/zengtianli/LiteGauge>，MIT，中文 README / 对应英文 README。
-- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.1.0>
+- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.1.1>（Latest）；v0.1.0 资产仍在。
 - 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
-- 安装 /Applications/LiteGauge.app，普通模式运行；Stats 的安装、运行与登录项保留。
+- 安装 /Applications/LiteGauge.app（0.1.1 (2)），普通模式运行；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
 - 源目录 ~/Apps/litegauge（2026-09-27 由 tlstats 改名），登记 id/family 为 litegauge。
 
 ## 发行与验证
 
-0.1.0 (1)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。ZIP 1,626,948 bytes，DMG 2,129,632 bytes；均 Developer ID 签名、Apple 公证 Accepted、票据已装订。最终可执行 SHA256：5f86b96672c3325f2d2ca2e194e5b98741c0abe608cf8ab3961acd45d17beb95。
+当前发布与装机：0.1.1 (2)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。源码 3d47e2a；ZIP 1,638,655 bytes，DMG 2,133,024 bytes；均 Developer ID 签名、Apple 公证 Accepted（473cf45c…、66bcc693…）。可执行 SHA256：e5dca53e1130d47180d99f8d93bab1a1a7ba6b0cfae7764060fea32ea5919a04。发布元数据以 release/latest.json 为准，详细经过见下方 2026-09-28「发布 0.1.1」。
 
-perf/build-receipt.json 包围实际 bash scripts/package-release.sh 构建生成；安装版与 receipt 一致。发布元数据见 release/latest.json。独立解包、Gatekeeper、公证票据、DMG 内容、CLI JSON/错误码、干净源码副本构建已验；14 项核心测试和 GitHub CI 通过。未在真实 macOS 14 设备运行。
+历史：0.1.0 (1) ZIP 1,626,948 bytes，DMG 2,129,632 bytes，可执行 SHA256 5f86b966…。perf/build-receipt.json 包围实际 bash scripts/package-release.sh 构建生成；独立解包、Gatekeeper、公证票据、DMG 内容、CLI JSON/错误码、干净源码副本构建已验；核心测试和 GitHub CI 通过。未在真实 macOS 14 设备运行。
 
 注意 bash build.sh 会覆盖 build/LiteGauge.app 为 ad-hoc 本机包。app_sop build-receipt 会真正执行传入命令；发行包必须传实际签名公证构建，不能给旧包填来源。
 
 ## 实测
+
+当前数字（0.1.1，2026-09-29 重测，见下方同日记录与 perf/lightweight.json）：安装包 1.6 MB / 装后 1.9 MB、内存 24.1 MB、空闲 CPU 0.98%、首个 CPU 读数 1.2 s。以下为 0.1.0 首测记录：
 
 M4 / 16 GiB，macOS 27.2，最终公证版菜单收起，启动后静置 45 秒，CPU 采样 60 秒，footprint 在窗口后取 3 次。
 
@@ -132,3 +134,15 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 ## 2026-09-29 facts.json 上线
 
 - 另一会话提交 757c0d1：build-site.py 从本产品 perf/lightweight.json 与 release 记录生成站点根 facts.json，门户卡片与 Chapter 读取它。本轮按授权 `bash scripts/deploy-site.sh` 重新部署，verify-site 含 facts.json 逐文件通过；线上 facts.json 为 0.1.1 (2)：安装包 1.6 MB / 装后 1.9 MB、内存 24.1 MB、CPU 0.98%、速度 1.2 s。以后重测只需重新部署本主页，门户卡片随之更新。
+
+## 2026-09-30 面向 agent 的命令行
+
+- 目标（本人原则「GUI 给人，CLI 给 agent」）：菜单栏里能看、能做的都能经 `litegauge` 驱动；GUI、CLI 共用 Sources/Metrics.swift，不另写实现。
+- 新增：`watch [--interval <秒>] [--count <次>] [--json]`（一个 sampler、1 秒 CPU 预热，之后按 2 秒默认节奏，磁盘沿用 60 秒缓存，NDJSON 每行一次 write；SIGINT/SIGTERM 干净结束）；`app status [--json]`（NSRunningApplication 按 bundle id 列实例、排除自身 pid，经 ~/.local/bin 软链调用时从解析后的可执行文件反推所在 .app）；`app quit (--dry-run | --yes) [--json]`（SIGTERM 后最多等 5 秒，沿 0.1.1 装机时实际用过的 TERM 路径；不带确认参数退出 2）；`--version --json`；`-h`/`help`/`<子命令> --help` 退出 0；`--help` 列开发参数；经小写 `litegauge` 不带参数只打印用法、退出 2（大写包内路径、LaunchServices、`--background`/`--benchmark` 行为不变）。
+- `status --json` 只加键：`ok`、`memory.percent/pressureLevel/level`、`disk.usedPercent/level/warnAbovePercent/mountPoint`、`errorCodes`；原 `pressure`、`volume`、`errors` 保留，缺失读数写 null。模型改为 Encodable + 自定义 encode；MemoryReading 保留 `pressure:` 标签初始化器，scripts/capture/main.swift 夹具照常编译。
+- 共享判断：PressureLevel、MetricLevel、MetricThresholds.diskWarnPercent=90、MetricsSampler.sampleInterval、MetricFormat.cadence、AppIdentity.bundleID；App.swift 面板配色、计时器、底部说明、单实例保护（RunningInstances.others()）改读这些。18 个面板夹具（4 种压力 × 磁盘 50/90/90.1/90.5%、错误态、空态）新旧源码离屏渲染逐字节相同，docs/media/manifest.json 记 `reused_for: 0.1.1` 及依据，录像不必重录。
+- 验证：`bash build.sh --test-only` 43 项通过（新增等级/阈值/JSON/参数解析/watch 流式与停止；阈值改 95、短命令改回启动 GUI 两个变异均被测试拦下）；`bash build.sh` 产出 build/LiteGauge.app（未装机）；functionality（14/14，新增 JSON 字段、watch、app status 对 ps、短命令用法）、privacy 8/8、native_ui 12/12 通过。recovery.sh 未跑：它在已有实例时会启动一个重复 GUI 进程（本轮禁止启动 GUI），其非法参数部分已手工核对（均退出 2、stdout 为空）。cli_entry 以 sop.cli 声明对已装 0.1.1 通过，链接缺失时判失败（退出 1，不再是 78）。
+- 独立复核后修正：① `--help`/`-h` 出现在任何位置都只显示帮助——此前 `--benchmark --help` 会启动测试菜单栏实例并把 ready_ms 写进名为 `--help` 的文件，`--snapshot -h`、`--ui-self-test --help` 会写文件；② `app status`/`app quit` 改用 `RunningInstances.menuBar()`（`.accessory` 且 `isFinishedLaunching`），离屏自检、渲染进程不再被列出或退出——探针实测自检进程启动后前 2–4 次采样仍是 `.accessory` 但从未完成启动，单实例保护仍用 `others()` 不变；③ `app quit` 加 `--pid <pid>`，只退出指定实例；SIGTERM 与等待逻辑移入 CLI.swift `CLIProcess.terminate`，核心测试在真实子进程上验证（正常退出、TERM 被屏蔽时到时报告仍在运行、已退出 pid 幂等）；④ `--version`（含 `--json`）与 `app status` 的 cli 版本、构建号都读自所在 App 的 Info.plist，核心测试把 `version` 常量钉到 Info.plist；⑤ 两份 README 补「-h/help/命令后 --help、不带参数只打印用法」也是 0.1.1 之后的变化。
+- 复核后验证：核心测试 48 项通过（变异：还原旧 help 判断、版本常量改 0.1.2、不发 SIGTERM、去掉子进程回收、允许 `--pid 0` 均被拦下）；连跑 5 次均通过；build/LiteGauge.app 可执行文件 300,704 字节；16 种 help 写法（含 4 个开发参数后加 --help）全部退出 0、无文件写出、无新进程；19 种参数错误退出 2；5 轮离屏自检期间 195 次轮询，`app status` 与 `app quit --dry-run` 均未列出自检进程，常驻 13299 始终列出、启动时间不变；functionality 14/14、native_ui 12/12、privacy 8/8。
+- 未实测：`app quit --yes` 对真实菜单栏实例（会移除本人的菜单栏图标）；只验了 `--dry-run`（含 `--pid`）、拒绝路径和核心测试里对子进程的 SIGTERM 路径。授权窗口里可先 `LiteGauge --benchmark <文件>` 起测试实例，再 `litegauge app quit --yes --pid <测试 pid>` 实测并回读 `app status`，不碰常驻实例。
+- 待发版：已装 0.1.1 不含新命令。发 0.1.2 时改 Info.plist、Sources/CLI.swift 的 `version`（两者不一致时核心测试失败）、scripts/capture-media.sh 清单版本、README 下载文件名与「0.1.1 之后加入」一句、CHANGELOG「未发布」标题、manifest reused_for 键；随后 package-release → 装机（可先 `litegauge app quit --yes`，再 `open -g -j`）→ 空闲 perf 重测 → deploy-site。

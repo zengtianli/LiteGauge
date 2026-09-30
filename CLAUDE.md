@@ -4,7 +4,7 @@ macOS 原生极简 App，仅显示 CPU、内存、启动磁盘容量。用户于
 
 - 菜单栏必须紧凑：2026-09-26 用户以 Stats 截图纠正，禁止横排 CPU/MEM/SSD 全部标签与百分比。固定 56 pt：CPU 上下两行，内存/磁盘各一条竖向填充条；详细数值放点击面板。
 
-- 源码 `Sources/`；共享采集逻辑同时供 App 与 `LiteGauge status --json` 使用。
+- 源码 `Sources/`；共享采集层 `Metrics.swift`（含面板配色等级、磁盘 90% 阈值、采样节奏常量）同时供 App 与命令行使用，App 不另写判断。命令解析与输出在 `CLI.swift`（版本常量 `version` 也在这里，须与 Info.plist 一致，核心测试检查），`main.swift` 只分派。命令行面向 agent：`litegauge status|watch|app status|app quit`，登记于 project.yaml `sop.cli`；`litegauge` 不带参数只打印用法，不启动菜单栏 App。
 - 构建 `bash build.sh`，产物 `build/LiteGauge.app`；测试 `bash build.sh --test-only`。
 - 实测 `perf/lightweight.json`；当前状态 `handoffs/current.md`。
 - 对外入口：`https://github.com/zengtianli/LiteGauge`、`https://litegauge.tianli.cyou`；中英文 README、产品主页、目录卡片消费同一实测证据。下载包在 `build/release/`，公开截图与视频在 `docs/media/`。
