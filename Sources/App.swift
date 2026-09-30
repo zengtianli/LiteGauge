@@ -53,6 +53,23 @@ enum StatusRenderer {
     }
 }
 
+/// Other processes of this bundle than the calling one.
+enum RunningInstances {
+    /// Every other process with the bundle id: the single-instance guard uses this (unchanged since 0.1.0).
+    static func others() -> [NSRunningApplication] {
+        NSRunningApplication.runningApplications(withBundleIdentifier: AppIdentity.bundleID)
+            .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+    }
+
+    /// Only instances that own a status item: the App runs as .accessory and creates the item once launching finishes.
+    /// The offscreen --ui-self-test and --snapshot runs never call NSApp.run (so never finish launching) and switch to
+    /// .prohibited; they start out .accessory from LSUIElement for a few ms, hence both conditions. `app status` and
+    /// `app quit` use this, so acceptance runs are never listed or signalled.
+    static func menuBar() -> [NSRunningApplication] {
+        others().filter { $0.activationPolicy == .accessory && $0.isFinishedLaunching }
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private let menu = NSMenu()
@@ -73,9 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     init(benchmark: String?) { self.benchmark = benchmark }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if benchmark == nil,
-           NSRunningApplication.runningApplications(withBundleIdentifier: "cyou.tianli.litegauge")
-            .contains(where: { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }) {
+        if benchmark == nil, !RunningInstances.others().isEmpty {
             NSApp.terminate(nil)
             return
         }
@@ -125,7 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func startTimer() {
         let source = DispatchSource.makeTimerSource(queue: queue)
-        source.schedule(deadline: .now() + .seconds(1), repeating: .seconds(2), leeway: .milliseconds(200))
+        source.schedule(deadline: .now() + .seconds(1), repeating: MetricsSampler.sampleInterval, leeway: .milliseconds(200))
         source.setEventHandler { [weak self] in self?.takeSample(forceDisk: false) }
         timer = source
         source.resume()
@@ -241,17 +256,22 @@ final class SummaryView: NSView {
         text("内存", 18, 89, weight: .medium)
         if let m = snapshot?.memory {
             text("\(MetricFormat.gib(m.usedBytes)) / \(MetricFormat.gib(m.totalBytes))", 108, 89, weight: .medium)
-            let color: NSColor = m.pressure == "紧张" ? .systemRed : m.pressure == "偏高" ? .systemOrange : .systemGreen
+            let color: NSColor
+            switch m.level {
+            case .critical: color = .systemRed
+            case .warning: color = .systemOrange
+            case .normal: color = .systemGreen
+            }
             bar(m.percent, 115, color: color)
             text("压力\(m.pressure) · 交换 \(m.swapUsedBytes.map(MetricFormat.gib) ?? "—")", 18, 126, size: 11, color: secondary)
         } else { text(snapshot == nil ? "读取中…" : "不可用", 215, 89, color: secondary) }
         text("启动磁盘", 18, 161, weight: .medium)
         if let d = snapshot?.disk {
             text("剩余 \(MetricFormat.gb(d.availableBytes))", 171, 161, weight: .medium)
-            bar(d.usedPercent, 187, color: d.usedPercent > 90 ? .systemOrange : .systemBlue)
+            bar(d.usedPercent, 187, color: d.level == .warning ? .systemOrange : .systemBlue)
             text("总容量 \(MetricFormat.gb(d.totalBytes))", 18, 198, size: 11, color: secondary)
         } else { text(snapshot == nil ? "读取中…" : "不可用", 215, 161, color: secondary) }
-        let note = snapshot?.errors.isEmpty == false ? snapshot!.errors.joined(separator: " · ") : "每 2 秒更新 · 磁盘每 60 秒更新"
+        let note = snapshot?.errors.isEmpty == false ? snapshot!.errors.joined(separator: " · ") : MetricFormat.cadence
         text(note, 18, 244, size: 10, color: secondary)
     }
 }

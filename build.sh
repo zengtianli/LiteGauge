@@ -18,14 +18,14 @@ fi
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
 mkdir -p build
 COMPILER=(xcrun swiftc -swift-version 5 -O -whole-module-optimization -target arm64-apple-macos14.0 -sdk "$SDK")
-"${COMPILER[@]}" Sources/Metrics.swift Tests/main.swift -o build/tests
+"${COMPILER[@]}" Sources/Metrics.swift Sources/CLI.swift Tests/main.swift -o build/tests
 build/tests
 if [ "${1:-}" = '--test-only' ]; then exit 0; fi
 APP=build/LiteGauge.app
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp Info.plist "$APP/Contents/Info.plist"
 if [ -f icon/AppIcon.icns ]; then cp icon/AppIcon.icns "$APP/Contents/Resources/"; fi
-"${COMPILER[@]}" -Xlinker -dead_strip Sources/Metrics.swift Sources/App.swift Sources/main.swift -o "$APP/Contents/MacOS/LiteGauge"
+"${COMPILER[@]}" -Xlinker -dead_strip Sources/Metrics.swift Sources/CLI.swift Sources/App.swift Sources/main.swift -o "$APP/Contents/MacOS/LiteGauge"
 if [ -n "${CODE_SIGN_IDENTITY:-}" ]; then
   codesign --force --options runtime --timestamp --sign "$CODE_SIGN_IDENTITY" "$APP"
 else

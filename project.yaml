@@ -32,6 +32,10 @@ sop:
   site_build: python3 scripts/build-site.py
   site_deploy: bash scripts/deploy-site.sh
   test: bash build.sh --test-only
+  cli:
+    app: cyou.tianli.litegauge
+    commands:
+    - litegauge
   ui:
     - Sources/App.swift
   source:

@@ -6,18 +6,19 @@ cd "$(dirname "$0")/../.."
 source scripts/accept/_build.sh
 bad() { local out code; set +e; out="$("$EXE" "$@" 2>/dev/null)"; code=$?; set -e; echo "$code:${#out}"; }
 R1="$(bad --bogus)"; R2="$(bad status --json extra)"; R3="$(bad --snapshot)"
+R4="$(bad watch --interval 0.5)"; R5="$(bad app quit)"   # app quit without --yes/--dry-run must refuse
 DUP=skipped
 if pgrep -xq LiteGauge; then   # only when an instance already runs, so the test never adds a status item
   "$EXE" & P=$!
   for _ in $(seq 1 20); do kill -0 $P 2>/dev/null || break; sleep 0.5; done
   if kill -0 $P 2>/dev/null; then kill $P; DUP=still_running; else wait $P; DUP=exited; fi
 fi
-python3 - "$R1" "$R2" "$R3" "$DUP" <<'PY'
+python3 - "$R1" "$R2" "$R3" "$R4" "$R5" "$DUP" <<'PY'
 import json, os, sys
-bad = sys.argv[1:4]; dup = sys.argv[4]
+bad = sys.argv[1:6]; dup = sys.argv[6]
 checks = {f"invalid_args_{i}_exit2_no_stdout": b == "2:0" for i, b in enumerate(bad)}
 checks["duplicate_instance_exits"] = dup in ("exited", "skipped")
-checks["pause_resume_baseline_tests"] = True  # build.sh aborts above if the 14 core tests fail
+checks["pause_resume_baseline_tests"] = True  # build.sh aborts above if the core tests fail
 failed = [k for k, v in checks.items() if not v]
 summary = (f"非法参数退出 2、重复实例{'自行退出' if dup == 'exited' else '未测（无运行实例）'}、暂停/唤醒/基线测试通过" if not failed
            else "恢复检查失败：" + ", ".join(failed))
