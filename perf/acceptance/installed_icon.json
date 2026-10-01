@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "name": "installed_icon",
+  "app_id": "litegauge",
+  "command": "~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/installed_icon.py",
+  "exit_code": 0,
+  "status": "passed",
+  "started_at": "2026-10-01T10:38:48.517389+08:00",
+  "finished_at": "2026-10-01T10:38:49.898836+08:00",
+  "input_sha256": "cb805e2771334242870ab2c3b94839faf85376dfbfd172c07d1912783c92e40e",
+  "log": "perf/acceptance/installed_icon.log",
+  "log_sha256": "45aeaa05d50ce1dbe00cad8ab306a6fceb92efe10c5524bdf2813eb9ff7d76b9",
+  "summary": "系统实际显示的装机图标与源图标一致（LiteGauge.app 0.1.2 (3)：256px 均差 5.3 超差 0.00%，512px 均差 7.42 超差 0.07%；macOS 27.2.0，离屏读取）",
+  "detail": {
+    "summary": "系统实际显示的装机图标与源图标一致（LiteGauge.app 0.1.2 (3)：256px 均差 5.3 超差 0.00%，512px 均差 7.42 超差 0.07%；macOS 27.2.0，离屏读取）",
+    "passed": true,
+    "method": "NSWorkspace.icon(forFile:)（IconServices，Finder/Dock 同源）离屏渲染 256/512 px，与源图标比对内部像素；不启动 App、不开窗口、不合成输入、不抢焦点",
+    "source_icon": "icon/AppIcon.icns",
+    "source_icon_sha256": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f",
+    "system": {
+      "os": "27.2.0",
+      "os_build": "Version 27.2 (Build 26B5091g)",
+      "appearance": "aqua",
+      "system_icon_api": "NSWorkspace.shared.icon(forFile:)"
+    },
+    "helper": "cached",
+    "sizes": [
+      256,
+      512
+    ],
+    "tolerance": {
+      "erode_fraction": 0.08,
+      "mean_max": 12.0,
+      "bad_level": 48,
+      "bad_fraction_max": 0.02,
+      "edge_shift_px": 1,
+      "jail_scales": [
+        0.55,
+        0.92
+      ]
+    },
+    "apps": [
+      {
+        "app": "/Applications/LiteGauge.app",
+        "bundle_id": "cyou.tianli.litegauge",
+        "version": "0.1.2",
+        "build": "3",
+        "bundle_icon": "/Applications/LiteGauge.app/Contents/Resources/AppIcon.icns",
+        "bundle_icon_sha256": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f",
+        "passed": true,
+        "diagnosis": null,
+        "sizes": {
+          "256": {
+            "system_vs_source": {
+              "region_fraction": 0.5018,
+              "mean": 5.3,
+              "p95": 7.0,
+              "bad_fraction": 0.0,
+              "bad_fraction_plain": 0.0,
+              "passed": true
+            },
+            "system_blank": false,
+            "system_blank_note": "极差 255，标准差 75.9",
+            "passed": true
+          },
+          "512": {
+            "system_vs_source": {
+              "region_fraction": 0.5059,
+              "mean": 7.42,
+              "p95": 15.0,
+              "bad_fraction": 0.0007,
+              "bad_fraction_plain": 0.014,
+              "passed": true
+            },
+            "system_blank": false,
+            "system_blank_note": "极差 255，标准差 75.9",
+            "passed": true
+          }
+        }
+      }
+    ],
+    "contact_sheet": "perf/acceptance/installed_icon.png",
+    "contact_sheet_sha256": "3200177f01dd6edc196e56fc103094985f4b7a33de737c344258adc0617b7c52"
+  }
+}

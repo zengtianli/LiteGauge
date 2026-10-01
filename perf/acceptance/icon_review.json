@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "name": "icon_review",
+  "app_id": "litegauge",
+  "command": "~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/icon_review.py",
+  "exit_code": 0,
+  "status": "passed",
+  "started_at": "2026-10-01T10:38:47.617328+08:00",
+  "finished_at": "2026-10-01T10:38:48.515339+08:00",
+  "input_sha256": "86e77dbb32d5e4400568b038b5225c4932001114980da632936c9d898e779850",
+  "log": "perf/acceptance/icon_review.log",
+  "log_sha256": "8533e2ee30c4a36b967aed55cc0984623256b6d6c9dc5820a92fff79f3fea3e4",
+  "summary": "机器审阅：尺寸齐全、非空白（16–1024 px 共 10 个表示，浅色/深色底拼图已存）",
+  "detail": {
+    "summary": "机器审阅：尺寸齐全、非空白（16–1024 px 共 10 个表示，浅色/深色底拼图已存）",
+    "passed": true,
+    "icns": "icon/AppIcon.icns",
+    "icns_sha256": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f",
+    "representations": [
+      {
+        "name": "icon_16x16.png",
+        "expected_px": 16,
+        "present": true,
+        "size": [
+          16,
+          16
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 71.3"
+      },
+      {
+        "name": "icon_16x16@2x.png",
+        "expected_px": 32,
+        "present": true,
+        "size": [
+          32,
+          32
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 73.6"
+      },
+      {
+        "name": "icon_32x32.png",
+        "expected_px": 32,
+        "present": true,
+        "size": [
+          32,
+          32
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 74.1"
+      },
+      {
+        "name": "icon_32x32@2x.png",
+        "expected_px": 64,
+        "present": true,
+        "size": [
+          64,
+          64
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 75.5"
+      },
+      {
+        "name": "icon_128x128.png",
+        "expected_px": 128,
+        "present": true,
+        "size": [
+          128,
+          128
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 76.2"
+      },
+      {
+        "name": "icon_128x128@2x.png",
+        "expected_px": 256,
+        "present": true,
+        "size": [
+          256,
+          256
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 76.6"
+      },
+      {
+        "name": "icon_256x256.png",
+        "expected_px": 256,
+        "present": true,
+        "size": [
+          256,
+          256
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 76.6"
+      },
+      {
+        "name": "icon_256x256@2x.png",
+        "expected_px": 512,
+        "present": true,
+        "size": [
+          512,
+          512
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 76.9"
+      },
+      {
+        "name": "icon_512x512.png",
+        "expected_px": 512,
+        "present": true,
+        "size": [
+          512,
+          512
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 76.9"
+      },
+      {
+        "name": "icon_512x512@2x.png",
+        "expected_px": 1024,
+        "present": true,
+        "size": [
+          1024,
+          1024
+        ],
+        "blank": false,
+        "note": "极差 255，标准差 77.1"
+      }
+    ],
+    "contact_sheet": "perf/acceptance/icon_review.png",
+    "contact_sheet_sha256": "cfc1ea4a89ff0f42817f05d8d3ea2fc7fbbc19069b5efe7008ca28a4947562be",
+    "method": "iconutil 展开 + Pillow 像素检查（机器审阅，非审美判断）"
+  }
+}

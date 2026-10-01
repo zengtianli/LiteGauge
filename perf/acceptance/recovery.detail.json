@@ -1,0 +1,17 @@
+{
+  "summary": "非法参数退出 2、重复实例自行退出、暂停/唤醒/基线测试通过",
+  "checks": {
+    "invalid_args_0_exit2_no_stdout": true,
+    "invalid_args_1_exit2_no_stdout": true,
+    "invalid_args_2_exit2_no_stdout": true,
+    "invalid_args_3_exit2_no_stdout": true,
+    "invalid_args_4_exit2_no_stdout": true,
+    "duplicate_instance_exits": true,
+    "pause_resume_baseline_tests": true
+  },
+  "duplicate_instance": "exited",
+  "not_covered": [
+    "real sleep/wake cycle",
+    "injected sampler read failure"
+  ]
+}

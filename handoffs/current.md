@@ -6,14 +6,14 @@
 
 - 官网：<https://litegauge.tianli.cyou/>
 - 源码：<https://github.com/zengtianli/LiteGauge>，MIT，中文 README / 对应英文 README。
-- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.1.1>（Latest）；v0.1.0 资产仍在。
+- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.1.2>（Latest）；v0.1.1、v0.1.0 资产仍在。
 - 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
-- 安装 /Applications/LiteGauge.app（0.1.1 (2)），普通模式运行；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
+- 安装 /Applications/LiteGauge.app（0.1.2 (3)），普通模式运行；升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
 - 源目录 ~/Apps/litegauge（2026-09-27 由 tlstats 改名），登记 id/family 为 litegauge。
 
 ## 发行与验证
 
-当前发布与装机：0.1.1 (2)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。源码 3d47e2a；ZIP 1,638,655 bytes，DMG 2,133,024 bytes；均 Developer ID 签名、Apple 公证 Accepted（473cf45c…、66bcc693…）。可执行 SHA256：e5dca53e1130d47180d99f8d93bab1a1a7ba6b0cfae7764060fea32ea5919a04。发布元数据以 release/latest.json 为准，详细经过见下方 2026-09-28「发布 0.1.1」。
+当前发布与装机：0.1.2 (3)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。源码 1d780db；ZIP 1,664,267 bytes，DMG 2,139,407 bytes；均 Developer ID 签名、Apple 公证 Accepted（e50d750e…、e29f0441…）。可执行 SHA256：66ed618b9bb0a64c31288a6a463343713b44d23a1eb1eeb0d7d0061357afe7ab。发布元数据以 release/latest.json 为准，详细经过见下方 2026-10-01「发布 0.1.2」。
 
 历史：0.1.0 (1) ZIP 1,626,948 bytes，DMG 2,129,632 bytes，可执行 SHA256 5f86b966…。perf/build-receipt.json 包围实际 bash scripts/package-release.sh 构建生成；独立解包、Gatekeeper、公证票据、DMG 内容、CLI JSON/错误码、干净源码副本构建已验；核心测试和 GitHub CI 通过。未在真实 macOS 14 设备运行。
 
@@ -21,7 +21,7 @@
 
 ## 实测
 
-当前数字（0.1.1，2026-09-29 重测，见下方同日记录与 perf/lightweight.json）：安装包 1.6 MB / 装后 1.9 MB、内存 24.1 MB、空闲 CPU 0.98%、首个 CPU 读数 1.2 s。以下为 0.1.0 首测记录：
+当前数字（0.1.1，2026-09-29 重测；0.1.2 待空闲重测，见下方同日记录与 perf/lightweight.json）：安装包 1.6 MB / 装后 1.9 MB、内存 24.1 MB、空闲 CPU 0.98%、首个 CPU 读数 1.2 s。以下为 0.1.0 首测记录：
 
 M4 / 16 GiB，macOS 27.2，最终公证版菜单收起，启动后静置 45 秒，CPU 采样 60 秒，footprint 在窗口后取 3 次。
 
@@ -146,3 +146,12 @@ perf/raw/sample.txt 是旧 TLStats 横排标题版本，不能据它断言最终
 - 复核后验证：核心测试 48 项通过（变异：还原旧 help 判断、版本常量改 0.1.2、不发 SIGTERM、去掉子进程回收、允许 `--pid 0` 均被拦下）；连跑 5 次均通过；build/LiteGauge.app 可执行文件 300,704 字节；16 种 help 写法（含 4 个开发参数后加 --help）全部退出 0、无文件写出、无新进程；19 种参数错误退出 2；5 轮离屏自检期间 195 次轮询，`app status` 与 `app quit --dry-run` 均未列出自检进程，常驻 13299 始终列出、启动时间不变；functionality 14/14、native_ui 12/12、privacy 8/8。
 - 未实测：`app quit --yes` 对真实菜单栏实例（会移除本人的菜单栏图标）；只验了 `--dry-run`（含 `--pid`）、拒绝路径和核心测试里对子进程的 SIGTERM 路径。授权窗口里可先 `LiteGauge --benchmark <文件>` 起测试实例，再 `litegauge app quit --yes --pid <测试 pid>` 实测并回读 `app status`，不碰常驻实例。
 - 待发版：已装 0.1.1 不含新命令。发 0.1.2 时改 Info.plist、Sources/CLI.swift 的 `version`（两者不一致时核心测试失败）、scripts/capture-media.sh 清单版本、README 下载文件名与「0.1.1 之后加入」一句、CHANGELOG「未发布」标题、manifest reused_for 键；随后 package-release → 装机（可先 `litegauge app quit --yes`，再 `open -g -j`）→ 空闲 perf 重测 → deploy-site。
+
+## 2026-10-01 发布 0.1.2 (3) 并装机（Chapter 修复轮，本人长期授权）
+
+- 版本：Info.plist 0.1.2 / build 3、CLI.swift `version`、README 下载文件名与「自 0.1.2 起」说明、CHANGELOG、release-notes、manifest `reused_for.0.1.2`（App.swift/Metrics.swift 自 0.1.1 沿用核对后未变）；capture-media.sh 改从 Info.plist 读版本，不再手改（1d780db）。
+- `chapter sop build-receipt ... --build-command "bash scripts/package-release.sh"`（receipt 的 6 个 glob）：App 与 DMG 公证 Accepted（e50d750e…、e29f0441…），receipt commit 1d780db、dirty=false，可执行 66ed618b…。独立解包 ZIP：可执行哈希一致、stapler/spctl 通过。
+- install.sh 新增升级路径：已装时把旧包移到 `~/.Trash/litegauge-<旧版本>-<时间>/`；已装实例在运行时须 `--restart`，由新包自己的 `app quit --yes --pid` 退出（只退出 /Applications 那份菜单栏实例），替换后 `open -g -j` 后台重启；复制/校验失败放回旧包。CLI 软链已存在且指向本 App 时保留，指向别处则拒绝。实跑：退出 13299（0.1.1）→ 旧包在 ~/.Trash/litegauge-0.1.1-20261001-103726/ → 新实例 64459 为 0.1.2 (3)，可执行哈希与 receipt 一致。这也是 `app quit --yes` 第一次对真实菜单栏实例实测。
+- 推送 46c5e54..4c9f64d（含上轮未推的 agent CLI 两个提交；触发 Core tests CI）；GitHub Release v0.1.2 为 Latest，target 4c9f64d，ZIP/DMG 下载哈希与 SHA256SUMS 一致。
+- `chapter sop accept --app litegauge --all`：10 项全部 passed，installed_icon 由 builtin 离屏 IconServices 比对判定（256px 均差 5.3、512px 均差 7.42），不再需要本人确认。
+- 未做：perf 重测（本轮禁止测量，留给后续统一测量阶段）；官网部署依赖它——build-site.py 在 release 与 perf 版本不一致时拒绝生成，所以官网/facts.json 仍是 0.1.1 数字与 0.1.1 下载（v0.1.1 资产仍在，链接有效）。测量后：README 数字块 → `python3 scripts/build-site.py && bash scripts/deploy-site.sh`。

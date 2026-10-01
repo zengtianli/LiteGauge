@@ -1,0 +1,32 @@
+{
+  "summary": "进程内离屏界面自检 12/12 项通过（当前源码构建，可执行 7de9de4ba7ab）",
+  "executable_sha256": "7de9de4ba7abed98ff20d017609af039bfbc69d7b734562750bba6939afee6f2",
+  "built_from": "current source, ad-hoc build (scripts/accept/_build.sh)",
+  "checks": {
+    "actions_wired": true,
+    "closed_menu_stops_panel_updates": true,
+    "indicator_bars_scale": true,
+    "indicator_tracks_reading": true,
+    "menu_structure": true,
+    "open_samples_panel": true,
+    "panel_accessibility_values": true,
+    "panel_initial_reading": true,
+    "panel_renders": true,
+    "pause_resume": true,
+    "refresh_updates_cpu_and_disk": true,
+    "shortcuts_cmd_r_q": true
+  },
+  "screenshots": [
+    "perf/acceptance/native-ui/native-ui-panel-initial.png",
+    "perf/acceptance/native-ui/native-ui-panel.png",
+    "perf/acceptance/native-ui/native-ui-indicator-0.png",
+    "perf/acceptance/native-ui/native-ui-indicator-100.png",
+    "perf/acceptance/native-ui/native-ui-indicator-unavailable.png"
+  ],
+  "not_covered": [
+    "physical menu-bar click and AppKit menu tracking",
+    "opening Activity Monitor",
+    "actual quit",
+    "real sleep/wake notifications"
+  ]
+}

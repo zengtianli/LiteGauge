@@ -1,0 +1,20 @@
+{
+  "summary": "隐私边界 8/8 项通过（运行实例无网络套接字）",
+  "checks": {
+    "system_libraries_only": true,
+    "no_network_symbols": true,
+    "no_embedded_urls": true,
+    "no_entitlements": true,
+    "no_privacy_usage_strings": true,
+    "source_no_network_process_defaults": true,
+    "running_instance_no_sockets": true,
+    "no_preferences_or_support_files": true
+  },
+  "findings": {
+    "non_system_libs": "",
+    "network_symbols": "",
+    "urls": "",
+    "source_hits": "",
+    "running_sockets": "0"
+  }
+}

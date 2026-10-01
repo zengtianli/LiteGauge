@@ -3,30 +3,104 @@
   "checks": {
     "homepage_desktop": {
       "result": "passed",
-      "method": "ui_automation",
-      "checked_at": "2026-09-26T23:49:48.168122+08:00",
       "scope": "promo_ui",
-      "input_sha256": "31892ebae411468e5f17669bb8aa58689d1a1feb2c1dc1727d29d2cfe4fe8995",
-      "evidence": "perf/promotion-verification.json",
-      "evidence_sha256": "0f0fbe7e669aaa2144846d3f22dd92b89c8ca7da4ecbf59f83ac1d80004a0be1"
+      "method": "ui_automation",
+      "checked_at": "2026-10-01T10:38:54.657852+08:00",
+      "input_sha256": "e24e89158db73b5bcd3f12110b17f755bf2f772299d92ffc893ef816410f4366",
+      "evidence": "perf/acceptance/homepage_desktop.json",
+      "evidence_sha256": "440f962923687ee0164acc30201389cab020d69a692eefa4473028444565e2e8",
+      "detail": "builtin:homepage_desktop：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/homepage.py --viewport desktop → desktop 1440px：HTTP 200，标题「轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态」，无横向溢出，4 张图片全部加载"
     },
     "homepage_mobile": {
       "result": "passed",
-      "method": "ui_automation",
-      "checked_at": "2026-09-26T23:49:48.168245+08:00",
       "scope": "promo_ui",
-      "input_sha256": "31892ebae411468e5f17669bb8aa58689d1a1feb2c1dc1727d29d2cfe4fe8995",
-      "evidence": "perf/promotion-verification.json",
-      "evidence_sha256": "0f0fbe7e669aaa2144846d3f22dd92b89c8ca7da4ecbf59f83ac1d80004a0be1"
+      "method": "ui_automation",
+      "checked_at": "2026-10-01T10:38:58.706676+08:00",
+      "input_sha256": "e24e89158db73b5bcd3f12110b17f755bf2f772299d92ffc893ef816410f4366",
+      "evidence": "perf/acceptance/homepage_mobile.json",
+      "evidence_sha256": "0016fe38448e606b66f85476da0433f49f9196ed86b345ae881cafed2ae1ac18",
+      "detail": "builtin:homepage_mobile：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/homepage.py --viewport mobile → mobile 390px：HTTP 200，标题「轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态」，无横向溢出，4 张图片全部加载"
     },
     "media_playback": {
       "result": "passed",
-      "method": "ui_automation",
-      "checked_at": "2026-09-26T23:49:48.168306+08:00",
       "scope": "media",
-      "input_sha256": "463d013642dded913fa17a93dbf9c1f1908033bb6345b7e8d1a4037a2fb8aabc",
-      "evidence": "perf/promotion-verification.json",
-      "evidence_sha256": "0f0fbe7e669aaa2144846d3f22dd92b89c8ca7da4ecbf59f83ac1d80004a0be1"
+      "method": "ui_automation",
+      "checked_at": "2026-10-01T10:39:03.896372+08:00",
+      "input_sha256": "71a588f35fda003c490dc3c98973866b337447153676eb982eb8d7c954c1d579",
+      "evidence": "perf/acceptance/media_playback.json",
+      "evidence_sha256": "5aa004d41ccfb51c95f0ca64e2985314b246e65297d1191dcd88d295906ef91a",
+      "detail": "builtin:media_playback：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/media_playback.py → 1 个本地视频 ffprobe/ffmpeg 全量解码通过（docs/media/demo.mp4 24.0s h264）；推广页 1 个视频在无界面浏览器中实际播放（1.1/24s）"
+    },
+    "installed_icon": {
+      "result": "passed",
+      "scope": "installed_icon",
+      "method": "ui_automation",
+      "checked_at": "2026-10-01T10:38:49.898836+08:00",
+      "input_sha256": "cb805e2771334242870ab2c3b94839faf85376dfbfd172c07d1912783c92e40e",
+      "evidence": "perf/acceptance/installed_icon.json",
+      "evidence_sha256": "34ec564021b3a796903a180b2041e34f8979bf52af4863531eead8eac25547d1",
+      "detail": "builtin:installed_icon：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/installed_icon.py → 系统实际显示的装机图标与源图标一致（LiteGauge.app 0.1.2 (3)：256px 均差 5.3 超差 0.00%，512px 均差 7.42 超差 0.07%；macOS 27.2.0，离屏读取）"
+    },
+    "functionality": {
+      "result": "passed",
+      "scope": "code",
+      "method": "real_product",
+      "checked_at": "2026-10-01T10:39:12.247579+08:00",
+      "input_sha256": "805da561764e5001a31f438131ffee93fcb036fa32157d5f57d4cf726478eb08",
+      "evidence": "perf/acceptance/functionality.json",
+      "evidence_sha256": "5aabfe0511e9a1ee59266d21bd76664f799fc8961d79d371083e39b55e4c9caa",
+      "detail": "sop.accept：bash scripts/accept/functionality.sh → 当前源码构建：核心测试通过，CLI 读数与命令交叉核对 14/14 项通过"
+    },
+    "recovery": {
+      "result": "passed",
+      "scope": "code",
+      "method": "real_product",
+      "checked_at": "2026-10-01T10:38:47.614098+08:00",
+      "input_sha256": "805da561764e5001a31f438131ffee93fcb036fa32157d5f57d4cf726478eb08",
+      "evidence": "perf/acceptance/recovery.json",
+      "evidence_sha256": "5fa5eb4840cb652d725d585959b873b1cf4d31a36db9eeca04ddcd24621fbc30",
+      "detail": "sop.accept：bash scripts/accept/recovery.sh → 非法参数退出 2、重复实例自行退出、暂停/唤醒/基线测试通过"
+    },
+    "privacy": {
+      "result": "passed",
+      "scope": "code",
+      "method": "real_product",
+      "checked_at": "2026-10-01T10:39:54.227655+08:00",
+      "input_sha256": "805da561764e5001a31f438131ffee93fcb036fa32157d5f57d4cf726478eb08",
+      "evidence": "perf/acceptance/privacy.json",
+      "evidence_sha256": "84e63e1fc90a0212331350eb90441b5559359a49da58d85c3a85999502cad358",
+      "detail": "sop.accept：bash scripts/accept/privacy.sh → 隐私边界 8/8 项通过（运行实例无网络套接字）"
+    },
+    "icon_review": {
+      "result": "passed",
+      "scope": "icon",
+      "method": "ui_automation",
+      "checked_at": "2026-10-01T10:38:48.515339+08:00",
+      "input_sha256": "86e77dbb32d5e4400568b038b5225c4932001114980da632936c9d898e779850",
+      "evidence": "perf/acceptance/icon_review.json",
+      "evidence_sha256": "286f51c8b3767f119a26ceb9467593887cacc81248cd0dda841c01526f6ad771",
+      "detail": "builtin:icon_review：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/icon_review.py → 机器审阅：尺寸齐全、非空白（16–1024 px 共 10 个表示，浅色/深色底拼图已存）"
+    },
+    "native_ui": {
+      "result": "passed",
+      "scope": "ui",
+      "method": "ui_automation",
+      "checked_at": "2026-10-01T10:41:34.065951+08:00",
+      "input_sha256": "d8f112b033b506627ae1917248e2f341ec5f33c292e2b3f7321f3d2e4aecf0f6",
+      "evidence": "perf/acceptance/native_ui.json",
+      "evidence_sha256": "b8738a5b7453a215fd80d07130e2c7bed3a100e32ba6126054263e50fa3ac981",
+      "detail": "sop.accept：bash scripts/accept/native_ui.sh → 进程内离屏界面自检 12/12 项通过（当前源码构建，可执行 7de9de4ba7ab）"
+    },
+    "cli_entry": {
+      "result": "passed",
+      "scope": "cli_entry",
+      "method": "real_product",
+      "checked_at": "2026-10-01T10:39:04.208595+08:00",
+      "input_sha256": "4d46f0f5a775789ca728058533c79b758d16a9a9851c0e1c72428f5362f8293a",
+      "evidence": "perf/acceptance/cli_entry.json",
+      "evidence_sha256": "a2b05265590d75f4cfc5523e70576a5a18d3d58d4f57d5af35a440282e0ebed4",
+      "detail": "builtin:cli_entry：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/cli_entry.py → 命令行在 App 里：litegauge — 轻仪 LiteGauge 0.1.2 — 极简 CPU / 内存 / 磁盘监控（菜单栏 App 与命令行共用同一采集层）"
     }
-  }
+  },
+  "updated_at": "2026-10-01T10:41:34.202457+08:00"
 }

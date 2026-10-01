@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "name": "recovery",
+  "app_id": "litegauge",
+  "command": "bash scripts/accept/recovery.sh",
+  "exit_code": 0,
+  "status": "passed",
+  "started_at": "2026-10-01T10:38:25.686332+08:00",
+  "finished_at": "2026-10-01T10:38:47.614098+08:00",
+  "input_sha256": "805da561764e5001a31f438131ffee93fcb036fa32157d5f57d4cf726478eb08",
+  "log": "perf/acceptance/recovery.log",
+  "log_sha256": "4c96eaf39d546fa0afa7cb3cf4ae9e73f0388f9d7ae841d51556d4a44b2a08ec",
+  "summary": "非法参数退出 2、重复实例自行退出、暂停/唤醒/基线测试通过",
+  "detail": {
+    "summary": "非法参数退出 2、重复实例自行退出、暂停/唤醒/基线测试通过",
+    "checks": {
+      "invalid_args_0_exit2_no_stdout": true,
+      "invalid_args_1_exit2_no_stdout": true,
+      "invalid_args_2_exit2_no_stdout": true,
+      "invalid_args_3_exit2_no_stdout": true,
+      "invalid_args_4_exit2_no_stdout": true,
+      "duplicate_instance_exits": true,
+      "pause_resume_baseline_tests": true
+    },
+    "duplicate_instance": "exited",
+    "not_covered": [
+      "real sleep/wake cycle",
+      "injected sampler read failure"
+    ]
+  }
+}

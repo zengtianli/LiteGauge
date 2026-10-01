@@ -1,0 +1,121 @@
+{
+  "summary": "当前源码构建：核心测试通过，CLI 读数与命令交叉核对 14/14 项通过",
+  "checks": {
+    "no_errors": true,
+    "cpu_in_range": true,
+    "memory_total_matches_hw_memsize": true,
+    "memory_used_within_total": true,
+    "pressure_matches_sysctl": true,
+    "disk_total_matches_df": true,
+    "disk_available_matches_df": true,
+    "ok_and_error_codes": true,
+    "pressure_level_matches_sysctl": true,
+    "memory_percent_and_level": true,
+    "disk_used_percent_and_level": true,
+    "watch_two_ndjson_records": true,
+    "app_status_matches_ps": true,
+    "short_name_prints_usage_only": true
+  },
+  "status": {
+    "cpuPercent": 89.26441351888667,
+    "disk": {
+      "availableBytes": 619517423616,
+      "level": "normal",
+      "mountPoint": "/System/Volumes/Data",
+      "sampledAt": "2026-10-01T02:39:08Z",
+      "totalBytes": 1995186708480,
+      "usedPercent": 68.94940102683577,
+      "volume": "启动磁盘",
+      "warnAbovePercent": 90
+    },
+    "errorCodes": [],
+    "errors": [],
+    "memory": {
+      "compressedBytes": 5786419200,
+      "level": "warning",
+      "percent": 79.95071411132812,
+      "pressure": "偏高",
+      "pressureLevel": "elevated",
+      "swapUsedBytes": 11295064064,
+      "totalBytes": 17179869184,
+      "usedBytes": 13735428096
+    },
+    "ok": true,
+    "sampledAt": "2026-10-01T02:39:09Z"
+  },
+  "watch": [
+    {
+      "cpuPercent": 89.8507462686567,
+      "disk": {
+        "availableBytes": 619550216192,
+        "level": "normal",
+        "mountPoint": "/System/Volumes/Data",
+        "sampledAt": "2026-10-01T02:39:09Z",
+        "totalBytes": 1995186708480,
+        "usedPercent": 68.94775744251052,
+        "volume": "启动磁盘",
+        "warnAbovePercent": 90
+      },
+      "errorCodes": [],
+      "errors": [],
+      "memory": {
+        "compressedBytes": 5761613824,
+        "level": "warning",
+        "percent": 79.84552383422852,
+        "pressure": "偏高",
+        "pressureLevel": "elevated",
+        "swapUsedBytes": 11295064064,
+        "totalBytes": 17179869184,
+        "usedBytes": 13717356544
+      },
+      "ok": true,
+      "sampledAt": "2026-10-01T02:39:10Z"
+    },
+    {
+      "cpuPercent": 90,
+      "disk": {
+        "availableBytes": 619550216192,
+        "level": "normal",
+        "mountPoint": "/System/Volumes/Data",
+        "sampledAt": "2026-10-01T02:39:09Z",
+        "totalBytes": 1995186708480,
+        "usedPercent": 68.94775744251052,
+        "volume": "启动磁盘",
+        "warnAbovePercent": 90
+      },
+      "errorCodes": [],
+      "errors": [],
+      "memory": {
+        "compressedBytes": 5858721792,
+        "level": "warning",
+        "percent": 79.94518280029297,
+        "pressure": "偏高",
+        "pressureLevel": "elevated",
+        "swapUsedBytes": 11295064064,
+        "totalBytes": 17179869184,
+        "usedBytes": 13734477824
+      },
+      "ok": true,
+      "sampledAt": "2026-10-01T02:39:11Z"
+    }
+  ],
+  "app_status": {
+    "running": true,
+    "instances": 1
+  },
+  "reference": {
+    "df_k": [
+      "/dev/disk3s5",
+      "1948424520",
+      "1304906204",
+      "605029604",
+      "69%",
+      "8966504",
+      "6050296040",
+      "0%",
+      "/System/Volumes/Data"
+    ],
+    "hw_memsize": 17179869184,
+    "pressure_level": 2
+  }
+}

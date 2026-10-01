@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "name": "privacy",
+  "app_id": "litegauge",
+  "command": "bash scripts/accept/privacy.sh",
+  "exit_code": 0,
+  "status": "passed",
+  "started_at": "2026-10-01T10:38:25.685963+08:00",
+  "finished_at": "2026-10-01T10:39:54.227655+08:00",
+  "input_sha256": "805da561764e5001a31f438131ffee93fcb036fa32157d5f57d4cf726478eb08",
+  "log": "perf/acceptance/privacy.log",
+  "log_sha256": "a938611e9a187f70fabff60696b4edcee8e51ac10efbcf6ea61282a078da0015",
+  "summary": "隐私边界 8/8 项通过（运行实例无网络套接字）",
+  "detail": {
+    "summary": "隐私边界 8/8 项通过（运行实例无网络套接字）",
+    "checks": {
+      "system_libraries_only": true,
+      "no_network_symbols": true,
+      "no_embedded_urls": true,
+      "no_entitlements": true,
+      "no_privacy_usage_strings": true,
+      "source_no_network_process_defaults": true,
+      "running_instance_no_sockets": true,
+      "no_preferences_or_support_files": true
+    },
+    "findings": {
+      "non_system_libs": "",
+      "network_symbols": "",
+      "urls": "",
+      "source_hits": "",
+      "running_sockets": "0"
+    }
+  }
+}
