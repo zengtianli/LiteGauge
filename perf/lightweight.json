@@ -176,9 +176,34 @@
         "download_bytes": 1638655,
         "download_mb": 1.56
       }
+    },
+    {
+      "section": "idle",
+      "replaced_on": "2026-10-01",
+      "reason": "本次按记录的采样窗口与辅助进程合计实测",
+      "value": {
+        "process": "/Applications/LiteGauge.app",
+        "footprint_mb": 15.0,
+        "main_footprint_mb": 15.0,
+        "cpu_pct": 0.0,
+        "main_cpu_pct": 0.0,
+        "processes": [
+          {
+            "name": "main",
+            "cpu_pct": 0.0,
+            "footprint_peak_mb": 15.0
+          }
+        ],
+        "window_s": 60,
+        "settle_s": null,
+        "measured_at": "2026-10-01",
+        "method": "对已长时间运行的实例直接 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
+        "load": "负载均值 2.70 3.33 10.34；total = 9216.00M  used = 8000.38M  free = 1215.62M",
+        "owner_idle_s_at_start": 7307
+      }
     }
   ],
-  "env_note": "2026-10-01 主会话逐个顺序测量，负载均值 3.01 3.54 10.96；total = 9216.00M  used = 8000.38M  free = 1215.62M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
+  "env_note": "2026-10-01 主会话逐个顺序测量，负载均值 2.72 3.17 9.50；total = 9216.00M  used = 8000.38M  free = 1215.62M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
   "measured_artifact": {
     "version": "0.1.2",
     "build": "3",
@@ -201,7 +226,28 @@
     "settle_s": null,
     "measured_at": "2026-10-01",
     "method": "对已长时间运行的实例直接 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
-    "load": "负载均值 2.70 3.33 10.34；total = 9216.00M  used = 8000.38M  free = 1215.62M",
-    "owner_idle_s_at_start": 7307
-  }
+    "load": "负载均值 2.57 3.03 8.97；total = 9216.00M  used = 8000.38M  free = 1215.62M",
+    "owner_idle_s_at_start": 7473
+  },
+  "speed_gui": [
+    {
+      "key": "first_sample",
+      "label": "进程内首个 CPU 数值（5 次中位）",
+      "label_en": "First CPU reading after app setup (median of 5)",
+      "median_ms": 1215.1,
+      "runs": 5,
+      "raw_ms": [
+        1231.7,
+        1221.3,
+        1215.1,
+        1212.4,
+        1213.7
+      ],
+      "headline": true,
+      "method": "已装 0.1.2 以 --benchmark 启动测试实例（open -g -j -n 后台、不抢焦点，按其写出的 pid 结束，不碰常驻实例），AppDelegate 初始化至首个有效 CPU 差分；非完整冷启动；含 1 秒采样窗口",
+      "raw": "perf/raw/first-sample-0.1.2-3.json",
+      "load": "负载均值 2.50 2.98 8.82；total = 9216.00M  used = 8000.38M  free = 1215.62M",
+      "measured_at": "2026-10-01"
+    }
+  ]
 }
