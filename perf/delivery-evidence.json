@@ -5,20 +5,20 @@
       "result": "passed",
       "scope": "promo_ui",
       "method": "ui_automation",
-      "checked_at": "2026-10-01T10:38:54.657852+08:00",
-      "input_sha256": "e24e89158db73b5bcd3f12110b17f755bf2f772299d92ffc893ef816410f4366",
+      "checked_at": "2026-10-01T14:13:59.071768+08:00",
+      "input_sha256": "f7f833f10cd4e1a2e77348180a32a82ba54a822eadcab3cddf0fb03cf7ce47d2",
       "evidence": "perf/acceptance/homepage_desktop.json",
-      "evidence_sha256": "440f962923687ee0164acc30201389cab020d69a692eefa4473028444565e2e8",
+      "evidence_sha256": "082350d664acb6ab8ab31f40227a8f66128204a2889df270c7e1d7bb0ff595c4",
       "detail": "builtin:homepage_desktop：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/homepage.py --viewport desktop → desktop 1440px：HTTP 200，标题「轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态」，无横向溢出，4 张图片全部加载"
     },
     "homepage_mobile": {
       "result": "passed",
       "scope": "promo_ui",
       "method": "ui_automation",
-      "checked_at": "2026-10-01T10:38:58.706676+08:00",
-      "input_sha256": "e24e89158db73b5bcd3f12110b17f755bf2f772299d92ffc893ef816410f4366",
+      "checked_at": "2026-10-01T14:13:59.076456+08:00",
+      "input_sha256": "f7f833f10cd4e1a2e77348180a32a82ba54a822eadcab3cddf0fb03cf7ce47d2",
       "evidence": "perf/acceptance/homepage_mobile.json",
-      "evidence_sha256": "0016fe38448e606b66f85476da0433f49f9196ed86b345ae881cafed2ae1ac18",
+      "evidence_sha256": "987a1c942474185e3f8e684efb167d409808716826c3877b308983e944598e8f",
       "detail": "builtin:homepage_mobile：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/homepage.py --viewport mobile → mobile 390px：HTTP 200，标题「轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态」，无横向溢出，4 张图片全部加载"
     },
     "media_playback": {
@@ -102,5 +102,5 @@
       "detail": "builtin:cli_entry：~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/cli_entry.py → 命令行在 App 里：litegauge — 轻仪 LiteGauge 0.1.2 — 极简 CPU / 内存 / 磁盘监控（菜单栏 App 与命令行共用同一采集层）"
     }
   },
-  "updated_at": "2026-10-01T10:41:34.202457+08:00"
+  "updated_at": "2026-10-01T14:13:59.089145+08:00"
 }

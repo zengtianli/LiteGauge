@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "name": "homepage_desktop",
+  "app_id": "litegauge",
+  "command": "~/Dev/.venv/bin/python ~/Apps/chapter/engine/acceptors/homepage.py --viewport desktop",
+  "exit_code": 0,
+  "status": "passed",
+  "started_at": "2026-10-01T14:13:54.867933+08:00",
+  "finished_at": "2026-10-01T14:13:59.071768+08:00",
+  "input_sha256": "f7f833f10cd4e1a2e77348180a32a82ba54a822eadcab3cddf0fb03cf7ce47d2",
+  "log": "perf/acceptance/homepage_desktop.log",
+  "log_sha256": "94c8fc9d217375978cab4be542213b527daeaceb7cdbf96b6166c88d42eeea7c",
+  "summary": "desktop 1440px：HTTP 200，标题「轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态」，无横向溢出，4 张图片全部加载",
+  "detail": {
+    "summary": "desktop 1440px：HTTP 200，标题「轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态」，无横向溢出，4 张图片全部加载",
+    "passed": true,
+    "url": "https://litegauge.tianli.cyou/",
+    "viewport": [
+      1440,
+      900
+    ],
+    "http_status": 200,
+    "title": "轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态",
+    "inner_width": 1440,
+    "scroll_width": 1440,
+    "horizontal_overflow": false,
+    "images": [
+      {
+        "src": "https://litegauge.tianli.cyou/assets/AppIcon.png",
+        "complete": true,
+        "natural_width": 1024,
+        "natural_height": 1024,
+        "rendered_width": 44,
+        "rendered_height": 44,
+        "alt": ""
+      },
+      {
+        "src": "https://litegauge.tianli.cyou/media/menubar.png",
+        "complete": true,
+        "natural_width": 112,
+        "natural_height": 36,
+        "rendered_width": 112,
+        "rendered_height": 36,
+        "alt": "轻仪菜单栏：CPU 标签与百分比上下排列，右侧依次为内存和磁盘竖条"
+      },
+      {
+        "src": "https://litegauge.tianli.cyou/media/panel.png",
+        "complete": true,
+        "natural_width": 304,
+        "natural_height": 276,
+        "rendered_width": 302,
+        "rendered_height": 274,
+        "alt": "轻仪详情面板，显示 CPU、内存已用与总量、内存压力、交换空间和启动磁盘剩余容量"
+      },
+      {
+        "src": "https://litegauge.tianli.cyou/assets/AppIcon.png",
+        "complete": true,
+        "natural_width": 1024,
+        "natural_height": 1024,
+        "rendered_width": 88,
+        "rendered_height": 88,
+        "alt": ""
+      }
+    ],
+    "videos": [
+      {
+        "src": "https://litegauge.tianli.cyou/media/demo.mp4",
+        "ready_state": 4,
+        "duration": 24,
+        "current_time": 0,
+        "paused": true,
+        "error": null,
+        "video_width": 1280,
+        "video_height": 900,
+        "tracks": 1,
+        "play_error": null
+      }
+    ],
+    "failed_requests": [],
+    "requests": 8,
+    "screenshot": "perf/acceptance/homepage_desktop.png",
+    "screenshot_sha256": "daea3bec2d3286d5da11cca99cad30be1f243c5bf231dc0b826c7532f2eefe6b",
+    "screenshot_check": "极差 255，标准差 32.0",
+    "browser": {
+      "binary": "/Users/tianli/Library/Caches/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-mac-arm64/chrome-headless-shell",
+      "kind": "headless_shell",
+      "version": "Google Chrome for Testing 151.0.7922.34"
+    },
+    "probe_timed_out": false,
+    "method": "隔离无界面浏览器（临时配置、无调试端口、不操作桌面）经本地透传代理加载线上页面，探针读取布局与资源状态",
+    "limits": [
+      "单一桌面视口",
+      "机器判定布局与资源；视觉美观未做人工审阅"
+    ]
+  }
+}

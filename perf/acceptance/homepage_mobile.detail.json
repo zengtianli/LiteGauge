@@ -1,0 +1,82 @@
+{
+  "summary": "mobile 390px：HTTP 200，标题「轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态」，无横向溢出，4 张图片全部加载",
+  "passed": true,
+  "url": "https://litegauge.tianli.cyou/",
+  "viewport": [
+    390,
+    844
+  ],
+  "http_status": 200,
+  "title": "轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态",
+  "inner_width": 390,
+  "scroll_width": 390,
+  "horizontal_overflow": false,
+  "images": [
+    {
+      "src": "https://litegauge.tianli.cyou/assets/AppIcon.png",
+      "complete": true,
+      "natural_width": 1024,
+      "natural_height": 1024,
+      "rendered_width": 38,
+      "rendered_height": 38,
+      "alt": ""
+    },
+    {
+      "src": "https://litegauge.tianli.cyou/media/menubar.png",
+      "complete": true,
+      "natural_width": 112,
+      "natural_height": 36,
+      "rendered_width": 112,
+      "rendered_height": 36,
+      "alt": "轻仪菜单栏：CPU 标签与百分比上下排列，右侧依次为内存和磁盘竖条"
+    },
+    {
+      "src": "https://litegauge.tianli.cyou/media/panel.png",
+      "complete": true,
+      "natural_width": 304,
+      "natural_height": 276,
+      "rendered_width": 290,
+      "rendered_height": 263,
+      "alt": "轻仪详情面板，显示 CPU、内存已用与总量、内存压力、交换空间和启动磁盘剩余容量"
+    },
+    {
+      "src": "https://litegauge.tianli.cyou/assets/AppIcon.png",
+      "complete": true,
+      "natural_width": 1024,
+      "natural_height": 1024,
+      "rendered_width": 60,
+      "rendered_height": 60,
+      "alt": ""
+    }
+  ],
+  "videos": [
+    {
+      "src": "https://litegauge.tianli.cyou/media/demo.mp4",
+      "ready_state": 4,
+      "duration": 24,
+      "current_time": 0,
+      "paused": true,
+      "error": null,
+      "video_width": 1280,
+      "video_height": 900,
+      "tracks": 1,
+      "play_error": null
+    }
+  ],
+  "failed_requests": [],
+  "requests": 8,
+  "screenshot": "perf/acceptance/homepage_mobile.png",
+  "screenshot_sha256": "06613bc83f29c672414e4eaefe8fce354fa32213b57783d14694a2d868c48e89",
+  "screenshot_check": "极差 255，标准差 49.2",
+  "browser": {
+    "binary": "/Users/tianli/Library/Caches/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-mac-arm64/chrome-headless-shell",
+    "kind": "headless_shell",
+    "version": "Google Chrome for Testing 151.0.7922.34"
+  },
+  "probe_timed_out": false,
+  "method": "隔离无界面浏览器（临时配置、无调试端口、不操作桌面）经本地透传代理加载线上页面，探针读取布局与资源状态",
+  "limits": [
+    "响应式视口，不等于真机",
+    "机器判定布局与资源；视觉美观未做人工审阅"
+  ]
+}
