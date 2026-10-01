@@ -110,13 +110,15 @@ GUI-only: clicking to open the menu, arrow-key menu navigation, "Open Activity M
 <!-- lightweight:start -->
 ## Resource use
 
-| Download | Idle memory | Idle CPU | First CPU reading after app setup (median of 5) |
+| Download | Idle memory | Idle CPU | Speed |
 |---|---|---|---|
-| **1.6 MB** (installed 1.9 MB) | **24.1 MB** | **0.98%** | **1.2 s** |
+| **1.7 MB** (installed 1.9 MB) | **15.7 MB** | **0%** | **Not measured** |
 
 Native AppKit; no third-party runtime or network requests; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes.
 
-<sub>v0.1.1 (2) · Mac16,12 / Apple M4 / macOS 27.2 · Notarized release; menu closed; CPU/memory every 2 seconds and disk every 60 seconds. Measured on the resident instance after about 13 hours of running (not freshly launched); 60-second CPU window, footprint read in the same pass. · measured 2026-09-29. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
+Items marked Not measured have no measurement record for this version.
+
+<sub>v0.1.2 (3) · Mac16,12 / Apple M4 / macOS 27.2 · Notarized release; menu closed; CPU/memory every 2 seconds and disk every 60 seconds. Measured on the resident instance after about 13 hours of running (not freshly launched); 60-second CPU window, footprint read in the same pass. · measured 2026-10-01. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
 
 These are measurements on the listed device and refresh settings, not a guarantee for every Mac. Time to the first CPU value includes its sampling interval and is not a full cold-start measurement.
