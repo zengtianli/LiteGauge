@@ -47,10 +47,14 @@ sop:
   test_inputs:
   - Tests/**
   measure:
-    app: /Applications/LiteGauge.app
-    launch: false
-    running: /Applications/LiteGauge.app/Contents/MacOS/LiteGauge
-    download: build/release/LiteGauge-{short}-arm64.zip
+    # Resident menu-bar app without a main window: the script samples the running instance (shared batch_measure,
+    # release zip size) and times 5 --benchmark test instances (first CPU reading). A test instance briefly adds a
+    # second menu-bar item, so it runs only while the owner is away.
+    command: ~/Dev/.venv/bin/python scripts/measure-sop.py
+    outputs:
+    - perf/lightweight.json
+    - perf/raw
+    in_use: false
   budget:
     cpu: 0.3
     memory_mb: 30
