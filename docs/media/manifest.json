@@ -41,6 +41,10 @@
     "0.1.1": {
       "date": "2026-09-30",
       "reason": "Agent CLI change: Sources/App.swift now takes panel colours, the disk 90% threshold and the cadence note from shared MetricLevel/MetricThresholds/MetricFormat in Metrics.swift, and the single-instance guard from RunningInstances. Offscreen SummaryView renders of 18 fixtures (4 pressure levels x disk 50/90/90.1/90.5% used, error and empty states) are byte-identical to HEAD 46c5e54; StatusRenderer is unchanged. The recording still shows the current UI."
+    },
+    "0.1.2": {
+      "date": "2026-10-01",
+      "reason": "0.1.2 ships the agent CLI recorded under 0.1.1 above; Sources/App.swift and Sources/Metrics.swift are unchanged since that reuse check (only Info.plist and the CLI version constant changed for the release), so the recording still shows the current UI."
     }
   }
 }

@@ -8,7 +8,7 @@ cp build/media/panel.png build/media/menubar.png docs/media/
 ffmpeg -hide_banner -loglevel error -y -framerate 1 -i build/media/frames/%03d.png -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -r 30 -movflags +faststart docs/media/demo.mp4
 ffmpeg -hide_banner -loglevel error -y -i docs/media/demo.mp4 -frames:v 1 -q:v 2 docs/media/demo-poster.jpg
 python3 - <<'PY'
-import json, pathlib, datetime, hashlib
+import json, pathlib, datetime, hashlib, plistlib
 root = pathlib.Path('.')
 media = root / 'docs/media'
 (media / 'demo.zh.vtt').write_text('''WEBVTT
@@ -23,7 +23,8 @@ media = root / 'docs/media'
 磁盘详情显示剩余空间；日常点击菜单或按 ⌘R 可立即刷新。
 ''')
 sources = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [root/'Sources/App.swift', root/'Sources/Metrics.swift']}
-manifest = {'version': '0.1.1', 'recorded_at': datetime.datetime.now().astimezone().isoformat(),
+version = plistlib.loads((root / 'Info.plist').read_bytes())['CFBundleShortVersionString']
+manifest = {'version': version, 'recorded_at': datetime.datetime.now().astimezone().isoformat(),
     'method': 'Production AppKit views rendered offscreen; 24 seconds of real MetricsSampler readings. No synthetic clicks or desktop screen recording.',
     'screenshots': 'Deterministic fixture: CPU 22%, memory 10/16 GiB, disk 180/500 GB free. Same production renderer.',
     'coverage': ['Compact 56-point status indicator', 'CPU updates at 2-second cadence', 'Memory pressure and swap', 'Disk remaining capacity'],

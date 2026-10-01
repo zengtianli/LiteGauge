@@ -3,7 +3,7 @@ import Foundation
 // Command-line surface for agents and scripts. Foundation only, so the core tests compile it without AppKit.
 // Readings come from the same MetricsSampler / MetricFormat / MetricThresholds the menu-bar App draws from.
 
-let version = "0.1.1"
+let version = "0.1.2"
 
 struct WatchOptions: Equatable {
     var interval: TimeInterval = MetricsSampler.sampleInterval

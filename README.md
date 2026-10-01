@@ -23,7 +23,7 @@ CPU 标签与百分比上下排列，右侧两根竖条依次表示内存、磁�
 
 需要 **Apple Silicon（M1 或更新）与 macOS 14 或更新版本**。当前不提供 Intel 构建，应用界面为中文。
 
-1. 在 [Releases](https://github.com/zengtianli/LiteGauge/releases/latest) 下载 `LiteGauge-0.1.1-arm64.dmg`。
+1. 在 [Releases](https://github.com/zengtianli/LiteGauge/releases/latest) 下载 `LiteGauge-0.1.2-arm64.dmg`。
 2. 打开 DMG，将 `LiteGauge.app` 拖到 `Applications`。
 3. 在「应用程序」中打开 LiteGauge，在屏幕顶部菜单栏查看读数。它没有 Dock 图标或普通主窗口。
 
@@ -71,7 +71,7 @@ litegauge --version --json
 litegauge --help                   # 也可用 -h、help；任一命令或参数后加 --help / -h 也只显示帮助，不执行
 ```
 
-`watch`、`app`、`--version --json` 与下表中的等级、百分比、错误代码字段在 0.1.1 之后加入（当前源码，随下一版发布）；已发布的 0.1.1 提供 `status [--json]`、`--version` 和 `--help`。以下行为也从下一版起生效：`-h`、`help` 与「命令后加 `--help`」显示帮助（0.1.1 中退出 2），`litegauge` 不带参数只打印用法（0.1.1 中会走启动菜单栏 App 的路径）。
+`watch`、`app`、`--version --json` 与下表中的等级、百分比、错误代码字段自 0.1.2 起提供；0.1.1 只有 `status [--json]`、`--version` 和 `--help`。以下行为也自 0.1.2 起生效：`-h`、`help` 与「命令后加 `--help`」显示帮助（0.1.1 中退出 2），`litegauge` 不带参数只打印用法（0.1.1 中会走启动菜单栏 App 的路径）。
 
 `status --json` 与 `watch --json` 的每条记录：
 
@@ -152,7 +152,8 @@ open build/LiteGauge.app
 
 ```sh
 bash build.sh --test-only
-bash scripts/install.sh  # 首次安装到 /Applications，并添加 ~/.local/bin/litegauge
+bash scripts/install.sh  # 首次安装到 /Applications，并添加 ~/.local/bin/litegauge；旧版移入废纸篓
+bash scripts/install.sh --restart  # 已装版正在运行时：退出、替换后在后台重新启动
 ```
 
 测试覆盖 CPU 差分与溢出、内存扣除与下溢、磁盘缓存与刷新、睡眠/锁屏叠加状态、压力等级与配色阈值、JSON 字段、命令行参数解析、`watch` 连续输出及真实系统读取。`Sources/Metrics.swift` 为 GUI/CLI 共用采集层（含等级与阈值），`Sources/App.swift` 负责菜单栏与详情，`Sources/CLI.swift` 负责命令解析与输出，`Sources/main.swift` 处理入口。

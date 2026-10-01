@@ -23,7 +23,7 @@ A stacked CPU label and percentage are followed by two vertical bars for memory 
 
 Requires **Apple Silicon (M1 or newer) and macOS 14 or later**. Intel builds are not currently provided. The application interface is in Chinese.
 
-1. Download `LiteGauge-0.1.1-arm64.dmg` from [Releases](https://github.com/zengtianli/LiteGauge/releases/latest).
+1. Download `LiteGauge-0.1.2-arm64.dmg` from [Releases](https://github.com/zengtianli/LiteGauge/releases/latest).
 2. Open the DMG and drag `LiteGauge.app` into `Applications`.
 3. Launch LiteGauge from Applications and check the top menu bar. There is no Dock icon or regular main window.
 
@@ -71,7 +71,7 @@ litegauge --version --json
 litegauge --help                   # also -h or help; --help / -h after any command or flag only prints help and runs nothing
 ```
 
-`watch`, `app`, `--version --json`, and the level, percentage, and error-code fields below were added after 0.1.1 (current source, shipping with the next release). The released 0.1.1 provides `status [--json]`, `--version`, and `--help`. These also take effect with the next release: `-h`, `help`, and `--help` after a command print help (0.1.1 exits 2), and `litegauge` with no arguments only prints usage (0.1.1 goes down the menu-bar app launch path).
+`watch`, `app`, `--version --json`, and the level, percentage, and error-code fields below are available from 0.1.2; 0.1.1 only has `status [--json]`, `--version`, and `--help`. These also take effect from 0.1.2: `-h`, `help`, and `--help` after a command print help (0.1.1 exits 2), and `litegauge` with no arguments only prints usage (0.1.1 goes down the menu-bar app launch path).
 
 Each record of `status --json` and `watch --json`:
 
@@ -152,7 +152,8 @@ The build script runs tests first, then creates `build/LiteGauge.app` with a loc
 
 ```sh
 bash build.sh --test-only
-bash scripts/install.sh  # First install to /Applications, plus ~/.local/bin/litegauge
+bash scripts/install.sh  # Install to /Applications, plus ~/.local/bin/litegauge; the old app goes to the Trash
+bash scripts/install.sh --restart  # If the installed copy is running: quit, replace, relaunch in the background
 ```
 
 Tests cover CPU deltas and wraparound, memory accounting and underflow, disk caching and refresh, overlapping sleep/lock state, pressure levels and colour thresholds, JSON fields, command-line parsing, `watch` streaming, and live system reads. `Sources/Metrics.swift` provides shared collection (including levels and thresholds), `Sources/App.swift` implements the interface, `Sources/CLI.swift` parses commands and formats output, and `Sources/main.swift` handles entry points.
