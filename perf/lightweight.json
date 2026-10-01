@@ -1,15 +1,16 @@
 {
   "product": "litegauge",
-  "measured_at": "2026-09-29",
+  "measured_at": "2026-10-01",
   "device": "Mac16,12 / Apple M4 / macOS 27.2",
   "size": {
-    "installed_bytes": 1851392,
-    "installed_mb": 1.77,
-    "download_bytes": 1638655,
-    "download_mb": 1.56
+    "download_bytes": 1664267,
+    "download_mb": 1.59,
+    "installed_bytes": 1900544,
+    "installed_mb": 1.81,
+    "download_file": "LiteGauge-0.1.2-arm64.zip"
   },
   "compare": [],
-  "version": "0.1.1 (2)",
+  "version": "0.1.2 (3)",
   "data": "公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；测量已连续运行约13小时的常驻实例（非刚启动），M4/16 GiB 日常负载",
   "artifact": {
     "bundle_id": "cyou.tianli.litegauge",
@@ -106,46 +107,101 @@
         "download_bytes": 1626948,
         "download_mb": 1.55
       }
+    },
+    {
+      "section": "version",
+      "replaced_on": "2026-10-01",
+      "reason": "装机：安装了轻量化后的新构建",
+      "value": "0.1.1 (2)"
+    },
+    {
+      "section": "idle",
+      "version": "0.1.1 (2)",
+      "replaced_on": "2026-10-01",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": {
+        "process": "/Applications/LiteGauge.app",
+        "footprint_mb": 23.0,
+        "main_footprint_mb": 23.0,
+        "cpu_pct": 0.98,
+        "main_cpu_pct": 0.98,
+        "processes": [
+          {
+            "name": "main",
+            "cpu_pct": 0.985,
+            "footprint_peak_mb": 23.0
+          }
+        ],
+        "window_s": 60,
+        "settle_s": null,
+        "measured_at": "2026-09-29",
+        "method": "对已长时间运行的实例直接 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
+        "load": "负载均值 3.48 28.30 87.90；total = 4096.00M  used = 3411.00M  free = 685.00M"
+      }
+    },
+    {
+      "section": "speed_gui",
+      "version": "0.1.1 (2)",
+      "replaced_on": "2026-10-01",
+      "reason": "版本变化；仅本次实测可作为当前证据",
+      "value": [
+        {
+          "key": "first_sample",
+          "label": "进程内首个 CPU 数值（5 次中位）",
+          "label_en": "First CPU reading after app setup (median of 5)",
+          "median_ms": 1238.4,
+          "runs": 5,
+          "raw_ms": [
+            1312.8,
+            1239.7,
+            1234.0,
+            1234.7,
+            1238.4
+          ],
+          "headline": true,
+          "method": "已装 0.1.1 以 --benchmark 启动测试实例（后台、不抢焦点），AppDelegate 初始化至首个有效 CPU 差分；非完整冷启动；含 1 秒采样窗口",
+          "load": "负载均值 3.54 25.58 84.50",
+          "measured_at": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "section": "size",
+      "version": "0.1.1 (2)",
+      "replaced_on": "2026-10-01",
+      "reason": "版本变化；旧安装包大小不沿用",
+      "value": {
+        "installed_bytes": 1851392,
+        "installed_mb": 1.77,
+        "download_bytes": 1638655,
+        "download_mb": 1.56
+      }
     }
   ],
+  "env_note": "2026-10-01 主会话逐个顺序测量，负载均值 3.01 3.54 10.96；total = 9216.00M  used = 8000.38M  free = 1215.62M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
+  "measured_artifact": {
+    "version": "0.1.2",
+    "build": "3",
+    "executable_sha256": "66ed618b9bb0a64c31288a6a463343713b44d23a1eb1eeb0d7d0061357afe7ab"
+  },
   "idle": {
     "process": "/Applications/LiteGauge.app",
-    "footprint_mb": 23.0,
-    "main_footprint_mb": 23.0,
-    "cpu_pct": 0.98,
-    "main_cpu_pct": 0.98,
+    "footprint_mb": 15.0,
+    "main_footprint_mb": 15.0,
+    "cpu_pct": 0.0,
+    "main_cpu_pct": 0.0,
     "processes": [
       {
         "name": "main",
-        "cpu_pct": 0.985,
-        "footprint_peak_mb": 23.0
+        "cpu_pct": 0.0,
+        "footprint_peak_mb": 15.0
       }
     ],
     "window_s": 60,
     "settle_s": null,
-    "measured_at": "2026-09-29",
+    "measured_at": "2026-10-01",
     "method": "对已长时间运行的实例直接 measure.py idle <PID> --seconds 60 --with-helpers：内存为主进程 + WebKit/XPC 辅助进程 + 子进程同一时刻 phys_footprint 之和的峰值（活动监视器「内存」列同口径），CPU 为这些进程窗口内 CPU 时间增量之和 ÷ 墙钟",
-    "load": "负载均值 3.48 28.30 87.90；total = 4096.00M  used = 3411.00M  free = 685.00M"
-  },
-  "env_note": "2026-09-29 主会话逐个顺序测量，负载均值 3.67 34.35 94.60；total = 4096.00M  used = 3411.00M  free = 685.00M（开始时）；启动时间受负载影响，内存与 CPU 为进程自身数值",
-  "speed_gui": [
-    {
-      "key": "first_sample",
-      "label": "进程内首个 CPU 数值（5 次中位）",
-      "label_en": "First CPU reading after app setup (median of 5)",
-      "median_ms": 1238.4,
-      "runs": 5,
-      "raw_ms": [
-        1312.8,
-        1239.7,
-        1234.0,
-        1234.7,
-        1238.4
-      ],
-      "headline": true,
-      "method": "已装 0.1.1 以 --benchmark 启动测试实例（后台、不抢焦点），AppDelegate 初始化至首个有效 CPU 差分；非完整冷启动；含 1 秒采样窗口",
-      "load": "负载均值 3.54 25.58 84.50",
-      "measured_at": "2026-09-29"
-    }
-  ]
+    "load": "负载均值 2.70 3.33 10.34；total = 9216.00M  used = 8000.38M  free = 1215.62M",
+    "owner_idle_s_at_start": 7307
+  }
 }
