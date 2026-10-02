@@ -17,6 +17,16 @@ key_scripts:
 - build.sh
 - scripts/install.sh
 sop:
+  platforms:
+    mac: {}
+    iphone:
+      not_applicable: 当前监控器读取 Mac 主机 Mach CPU、内存统计和启动磁盘容量；iOS 不开放同口径全机监控与 macOS 菜单栏接口。
+    ipad:
+      not_applicable: 当前监控器读取 Mac 主机 Mach CPU、内存统计和启动磁盘容量；iPadOS 不开放同口径全机监控与 macOS 菜单栏接口。
+    watch:
+      not_applicable: watchOS 不开放 Mac 主机全机 CPU、内存和启动磁盘统计，也没有 macOS 菜单栏。
+    vision:
+      not_applicable: visionOS 不开放 Mac 主机同口径的全机 CPU、内存和启动磁盘统计，也没有 macOS 菜单栏。
   accept:
     functionality: bash scripts/accept/functionality.sh
     recovery: bash scripts/accept/recovery.sh
