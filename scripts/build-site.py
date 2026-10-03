@@ -94,16 +94,23 @@ def performance_section(perf: dict, release: dict) -> str:
     )
 
 
-def write_facts(output: Path, version: str) -> None:
+def write_facts(output: Path, release: dict) -> None:
     """Publish facts.json at the homepage root so it deploys with this page."""
     if not (PORTAL_SITE / "product_facts.py").is_file():
         print("facts.json not written — shared generator unavailable: " + str(PORTAL_SITE), file=sys.stderr)
         return
     sys.path.insert(0, str(PORTAL_SITE))
     import product_facts
+    version = str(release['version'])
     facts = product_facts.from_repo(ROOT, product_id=PRODUCT_ID, icon="assets/AppIcon.png")
     if facts["version"] != version:
         raise ValueError(f"facts.json version {facts['version']} (sop.release) differs from the page's v{version}")
+    measured = read_json(ROOT / 'perf/lightweight.json')
+    if str(measured['version']).split(' ')[0] != version and os.environ.get('APP_RELEASE_KEEP_HISTORY') == '1':
+        facts.update(download_bytes=release['bytes'], measured_version=measured['version'],
+                     historical_reference=True, download_source='verified current release ZIP')
+        facts['card_line'] = f"当前下载 {release['bytes'] / 1_000_000:.1f} MB · 历史实测 {escape(measured['version'])}（{escape(measured['measured_at'])}）：" + facts['card_line']
+        facts['card_text'] = product_facts.card_text(facts['card_line'])
     product_facts.write(output, facts)
 
 
@@ -187,7 +194,7 @@ def build(args: argparse.Namespace) -> None:
         public_release["dmg"] = {key: release["dmg"][key] for key in ("filename", "sha256", "bytes", "download_url")}
     (output / "release.json").write_text(json.dumps(public_release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     shutil.copy2(perf_path, output / "lightweight.json")
-    write_facts(output, str(release["version"]))
+    write_facts(output, release)
     (output / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n", encoding="utf-8")
     (output / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>{SITE_URL}/</loc></url></urlset>\n', encoding="utf-8")
     print(f"Built {output.relative_to(ROOT)}/index.html for v{release['version']}")
