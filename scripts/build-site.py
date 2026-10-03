@@ -13,6 +13,7 @@ import argparse
 import hashlib
 from html import escape
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -85,10 +86,11 @@ def performance_section(perf: dict, release: dict) -> str:
         "<section id='light' class='lw-perf wrap' aria-labelledby='light-title'><div class='section-title'>"
         "<p class='eyebrow'>轻量，有数字可查</p><h2 id='light-title'>只做需要的事，也看自己的占用。</h2><p>"
         + escape(str(perf.get("why", ""))) + "</p></div><div class='perf-grid'>" + rendered + "</div>"
-        "<p class='fine'>v" + escape(str(release["version"])) + " · " + escape(method) + " · " + escape(description)
+        "<p class='fine'>v" + escape(str(perf["version"])) + " · " + escape(method) + " · " + escape(description)
         + "。内存含主进程与辅助进程；CPU 为进程 CPU 时间增量 ÷ 墙钟，100% 代表一个核心。MB 按十进制显示。"
         "<a href='lightweight.json'>查看实测证据</a>。</p>"
-        + ("<p class='measurement-limit'>" + escape(limit_text) + "</p>" if limit_text else "") + "</section>"
+        + ("<p class='measurement-limit'>" + escape(limit_text) + "</p>" if limit_text else "")
+        + ("<p class='measurement-limit'>以上为 v" + escape(str(perf['version'])) + " 的历史实测，包括该版本的包大小；不代表当前 v" + escape(str(release['version'])) + "。当前下载大小见下载入口，本轮未重复运行性能采样。</p>" if str(perf['version']).split(' ')[0] != str(release['version']) else "") + "</section>"
     )
 
 
@@ -113,7 +115,7 @@ def build(args: argparse.Namespace) -> None:
     for key in ("version", "filename", "sha256", "bytes", "notarized", "minimum_macos", "architecture", "download_url"):
         if key not in release:
             raise ValueError(f"release metadata missing {key}")
-    if str(perf.get("version", "")).split(" ")[0] != str(release["version"]):
+    if str(perf.get("version", "")).split(" ")[0] != str(release["version"]) and os.environ.get("APP_RELEASE_KEEP_HISTORY") != "1":
         raise ValueError("Release and performance versions differ; measure this release first")
     if Path(release["filename"]).name != release["filename"] or not str(release["filename"]).endswith(".zip"):
         raise ValueError("Release filename must be a plain ZIP filename")
@@ -121,7 +123,7 @@ def build(args: argparse.Namespace) -> None:
         raise ValueError("Release SHA-256 must have 64 hexadecimal characters")
     if not str(release["download_url"]).startswith(GITHUB_URL + "/releases/download/"):
         raise ValueError("Download URL must point at this product's GitHub release")
-    if perf.get("size", {}).get("download_bytes") != release["bytes"]:
+    if perf.get("size", {}).get("download_bytes") != release["bytes"] and os.environ.get("APP_RELEASE_KEEP_HISTORY") != "1":
         raise ValueError("perf/lightweight.json size.download_bytes must match this release's bytes")
     archive = release_path.parent / release["filename"]
     if archive.exists():
