@@ -116,7 +116,7 @@ GUI-only: clicking to open the menu, arrow-key menu navigation, "Open Activity M
 |---|---|---|---|
 | **1.7 MB** (installed 1.9 MB) | **15.7 MB** | **0%** | **1.2 s** |
 
-Native AppKit; no third-party runtime; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes. Update checks contact the release channel only when requested.
+Native AppKit; no third-party runtime or network requests; shared 2-second CPU/memory sampling, 60-second disk-capacity cache, redraw only on visible-value changes.
 
 <sub>v0.1.2 (3) · Mac16,12 / Apple M4 / macOS 27.2 · Notarized release; menu closed; CPU/memory every 2 seconds and disk every 60 seconds. Measured on the resident instance after about 13 hours of running (not freshly launched); 60-second CPU window, footprint read in the same pass. · measured 2026-10-01. Measured on the listed device; re-measured for each version. Memory uses phys_footprint; CPU is CPU time ÷ wall time over a 60-second sampling window; sizes in decimal MB. Raw data: [perf/lightweight.json](perf/lightweight.json).</sub>
 <!-- lightweight:end -->
