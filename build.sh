@@ -21,11 +21,13 @@ COMPILER=(xcrun swiftc -swift-version 5 -O -whole-module-optimization -target ar
 "${COMPILER[@]}" Sources/Metrics.swift Sources/CLI.swift Tests/main.swift -o build/tests
 build/tests
 if [ "${1:-}" = '--test-only' ]; then exit 0; fi
+LIFECYCLE_VENDOR="${APP_LIFECYCLE_VENDOR:-$HOME/Dev/tools/dev/lib/tools/macapp/swift-shared/vendor-lifecycle.py}"
+if [ -f "$LIFECYCLE_VENDOR" ]; then python3 "$LIFECYCLE_VENDOR" --platform mac --target-source-dir "$PWD/Sources"; fi
 APP=build/LiteGauge.app
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp Info.plist "$APP/Contents/Info.plist"
 if [ -f icon/AppIcon.icns ]; then cp icon/AppIcon.icns "$APP/Contents/Resources/"; fi
-"${COMPILER[@]}" -Xlinker -dead_strip Sources/Metrics.swift Sources/CLI.swift Sources/App.swift Sources/main.swift -o "$APP/Contents/MacOS/LiteGauge"
+"${COMPILER[@]}" -Xlinker -dead_strip Sources/Metrics.swift Sources/CLI.swift Sources/App.swift Sources/AppLifecycle.swift Sources/AppConfiguration.swift Sources/AppLifecycleUI.swift Sources/main.swift -o "$APP/Contents/MacOS/LiteGauge"
 if [ -n "${CODE_SIGN_IDENTITY:-}" ]; then
   codesign --force --options runtime --timestamp --sign "$CODE_SIGN_IDENTITY" "$APP"
 else

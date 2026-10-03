@@ -94,6 +94,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSApp.terminate(nil)
             return
         }
+        if benchmark == nil {
+            AppLifecycleUI.install(name: "LiteGauge · 极简菜单栏监控", configuration: nil, updateSource: .github(repository: "zengtianli/LiteGauge"))
+        }
         statusItem = NSStatusBar.system.statusItem(withLength: StatusRenderer.size.width)
         statusItem.button?.image = StatusRenderer.image(cpu: nil, memory: nil, disk: nil)
         statusItem.button?.imagePosition = .imageOnly
@@ -119,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let activity = NSMenuItem(title: "打开活动监视器…", action: #selector(openActivityMonitor), keyEquivalent: "")
         activity.target = self
         menu.addItem(activity)
+        if benchmark == nil { AppLifecycleUI.menuItems().forEach { menu.addItem($0) } }
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "退出轻仪", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
