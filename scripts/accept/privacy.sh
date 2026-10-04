@@ -12,7 +12,7 @@ NET="$(nm -u "$EXE" | grep -iE 'URLSession|NSURLConnection|CFNetwork|nw_connecti
 URLS="$(strings "$EXE" | grep -iE 'https?://' || true)"
 ENT="$(codesign -d --entitlements - "$APP" 2>/dev/null | grep -v '^Executable' | grep -c key || true)"
 USAGE="$(plutil -p "$APP/Contents/Info.plist" | grep -ci usage || true)"
-SRC="$(grep -nE 'URLSession|URLRequest|NSTask|Process\(|UserDefaults|NSWorkspace.shared.open\(URL\(string' Sources/*.swift | grep -vE '^Sources/App(Lifecycle(UI)?|Configuration)\.swift:' || true)"
+SRC="$(grep -nE 'URLSession|URLRequest|NSTask|Process\(|UserDefaults|NSWorkspace.shared.open\(URL\(string' Sources/*.swift | grep -vE '^Sources/App(Lifecycle(UI)?|Configuration)\.swift:|^Sources/ResourceActions\.swift:[0-9]+: *let child = Process\(\)$' || true)"
 PID="$(pgrep -x LiteGauge | head -1 || true)"
 SOCK=-1; [ -n "$PID" ] && SOCK="$( (lsof -a -p "$PID" -i 2>/dev/null || true) | tail -n +2 | wc -l | tr -d ' ')"
 FILES="$( (ls -d ~/Library/Preferences/cyou.tianli.litegauge.plist ~/Library/Containers/cyou.tianli.litegauge ~/Library/Application\ Support/LiteGauge 2>/dev/null || true) | wc -l | tr -d ' ')"
@@ -32,7 +32,7 @@ if out:
     open(os.path.join(out, "privacy.detail.json"), "w").write(json.dumps({"summary": summary, "checks": checks,
         "findings": {"non_system_libs": libs, "network_symbols": net, "urls": urls, "source_hits": src, "running_sockets": sock,
                      "existing_product_preference_paths": files},
-        "scope": "Metric/CLI modules remain offline. Lifecycle update requests can create sockets and UI preferences; those observations do not contain metric samples."},
+        "scope": "Metric/diagnostic collection uses native libproc, offline. Explicit OrbStack restart invokes its bundled official CLI without a shell; Shadowrocket restart uses the local OS connection API. Lifecycle update requests can create sockets and UI preferences; metric samples are never uploaded."},
         ensure_ascii=False, indent=2) + "\n")
 print(summary); sys.exit(1 if failed else 0)
 PY

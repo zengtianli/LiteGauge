@@ -3,7 +3,7 @@ import Foundation
 // Command-line surface for agents and scripts. Foundation only, so the core tests compile it without AppKit.
 // Readings come from the same MetricsSampler / MetricFormat / MetricThresholds the menu-bar App draws from.
 
-let version = "0.1.3"
+let version = "0.2.0"
 
 struct WatchOptions: Equatable {
     var interval: TimeInterval = MetricsSampler.sampleInterval
@@ -16,6 +16,8 @@ enum CLICommand: Equatable {
     case usage                       // `litegauge` with no arguments: print usage, never start the menu-bar App
     case version(json: Bool)
     case status(json: Bool)
+    case diagnose(json: Bool, sort: DiagnosticSort, limit: Int)
+    case processAction(json: Bool, dryRun: Bool, action: String, pid: Int32, token: String)
     case watch(WatchOptions)
     case appStatus(json: Bool)
     case appQuit(json: Bool, dryRun: Bool, pid: Int32?)
@@ -38,6 +40,10 @@ enum CLI {
     用法：
       litegauge status [--json]
           采样约 1 秒，输出一次 CPU、内存、启动磁盘读数。
+      litegauge diagnose [--sort memory|cpu] [--limit 1..50] [--json]
+          按需扫描并合并应用进程，报告内存压力、主要占用与建议；CPU 的 100% 表示一个核心。
+      litegauge process quit|restart --pid <pid> --token <诊断中的token> (--dry-run | --yes) [--json]
+          正常退出或受控重启所选应用，核对进程身份，完成后复查占用；不强制结束系统进程。
       litegauge watch [--interval <秒>] [--count <次数>] [--json]
           按 App 的节奏持续输出：默认每 \(Int(MetricsSampler.sampleInterval)) 秒（1–3600），磁盘容量缓存 \(Int(MetricsSampler.diskInterval)) 秒；
           --json 时每行一个 JSON 对象（NDJSON）。次数到达或 Ctrl-C 后结束。
@@ -61,7 +67,7 @@ enum CLI {
     """
 
     static let usageText = """
-    用法：litegauge status [--json] | watch [--interval <秒>] [--count <次数>] [--json] | app status [--json] | app quit (--dry-run | --yes) [--pid <pid>] [--json] | --version | --help
+    用法：litegauge status [--json] | diagnose [--sort memory|cpu] [--limit 1..50] [--json] | process quit|restart --pid <pid> --token <token> (--dry-run | --yes) | watch [--interval <秒>] [--count <次数>] [--json] | app status [--json] | app quit (--dry-run | --yes) [--pid <pid>] [--json] | --version | --help
     litegauge 不带参数不会启动菜单栏 App；从「应用程序」打开，或 open -g -j /Applications/LiteGauge.app。
     """
 
@@ -79,6 +85,24 @@ enum CLI {
             return options(rest, switches: ["--json"]).map { .version(json: $0["--json"] != nil) }
         case "status":
             return options(rest, switches: ["--json"]).map { .status(json: $0["--json"] != nil) }
+        case "diagnose":
+            return options(rest, switches: ["--json"], valued: ["--sort", "--limit"]).flatMap { found in
+                guard let sort = DiagnosticSort(rawValue: found["--sort"] ?? "memory"),
+                      let limit = Int(found["--limit"] ?? "10"), (1...50).contains(limit) else {
+                    return fail("diagnose 的 --sort 须为 memory 或 cpu，--limit 须为 1 到 50")
+                }
+                return .success(.diagnose(json: found["--json"] != nil, sort: sort, limit: limit))
+            }
+        case "process":
+            guard let action = rest.first, ["quit", "restart"].contains(action) else { return fail("process 需要子命令 quit 或 restart") }
+            return options(Array(rest.dropFirst()), switches: ["--json", "--yes", "--dry-run"], valued: ["--pid", "--token"]).flatMap { found in
+                let dry = found["--dry-run"] != nil, yes = found["--yes"] != nil
+                guard dry != yes, let raw = found["--pid"], let pid = Int32(raw), pid > 1,
+                      let token = found["--token"], ProcessIdentity.validToken(token, pid: pid) else {
+                    return fail("process 需要 --pid、诊断中的 --token，以及 --dry-run 或 --yes（任选一个）")
+                }
+                return .success(.processAction(json: found["--json"] != nil, dryRun: dry, action: action, pid: pid, token: token))
+            }
         case "watch":
             return options(rest, switches: ["--json"], valued: ["--interval", "--count"]).flatMap(watchOptions)
         case "app":

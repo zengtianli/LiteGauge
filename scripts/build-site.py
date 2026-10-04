@@ -22,7 +22,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 SITE_URL = "https://litegauge.tianli.cyou"
 GITHUB_URL = "https://github.com/zengtianli/LiteGauge"
-MEDIA = ("menubar.png", "panel.png", "demo.mp4", "demo-poster.jpg", "demo.zh.vtt")
+MEDIA = ("menubar.png", "panel.png", "diagnosis.png", "demo.mp4", "demo-poster.jpg", "demo.zh.vtt")
 PORTAL_SITE = Path.home() / "Apps/apps-portal/site"
 PRODUCT_ID = "litegauge"  # products.yaml id / portal card data-product
 

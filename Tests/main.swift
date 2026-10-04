@@ -144,4 +144,70 @@ _ = try CLISampling.watch(WatchOptions(interval: 30, count: nil, json: false), s
     stopSoon.signal()
 }
 check(stopLines == 1, "a stop signal ends an unbounded watch after the current line")
+// On-demand process diagnosis: stable identities, interval CPU and app aggregation.
+func observation(_ pid: Int32, _ path: String, start: UInt64 = 1, uid: UInt32 = 501,
+                 memory: UInt64? = 10, cpu: UInt64? = 0, at: Double = 1) -> ProcessObservation {
+    ProcessObservation(identity: ProcessIdentity(pid: pid, startSeconds: start, startMicroseconds: 0, executablePath: path, userID: uid),
+                       parentPID: 1, footprintBytes: memory, cpuNanoseconds: cpu, observedUptime: at)
+}
+let appPath = "/Applications/Example.app/Contents/MacOS/Example"
+let helperPath = "/Applications/Example.app/Contents/Frameworks/Helper.app/Contents/MacOS/Helper"
+let oldProcess = observation(100, appPath, cpu: 1_000_000_000)
+let currentProcess = observation(100, appPath, cpu: 2_000_000_000, at: 3)
+check(ResourceDiagnostics.cpuPercent(current: currentProcess, previous: oldProcess) == 50, "interval CPU uses individual monotonic timestamps")
+check(ResourceDiagnostics.cpuPercent(current: observation(100, appPath, start: 2, cpu: 4_000_000_000, at: 3), previous: oldProcess) == nil,
+      "a reused PID never inherits the old CPU baseline")
+check(ResourceDiagnostics.cpuPercent(current: observation(100, helperPath, cpu: 4_000_000_000, at: 3), previous: oldProcess) == nil,
+      "an exec into another path resets CPU")
+check(ResourceDiagnostics.cpuPercent(current: observation(100, appPath, cpu: 0, at: 3), previous: oldProcess) == nil,
+      "decreasing CPU counters are unavailable, not a negative usage")
+let appGroups = ResourceDiagnostics.group(current: [currentProcess, observation(101, helperPath, memory: 20),
+    observation(102, appPath, uid: 502, memory: 30), observation(103, "/usr/local/bin/job", memory: nil, cpu: nil)], previous: [oldProcess])
+let ownGroup = appGroups.first { $0.id.hasPrefix("501:/Applications/") }!
+check(appGroups.count == 3 && ownGroup.processes.count == 2 && ownGroup.footprintBytes == 30 && ownGroup.cpuPercent == 50,
+      "nested helpers aggregate under the outer app; another user's app and standalone jobs remain separate")
+check(ownGroup.missingCPUCount == 1 && DiagnosticFormat.cpu(ownGroup).hasPrefix("≥"), "partial CPU coverage is explicit")
+let unavailableGroup = appGroups.first { $0.bundlePath == nil }!
+check(DiagnosticFormat.memory(unavailableGroup) == "—" && DiagnosticFormat.cpu(unavailableGroup) == "—", "unreadable processes display unavailable")
+check(ResourceDiagnostics.outerBundle(helperPath) == "/Applications/Example.app" && ResourceDiagnostics.outerBundle("/usr/bin/job") == nil,
+      "bundle grouping does not confuse executable names with app paths")
+check(ProcessIdentity.validToken("100:1:999999", pid: 100) && !ProcessIdentity.validToken("100:1:1000000", pid: 100)
+      && !ProcessIdentity.validToken("100::0", pid: 100) && !ProcessIdentity.validToken("101:1:0", pid: 100), "identity tokens reject malformed or mismatched targets")
+check(parsed(["diagnose"]) == .diagnose(json: false, sort: .memory, limit: 10)
+      && parsed(["diagnose", "--sort=cpu", "--limit", "20", "--json"]) == .diagnose(json: true, sort: .cpu, limit: 20), "diagnose ranking and limit")
+check(parsed(["process", "restart", "--pid", "100", "--token", "100:1:0", "--dry-run"])
+      == .processAction(json: false, dryRun: true, action: "restart", pid: 100, token: "100:1:0"), "restart is explicit and supports preview")
+check([["process", "restart", "--pid", "100", "--token", "100:1:0"],
+       ["process", "restart", "--pid", "100", "--token", "101:1:0", "--yes"],
+       ["process", "restart", "--pid", "100", "--token", "100:1:0", "--yes", "--dry-run"],
+       ["diagnose", "--limit", "0"], ["diagnose", "--limit", "51"], ["diagnose", "--sort", "random"]].allSatisfy(rejected),
+      "actions require confirmation and a bound identity; invalid ranks are rejected")
+check(parsed(["process", "restart", "--yes", "--help"]) == .help, "help never performs an action")
+let selfObservation = NativeProcessReader.observation(getpid())
+check(selfObservation?.identity.pid == getpid() && (selfObservation?.footprintBytes ?? 0) > 0 && selfObservation?.cpuNanoseconds != nil,
+      "native libproc reports this real process's footprint and CPU")
+// Compare a real CPU burst with getrusage's microsecond clock. This catches Mach-tick/nanosecond confusion.
+var burstBefore = rusage(), burstAfter = rusage()
+getrusage(RUSAGE_SELF, &burstBefore)
+let cpuBefore = NativeProcessReader.observation(getpid())!
+let burstDeadline = ProcessInfo.processInfo.systemUptime + 0.15
+var accumulator: UInt64 = 1
+while ProcessInfo.processInfo.systemUptime < burstDeadline { accumulator = accumulator &* 1664525 &+ 1013904223 }
+let cpuAfter = NativeProcessReader.observation(getpid())!
+getrusage(RUSAGE_SELF, &burstAfter)
+func seconds(_ value: rusage) -> Double {
+    Double(value.ru_utime.tv_sec + value.ru_stime.tv_sec) + Double(value.ru_utime.tv_usec + value.ru_stime.tv_usec) / 1_000_000
+}
+let referenceSeconds = seconds(burstAfter) - seconds(burstBefore)
+let nativeSeconds = Double(cpuAfter.cpuNanoseconds! - cpuBefore.cpuNanoseconds!) / 1_000_000_000
+check(accumulator != 0 && referenceSeconds > 0.03 && abs(nativeSeconds - referenceSeconds) < 0.025,
+      "native CPU clock matches a real getrusage burst in seconds")
+let diagnosis = ResourceDiagnostics.collect(warmup: 0.1)
+let diagnosisJSON = object(try CLIOutput.json(diagnosis, pretty: false))
+check(diagnosis.ok && !diagnosis.groups.isEmpty && diagnosisJSON["ok"] as? Bool == true
+      && diagnosisJSON["advice"] is [String], "live diagnosis is encoded with coverage and advice")
+let groupJSON = object(try CLIOutput.json(ownGroup, pretty: false))
+let processesJSON = groupJSON["processes"] as? [[String: Any]] ?? []
+check(groupJSON["footprintBytes"] as? Int == 30 && groupJSON["missingCPUCount"] as? Int == 1
+      && processesJSON.allSatisfy { $0["token"] is String }, "JSON includes aggregate counters, missing coverage and stable action tokens")
 print("PASS \(checks) checks")

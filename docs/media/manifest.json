@@ -1,13 +1,14 @@
 {
-  "version": "0.1.1",
-  "recorded_at": "2026-09-28T00:31:12.865698+08:00",
+  "version": "0.2.0",
+  "recorded_at": "2026-10-05T01:27:16.786874+08:00",
   "method": "Production AppKit views rendered offscreen; 24 seconds of real MetricsSampler readings. No synthetic clicks or desktop screen recording.",
   "screenshots": "Deterministic fixture: CPU 22%, memory 10/16 GiB, disk 180/500 GB free. Same production renderer.",
   "coverage": [
     "Compact 56-point status indicator",
     "CPU updates at 2-second cadence",
     "Memory pressure and swap",
-    "Disk remaining capacity"
+    "Disk remaining capacity",
+    "Resource diagnosis screenshot with deterministic example values"
   ],
   "not_covered": [
     "Finder installation",
@@ -15,8 +16,11 @@
     "Actual sleep/wake cycle"
   ],
   "sources_sha256": {
-    "Sources/App.swift": "409cba09414b446cda1fe16a6eee15885c994e1584db82436db6fa0973b94182",
-    "Sources/Metrics.swift": "ff61fba7acd1cc0dabb3f2fcdbea2e4d8509ef80047280fa1a37f69745e2135f"
+    "Sources/App.swift": "cdca045cd038810b28c25cea4bc32e3c322baf554fbea2d78ea5584b94cdff78",
+    "Sources/Metrics.swift": "7cf32ac9f3efa887926fcb5b81869edc5b892065d65d591f7383a2c351dda6d1",
+    "Sources/Diagnostics.swift": "5bb0ad61357092bca363c20587b60182810f85335f476f78adf298c3ff339975",
+    "Sources/DiagnosticsUI.swift": "37da03870f03b17d491e5262f00ac8d36608aa5fed7312bf26230a8dffcf46c7",
+    "Sources/ResourceActions.swift": "c345318a34a3e2b6708fabac8820e3334d13ed72650d095be7fd83847a426cae"
   },
   "raw": "build/media/frames/",
   "samples": "build/media/samples.json",
@@ -36,15 +40,5 @@
       "end": 24,
       "topic": "Disk remaining capacity"
     }
-  ],
-  "reused_for": {
-    "0.1.1": {
-      "date": "2026-09-30",
-      "reason": "Agent CLI change: Sources/App.swift now takes panel colours, the disk 90% threshold and the cadence note from shared MetricLevel/MetricThresholds/MetricFormat in Metrics.swift, and the single-instance guard from RunningInstances. Offscreen SummaryView renders of 18 fixtures (4 pressure levels x disk 50/90/90.1/90.5% used, error and empty states) are byte-identical to HEAD 46c5e54; StatusRenderer is unchanged. The recording still shows the current UI."
-    },
-    "0.1.2": {
-      "date": "2026-10-01",
-      "reason": "0.1.2 ships the agent CLI recorded under 0.1.1 above; Sources/App.swift and Sources/Metrics.swift are unchanged since that reuse check (only Info.plist and the CLI version constant changed for the release), so the recording still shows the current UI."
-    }
-  }
+  ]
 }

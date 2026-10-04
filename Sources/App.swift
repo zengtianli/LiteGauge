@@ -86,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var menuOpen = false
     fileprivate var lastTitle = ""
     private let summary = SummaryView(frame: NSRect(x: 0, y: 0, width: 304, height: 276))
+    private var diagnosticWindow: DiagnosticWindowController?
 
     init(benchmark: String?) { self.benchmark = benchmark }
 
@@ -119,6 +120,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let refresh = NSMenuItem(title: "立即刷新", action: #selector(refreshNow), keyEquivalent: "r")
         refresh.target = self
         menu.addItem(refresh)
+        let diagnose = NSMenuItem(title: "资源诊断与处理…", action: #selector(openDiagnosis), keyEquivalent: "")
+        diagnose.target = self
+        menu.addItem(diagnose)
         let activity = NSMenuItem(title: "打开活动监视器…", action: #selector(openActivityMonitor), keyEquivalent: "")
         activity.target = self
         menu.addItem(activity)
@@ -203,6 +207,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func refreshNow() { requestSample(forceDisk: true) }
+    @objc private func openDiagnosis() {
+        if diagnosticWindow == nil {
+            let controller = DiagnosticWindowController()
+            controller.didClose = { [weak self] in self?.diagnosticWindow = nil }
+            diagnosticWindow = controller
+        }
+        diagnosticWindow?.present()
+    }
     @objc private func openActivityMonitor() {
         NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
     }
@@ -324,10 +336,12 @@ extension AppDelegate {
         let items = menu.items
         let refresh = items.first { $0.title == "立即刷新" }, quit = items.first { $0.title == "退出轻仪" }
         let activity = items.first { $0.title == "打开活动监视器…" }
-        checks["menu_structure"] = items.count == 6 && items[0].view === summary && refresh != nil && quit != nil && activity != nil
+        let diagnose = items.first { $0.title == "资源诊断与处理…" }
+        checks["menu_structure"] = items.count >= 7 && items[0].view === summary && items.last === quit
+            && ["立即刷新", "退出轻仪", "打开活动监视器…", "资源诊断与处理…"].allSatisfy { title in items.filter { $0.title == title }.count == 1 }
         checks["shortcuts_cmd_r_q"] = refresh?.keyEquivalent == "r" && quit?.keyEquivalent == "q"
             && refresh?.keyEquivalentModifierMask == .command && quit?.keyEquivalentModifierMask == .command
-        checks["actions_wired"] = [refresh, quit, activity].allSatisfy { item in
+        checks["actions_wired"] = [refresh, quit, activity, diagnose].allSatisfy { item in
             guard let item, let action = item.action, let target = item.target as? NSObject else { return false }
             return target === self && target.responds(to: action) }
         checks["panel_initial_reading"] = summary.snapshot == nil && png(summary, "native-ui-panel-initial.png") > 0
@@ -375,9 +389,18 @@ extension AppDelegate {
         let none = indicator(nil, nil, nil, "native-ui-indicator-unavailable.png")
         checks["indicator_bars_scale"] = full > empty && empty > 0 && none > 0
 
+        let diagnosis = ResourceDiagnostics.collect()
+        let diagnosticView = DiagnosticViewController()
+        diagnosticView.view.appearance = NSAppearance(named: .aqua)
+        diagnosticView.apply(diagnosis)
+        diagnosticView.view.layoutSubtreeIfNeeded()
+        checks["diagnosis_live_groups"] = diagnosis.ok && !diagnosticView.rows.isEmpty
+        checks["diagnosis_offscreen_renders"] = png(diagnosticView.view, "native-ui-diagnosis.png") > 1000
+        checks["diagnosis_no_automatic_work"] = !diagnosticView.busy && diagnosticWindow == nil
+
         let ok = checks.values.allSatisfy { $0 }
         let result: [String: Any] = ["ok": ok, "checks": checks, "screenshots": ["native-ui-panel-initial.png", "native-ui-panel.png",
-            "native-ui-indicator-0.png", "native-ui-indicator-100.png", "native-ui-indicator-unavailable.png"],
+            "native-ui-indicator-0.png", "native-ui-indicator-100.png", "native-ui-indicator-unavailable.png", "native-ui-diagnosis.png"],
             "not_covered": ["physical menu-bar click and AppKit menu tracking", "opening Activity Monitor", "actual quit", "real sleep/wake notifications"]]
         if let data = try? JSONSerialization.data(withJSONObject: result, options: .sortedKeys) { print(String(decoding: data, as: UTF8.self)) }
         return ok

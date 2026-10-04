@@ -122,6 +122,29 @@ case .status(let json):
         if !snapshot.ok { CLIOutput.write(snapshot.errors.joined(separator: "\n") + "\n", to: .standardError) }
     }
     exit(snapshot.ok ? 0 : 1)
+case .diagnose(let json, let sort, let limit):
+    let result = ResourceDiagnostics.collect()
+    let groups = Array(result.sorted(sort).prefix(limit))
+    if json {
+        // Preserve complete coverage metadata while returning only the requested ranking.
+        var object = (try JSONSerialization.jsonObject(with: Data(CLIOutput.json(result, pretty: false).utf8))) as! [String: Any]
+        object["groups"] = try JSONSerialization.jsonObject(with: Data(CLIOutput.json(groups, pretty: false).utf8))
+        object["sort"] = sort.rawValue; object["limit"] = limit
+        writeJSONObject(object)
+    } else {
+        var lines = CLIOutput.statusLines(result.system)
+        lines.append("应用 / 进程\t内存计账\tCPU（100%=单核）\t进程数")
+        lines += groups.map { "\($0.name)\t\(DiagnosticFormat.memory($0))\t\(DiagnosticFormat.cpu($0))\t\($0.processes.count)" }
+        lines += result.advice
+        lines.append("身份不可读 \(result.unreadableIdentityCount) 个 · \(result.memoryAccounting)")
+        CLIOutput.write(lines.joined(separator: "\n") + "\n")
+    }
+    exit(result.ok ? 0 : 1)
+case .processAction(let json, let dryRun, let action, let pid, let token):
+    let result = ResourceActions.perform(pid: pid, token: token, action: action, dryRun: dryRun)
+    if json { CLIOutput.write(try CLIOutput.json(result, pretty: true)) }
+    else { CLIOutput.write(result.message + "\n", to: result.ok ? .standardOutput : .standardError) }
+    exit(result.ok ? 0 : 1)
 case .watch(let options):
     let (stop, sources) = CLISampling.stopOnSignals()
     let code = try CLISampling.watch(options, stop: stop) { CLIOutput.write($0) }

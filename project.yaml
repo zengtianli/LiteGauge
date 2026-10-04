@@ -48,6 +48,7 @@ sop:
     - litegauge
   ui:
   - Sources/App.swift
+  - Sources/DiagnosticsUI.swift
   source:
   - Sources/**
   - Tests/**

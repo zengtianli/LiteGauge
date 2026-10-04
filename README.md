@@ -19,15 +19,16 @@ CPU 标签与百分比上下排列，右侧两根竖条依次表示内存、磁�
 - **专注三项数据。** CPU/内存每 2 秒更新，磁盘容量每 60 秒更新；展开菜单或按 ⌘R 立即刷新。
 - **原生本机采集。** Swift + AppKit，无第三方运行依赖，不启动 shell 采集；采样离线，只有主动检查更新时访问发行渠道，无需账号。
 - **减少后台工作。** 屏幕休眠、系统睡眠或锁屏时暂停周期采集，恢复后重建 CPU 基线；可见整数变化时才更新菜单栏。
+- **查清占用并处理。** 菜单「资源诊断与处理…」按需合并应用及其辅助进程，按内存或 CPU 排序；可正常退出应用，或受控重启并自动复查前后内存。OrbStack 使用官方命令正常停启虚拟机后台，Shadowrocket 使用系统连接接口重连隧道。
 - **也能用于脚本和 agent。** 同一个程序提供 `status --json`、按 App 节奏连续输出的 `watch`，以及查询菜单栏实例的 `app status`；GUI 与 CLI 共用采集逻辑和配色阈值。
 
 ## 下载与安装
 
 需要 **Apple Silicon（M1 或更新）与 macOS 14 或更新版本**。当前不提供 Intel 构建，应用界面为中文。
 
-1. 在 [Releases](https://github.com/zengtianli/LiteGauge/releases/latest) 下载 `LiteGauge-0.1.2-arm64.dmg`。
+1. 在 [Releases](https://github.com/zengtianli/LiteGauge/releases/latest) 下载对应版本的 `LiteGauge-<版本>-arm64.dmg`。
 2. 打开 DMG，将 `LiteGauge.app` 拖到 `Applications`。
-3. 在「应用程序」中打开 LiteGauge，在屏幕顶部菜单栏查看读数。它没有 Dock 图标或普通主窗口。
+3. 在「应用程序」中打开 LiteGauge，在屏幕顶部菜单栏查看读数。它没有常驻主窗口，资源诊断窗口按需打开。
 
 也可下载 ZIP，解压后将应用拖入「应用程序」。正式发行包使用 Developer ID 签名、hardened runtime，并经过 Apple 公证；公证与 SHA-256 信息随每次 Release 的 `release.json` / `SHA256SUMS` 提供。更新前在轻仪菜单按 ⌘Q 退出，然后替换旧应用。
 
@@ -40,9 +41,20 @@ CPU 标签与百分比上下排列，右侧两根竖条依次表示内存、磁�
 | 点击菜单栏 CPU / 竖条 | 展开 CPU、内存、磁盘详情 |
 | 菜单内 ⌘R | 立即刷新 |
 | 菜单内 ⌘Q | 退出 LiteGauge |
+| 「资源诊断与处理…」 | 合并占用排行、内存压力解释、正常退出与重启后复查 |
 | 「打开活动监视器」 | 进一步查看进程占用 |
 
 原生菜单支持方向键和回车。没有全局快捷键。启动后首次 CPU 数值需要约 1 秒采样。
+
+### 资源诊断与处理（0.2.0 起）
+
+<img src="docs/media/diagnosis.png" width="740" alt="资源诊断：应用占用排行、内存压力和处理入口，同源 AppKit 示例值渲染">
+
+一次诊断约采样 1 秒，窗口显示应用路径内的各个进程合计。内存使用 `phys_footprint`，包含压缩及换出计账，不能直接相加当作物理 RAM；CPU 为区间使用率，100% 表示一个核心，与菜单栏整机 0–100% 的口径不同。受权限限制、采样期间退出或新启动的进程会标明不可用/部分覆盖。
+
+选择应用后可以「正常退出」或「重启并复查」。先显示影响，由用户确认；保留应用自身的保存提示，未能正常退出时停止，不强制结束。OrbStack 重启会短暂中断容器/虚拟机，Shadowrocket 重启会短暂断网；配置、镜像和数据保留。系统进程、独立后台任务或不能确定唯一实例的应用仅提供诊断。重启后的前后值为应用计账内存，不能冒充系统释放的物理 RAM。
+
+扫描只在打开诊断或点击刷新时执行，不增加后台进程轮询；不做系统缓存清空，也不自动结束或重启应用。窗口关闭后释放诊断界面。
 
 ## 命令行
 
@@ -64,6 +76,9 @@ ln -s /Applications/LiteGauge.app/Contents/MacOS/LiteGauge "$HOME/.local/bin/lit
 ```sh
 litegauge status                   # 一次读数：CPU / 内存 / 磁盘（采样约 1 秒）
 litegauge status --json            # 同上，输出一个 JSON 对象
+litegauge diagnose --sort memory --limit 10 --json # 应用占用、系统压力、覆盖范围和处理建议
+litegauge diagnose --sort cpu      # 按区间 CPU 排序（100%=一个核心）
+litegauge process restart --pid 123 --token 123:1790000000:0 --dry-run --json # token 从诊断结果读取；改 --yes 才执行
 litegauge watch --count 5 --json   # 按 App 节奏（默认每 2 秒）连续输出，每行一个 JSON（NDJSON）
 litegauge watch --interval 10      # 每 10 秒一行文本，Ctrl-C 结束
 litegauge app status --json        # 菜单栏实例是否在运行：pid、bundle 路径与版本
@@ -129,7 +144,7 @@ litegauge --help                   # 也可用 -h、help；任一命令或参数
 
 **为什么磁盘剩余量与 Finder 不同？** LiteGauge 读取启动盘 Data 卷所在 APFS 容器的总容量和当前可用块，不累加共享容量的多个卷，也不加回可清除空间。磁盘以十进制 GB 显示；竖条为已用比例，详情为剩余容量。
 
-**能监控网络、温度、风扇或各进程吗？** 当前版本只监控 CPU、内存和启动磁盘容量；没有网络速度、传感器、风扇控制、磁盘读写速率或历史曲线。需要进程详情时，可从菜单打开系统活动监视器。
+**能监控网络、温度、风扇或各进程吗？** 资源诊断支持应用与进程的内存/CPU 占用排行及受控处理；没有网络速度、传感器、风扇控制、磁盘读写速率或历史曲线。也可从菜单打开系统活动监视器。
 
 **可以与 Stats 一起安装吗？** 可以，两者使用不同名称和应用标识。并行运行的资源占用会相加；保留两款、平时只运行一款即可。
 

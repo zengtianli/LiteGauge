@@ -36,6 +36,28 @@ try save(panel(fixture), out.appendingPathComponent("panel.png"))
 let bar = StatusRenderer.image(cpu: fixture.cpuPercent, memory: fixture.memory?.percent, disk: fixture.disk?.usedPercent)
 try save(bar, out.appendingPathComponent("menubar.png"))
 
+// Public diagnostic screenshot: deterministic examples, no local process paths or private usage history.
+let exampleApps: [(String, String, UInt64, Double)] = [
+    ("Browser", "/Applications/Browser.app/Contents/MacOS/Browser", 2_600_000_000, 8),
+    ("OrbStack", "/Applications/OrbStack.app/Contents/MacOS/OrbStack", 1_350_000_000, 3),
+    ("Shadowrocket", "/Applications/Shadowrocket.app/Contents/MacOS/Shadowrocket", 160_000_000, 1),
+    ("Notes", "/Applications/Notes.app/Contents/MacOS/Notes", 90_000_000, 0.1)
+]
+let groups = exampleApps.enumerated().map { index, item in
+    ResourceGroup(id: "example-\(index)", name: item.0, bundlePath: ResourceDiagnostics.outerBundle(item.1),
+        processes: [ProcessUsage(identity: ProcessIdentity(pid: Int32(24001 + index), startSeconds: 1, startMicroseconds: 0,
+            executablePath: item.1, userID: UInt32.max), name: item.0, footprintBytes: item.2, cpuPercent: item.3)])
+}
+let diagnosis = ResourceDiagnosis(sampledAt: fixture.sampledAt, system: fixture, sampleSeconds: 1, groups: groups,
+    enumeratedProcessCount: 4, unreadableIdentityCount: 0, errors: [])
+let diagnosticView = DiagnosticViewController()
+diagnosticView.view.appearance = NSAppearance(named: .aqua)
+diagnosticView.apply(diagnosis)
+diagnosticView.view.layoutSubtreeIfNeeded()
+let diagnosticRep = diagnosticView.view.bitmapImageRepForCachingDisplay(in: diagnosticView.view.bounds)!
+diagnosticView.view.cacheDisplay(in: diagnosticView.view.bounds, to: diagnosticRep)
+try diagnosticRep.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent("diagnosis.png"))
+
 let captions = [
     ("01 / 菜单栏，一眼读懂", "左侧 CPU 百分比；右侧两根竖条依次表示内存、磁盘已用比例。"),
     ("02 / 内存，看数值也看压力", "详情同时显示内存压力和交换空间；占用高不一定代表内存不足。"),

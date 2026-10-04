@@ -19,15 +19,16 @@ A stacked CPU label and percentage are followed by two vertical bars for memory 
 - **Three focused readings.** CPU and memory update every 2 seconds; disk capacity every 60 seconds. Open the menu or press ⌘R to refresh immediately.
 - **Native local sampling.** Swift + AppKit, no third-party runtime dependencies or shell-based polling. Sampling stays offline; only an explicit update check contacts the release channel. No account is required.
 - **Less background work.** Periodic collection pauses during system sleep, display sleep, and screen lock. CPU sampling resets on resume, and the menu bar updates only when visible integer values change.
+- **Diagnose and act.** On-demand resource diagnosis groups apps and their helpers, ranks memory or CPU usage, and offers graceful quit or controlled restart with a before/after check. OrbStack uses its official CLI to stop/start the VM service; Shadowrocket reconnects its tunnel through the OS connection API.
 - **Ready for scripts and agents.** The same executable provides `status --json`, `watch` for readings at the app's cadence, and `app status` for the menu-bar instance; GUI and CLI share their collection code and colour thresholds.
 
 ## Download and install
 
 Requires **Apple Silicon (M1 or newer) and macOS 14 or later**. Intel builds are not currently provided. The application interface is in Chinese.
 
-1. Download `LiteGauge-0.1.2-arm64.dmg` from [Releases](https://github.com/zengtianli/LiteGauge/releases/latest).
+1. Download the matching `LiteGauge-<version>-arm64.dmg` from [Releases](https://github.com/zengtianli/LiteGauge/releases/latest).
 2. Open the DMG and drag `LiteGauge.app` into `Applications`.
-3. Launch LiteGauge from Applications and check the top menu bar. There is no Dock icon or regular main window.
+3. Launch LiteGauge from Applications and check the top menu bar. There is no persistent main window; resource diagnosis opens on demand.
 
 A ZIP is also available: extract it and move the app into Applications. Official release artifacts use Developer ID signing, hardened runtime, and Apple notarization. Each Release includes notarization information in `release.json` and hashes in `SHA256SUMS`. To update, quit LiteGauge with ⌘Q from its menu, then replace the old app.
 
@@ -40,9 +41,20 @@ No login item is added automatically, and other monitoring apps are not reconfig
 | Click the menu-bar CPU / bars | Open CPU, memory, and disk details |
 | ⌘R while the menu is open | Refresh immediately |
 | ⌘Q while the menu is open | Quit LiteGauge |
+| Resource diagnosis and actions | App rankings, memory-pressure explanation, graceful quit and restart with a follow-up check |
 | Open Activity Monitor | Inspect individual processes |
 
 The native menu supports arrow keys and Return. No global shortcuts are registered. The first CPU value requires approximately one second of sampling.
+
+### Resource diagnosis and actions (since 0.2.0)
+
+<img src="docs/media/diagnosis.png" width="740" alt="Resource diagnosis: app rankings, pressure and action controls; sample-value render of the production AppKit view">
+
+Each diagnosis samples for approximately one second and groups executables under their outer app bundle. Memory is `phys_footprint`, including compressed/swapped accounting, so app totals must not be added as physical RAM. Interval CPU uses 100% per core, unlike the menu bar's normalized whole-system 0–100%. Unreadable, exited and newly started processes are marked as unavailable or partial coverage.
+
+Select an app to quit gracefully or restart and recheck. The impact is shown for confirmation; normal save prompts are preserved and an app that refuses to quit is never force-killed. OrbStack restart briefly interrupts containers/VMs; Shadowrocket restart briefly interrupts networking. Settings, images and data are retained. System processes, standalone background tasks and ambiguous app instances are read-only. Before/after values describe app memory accounting, not the amount of physical RAM freed.
+
+Scanning runs only when diagnosis opens or Refresh is clicked. No background process polling, system cache purge or automatic quit/restart is added. Closing the window releases its controller.
 
 ## Command line
 
@@ -64,6 +76,9 @@ After adding `~/.local/bin` to PATH:
 ```sh
 litegauge status                   # one reading: CPU / memory / disk (about 1 s of sampling)
 litegauge status --json            # the same as one JSON object
+litegauge diagnose --sort memory --limit 10 --json # rankings, pressure, coverage and advice
+litegauge diagnose --sort cpu      # interval CPU ranking (100% = one core)
+litegauge process restart --pid 123 --token 123:1790000000:0 --dry-run --json # read token from diagnosis; --yes performs the action
 litegauge watch --count 5 --json   # stream at the app's cadence (every 2 s by default), one JSON object per line (NDJSON)
 litegauge watch --interval 10      # one text line every 10 s until Ctrl-C
 litegauge app status --json        # whether the menu-bar instance runs: pid, bundle path, version
@@ -129,7 +144,7 @@ These are measurements on the listed device and refresh settings, not a guarante
 
 **Why does free disk space differ from Finder?** LiteGauge reads the startup Data volume's APFS container capacity and currently available blocks. It does not add capacities across shared volumes or include purgeable space. Disk values use decimal GB. The bar shows used capacity; the detail panel shows available space.
 
-**Does it monitor network, temperature, fans, or individual processes?** This version focuses on CPU, memory, and startup-disk capacity. It does not include network speed, sensors, fan control, disk throughput, or history charts. Open Activity Monitor from the menu for process details.
+**Does it monitor network, temperature, fans, or individual processes?** The menu bar shows CPU, memory, and startup-disk capacity. Resource diagnosis provides on-demand application and process rankings, with supported quit or restart actions and a follow-up check. Network speed, sensors, fan control, disk throughput, and history charts are not included.
 
 **Can I keep Stats installed too?** Yes. They have different names and bundle identifiers. Running both adds their resource use together; keep both installed and run one at a time if you prefer.
 

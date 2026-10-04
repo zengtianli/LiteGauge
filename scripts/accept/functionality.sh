@@ -19,6 +19,21 @@ MEM="$(sysctl -n hw.memsize)"; PRESS="$(sysctl -n kern.memorystatus_vm_pressure_
 WATCH="$("$EXE" watch --interval 1 --count 2 --json)"
 # Menu-bar instances outside this acceptance run's temporary copies (other acceptors may start test instances from theirs).
 APPS="$("$EXE" app status --json)"; PIDS="$(ps -axo pid=,comm= | awk '$2 ~ /\/LiteGauge$/ && $2 !~ /litegauge-accept/ {print $1}' | tr '\n' ' ')"
+"$EXE" diagnose --limit 5 --json > "$WORK/diagnosis.json"
+# A bad identity must fail before attempting any action, even with --yes.
+set +e
+"$EXE" process restart --pid 2 --token 2:1:0 --yes --json > "$WORK/rejected-action.json"
+ACTION_CODE=$?
+set -e
+python3 - "$WORK/diagnosis.json" "$WORK/rejected-action.json" "$ACTION_CODE" <<'PY'
+import json, sys
+x=json.load(open(sys.argv[1])); bad=json.load(open(sys.argv[2]))
+assert x['ok'] and 1 <= len(x['groups']) <= 5 and x['sampleSeconds'] > 0
+assert x['unreadableIdentityCount'] >= 0 and x['memoryAccounting'] and x['cpuAccounting']
+assert all(p['token'] for g in x['groups'] for p in g['processes'])
+assert sys.argv[3] == '1' and bad['ok'] is False and bad['plan'] is None
+print('资源诊断/动作身份核验 4/4 项通过')
+PY
 python3 - "$JSON" "$DF" "$MEM" "$PRESS" "$WATCH" "$APPS" "$PIDS" "$SHORT_CODE:${#SHORT_OUT}" <<'PY'
 import json, os, sys
 s = json.loads(sys.argv[1]); df = sys.argv[2].split(); mem = int(sys.argv[3]); press = int(sys.argv[4])
