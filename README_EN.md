@@ -127,6 +127,9 @@ Exit codes: `0` success; `1` collection failure (`ok: false`) or `app quit` coul
 | "Unavailable" on read failure | `errors` / `errorCodes`, exit code 1 |
 | ⌘Q quit | `app quit --yes` (check the target with `--dry-run` first) |
 | Whether the menu-bar item is there | `app status` |
+| Concrete advice / automatic-care status | `care plan` / `care status` |
+| Opt in once / pause automatic care | `care enable --yes` / `care disable` |
+| Combined care for allowed abnormal services | `care run --dry-run` to preview, `care run --yes` to execute |
 
 GUI-only: clicking to open the menu, arrow-key menu navigation, "Open Activity Monitor" (use `ps` or `top` from the command line), and the automatic pause during sleep and screen lock (internal app behaviour with no user action). Development and acceptance flags `--ui-self-test`, `--snapshot`, `--benchmark`, and `--background` are listed in `--help`.
 

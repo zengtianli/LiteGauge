@@ -127,6 +127,9 @@ litegauge --help                   # 也可用 -h、help；任一命令或参数
 | 读取失败显示“不可用” | `errors` / `errorCodes`，退出码 1 |
 | ⌘Q 退出 | `app quit --yes`（先用 `--dry-run` 查看目标） |
 | 菜单栏图标是否在 | `app status` |
+| 具体资源建议 / 自动处理状态 | `care plan` / `care status` |
+| 一次允许 / 暂停后台自动处理 | `care enable --yes` / `care disable` |
+| 统一处理已允许的异常后台服务 | `care run --dry-run` 预览，`care run --yes` 执行 |
 
 只在界面里做的操作：点击展开菜单、方向键浏览菜单、「打开活动监视器」（命令行直接用 `ps` 或 `top`），以及睡眠、锁屏时自动暂停采样（App 内部行为，没有用户操作）。开发与验收参数 `--ui-self-test`、`--snapshot`、`--benchmark`、`--background` 见 `--help`。
 

@@ -1,0 +1,29 @@
+{
+  "version": "0.3.0",
+  "build": "6",
+  "source_commit": "fa82bb7",
+  "core_checks": 91,
+  "offscreen_ui_checks": 17,
+  "cli_counter_checks": 14,
+  "diagnosis_identity_checks": 4,
+  "care_preview_checks": 4,
+  "privacy_boundary_checks": 5,
+  "result": "passed",
+  "care_coverage": [
+    "Default disabled policy and explicit CLI intent",
+    "Sustained pressure, two observations, same process identity, idle input and foreground guards",
+    "Complete native CPU and memory coverage, busy-service deferral and user isolation",
+    "Retain aTrust, work apps, ordinary VM memory and stable index memory",
+    "Success and failure cooldowns, two-minute scan limit and sleep reset",
+    "Owner-only durable policy and journal, corrupt-policy rejection and action lease exclusion",
+    "Advice and combined operation available without selecting a process row",
+    "Read-only CLI planning and dry-run leave policy and journal unchanged",
+    "Native care engine performed a real healthy-service check with zero restart actions"
+  ],
+  "limits": [
+    "Automatic decisions are tested with controlled fixtures; healthy live services were not made artificially abnormal.",
+    "OrbStack and Shadowrocket native action adapters were exercised during 0.2.0 investigation; 0.3.0 reuses those adapters with care guards and a cross-process lease.",
+    "Offscreen AppKit checks do not prove physical menu clicks or real sleep/wake notifications.",
+    "Formal idle performance measurements for 0.3.0 remain pending; v0.1.2 figures are historical."
+  ]
+}
