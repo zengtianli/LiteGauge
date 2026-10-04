@@ -40,5 +40,20 @@
       "end": 24,
       "topic": "Disk remaining capacity"
     }
+  ],
+  "reused_for": {
+    "0.2.0 (5)": "录制早于源码提交；逐项核验五个生产源文件与录制时的 SHA-256 完全一致，画面可沿用。"
+  },
+  "ui_reviews": [
+    {
+      "checked_at": "2026-10-05T01:33:49.983525+08:00",
+      "unchanged": true,
+      "method": "SHA-256 equality of all five recorded production source files against current files; no post-recording source changes",
+      "ui_source_sha256": "fa6ac3c9f620228509110b5186e3fd8089cce5008e95c28da72f45db5ed7856c",
+      "ui_files": {
+        "Sources/App.swift": "cdca045cd038810b28c25cea4bc32e3c322baf554fbea2d78ea5584b94cdff78",
+        "Sources/DiagnosticsUI.swift": "37da03870f03b17d491e5262f00ac8d36608aa5fed7312bf26230a8dffcf46c7"
+      }
+    }
   ]
 }

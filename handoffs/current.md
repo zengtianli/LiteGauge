@@ -13,14 +13,14 @@
 
 - 官网：<https://litegauge.tianli.cyou/>
 - 源码：<https://github.com/zengtianli/LiteGauge>，MIT，中文 README / 对应英文 README。
-- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.1.2>（Latest）；v0.1.1、v0.1.0 资产仍在。
+- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.2.0>（Latest）；旧版本资产仍在。
 - 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
-- 安装 /Applications/LiteGauge.app（0.1.2 (3)），普通模式运行；升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
+- 安装 /Applications/LiteGauge.app（0.2.0 (5)），普通模式运行；升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
 - 源目录 ~/Apps/litegauge（2026-09-27 由 tlstats 改名），登记 id/family 为 litegauge。
 
 ## 发行与验证
 
-当前发布与装机：0.1.2 (3)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。源码 1d780db；ZIP 1,664,267 bytes，DMG 2,139,407 bytes；均 Developer ID 签名、Apple 公证 Accepted（e50d750e…、e29f0441…）。可执行 SHA256：66ed618b9bb0a64c31288a6a463343713b44d23a1eb1eeb0d7d0061357afe7ab。发布元数据以 release/latest.json 为准，详细经过见下方 2026-10-01「发布 0.1.2」。
+当前发布与装机：0.2.0 (5)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。构建源码 5b8e39c；ZIP 1,851,270 bytes，DMG 2,191,584 bytes；均 Developer ID 签名、Apple 公证 Accepted（89ded056…、ca8bf9a2…）。可执行 SHA256：b924a76ebf129e38c2564f6177ce9e9d9c663d019c304286dd68961ba6142526。发布元数据以 release/latest.json 为准，历史发行经过保留在下方记录。
 
 历史：0.1.0 (1) ZIP 1,626,948 bytes，DMG 2,129,632 bytes，可执行 SHA256 5f86b966…。perf/build-receipt.json 包围实际 bash scripts/package-release.sh 构建生成；独立解包、Gatekeeper、公证票据、DMG 内容、CLI JSON/错误码、干净源码副本构建已验；核心测试和 GitHub CI 通过。未在真实 macOS 14 设备运行。
 
@@ -28,7 +28,7 @@
 
 ## 实测
 
-当前数字（0.1.1，2026-09-29 重测；0.1.2 待空闲重测，见下方同日记录与 perf/lightweight.json）：安装包 1.6 MB / 装后 1.9 MB、内存 24.1 MB、空闲 CPU 0.98%、首个 CPU 读数 1.2 s。以下为 0.1.0 首测记录：
+最新正式实测为 0.1.2 (3)，2026-10-01：安装包 1.7 MB / 装后 1.9 MB、内存 15.7 MB、空闲 CPU 0%、首个 CPU 读数 1.2 s。0.2.0 待符合条件的空闲重测，官网明确标注上述数据属于历史版本。唯一事实源为 perf/lightweight.json。以下为 0.1.0 首测记录：
 
 M4 / 16 GiB，macOS 27.2，最终公证版菜单收起，启动后静置 45 秒，CPU 采样 60 秒，footprint 在窗口后取 3 次。
 
