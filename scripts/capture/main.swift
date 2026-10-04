@@ -56,6 +56,8 @@ let careReport = CarePlanner.report(diagnosis, policy: CarePolicy(enabled: true)
     context: CareContext(userID: UInt32.max, idleSeconds: 180, foregroundBundle: nil))
 diagnosticView.apply(diagnosis, careReport: careReport)
 diagnosticView.view.layoutSubtreeIfNeeded()
+RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+diagnosticView.view.layoutSubtreeIfNeeded()
 let diagnosticRep = diagnosticView.view.bitmapImageRepForCachingDisplay(in: diagnosticView.view.bounds)!
 diagnosticView.view.cacheDisplay(in: diagnosticView.view.bounds, to: diagnosticRep)
 try diagnosticRep.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent("diagnosis.png"))
