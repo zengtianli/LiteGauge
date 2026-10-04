@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-04T02:28:14+08:00",
+  "built_at": "2026-10-05T01:29:20+08:00",
   "artifact": {
     "bundle_id": "cyou.tianli.litegauge",
-    "version": "0.1.3",
-    "build": "4",
+    "version": "0.2.0",
+    "build": "5",
     "executable": "Contents/MacOS/LiteGauge",
-    "sha256": "f9939ea2220e06a2795e63a3da938db1c48867798c912a671e1ab5f86a405b8e",
+    "sha256": "b924a76ebf129e38c2564f6177ce9e9d9c663d019c304286dd68961ba6142526",
     "icon": {
       "path": "Contents/Resources/AppIcon.icns",
       "sha256": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f"
@@ -20,24 +20,27 @@
       "icon/AppIcon.icns",
       "build.sh"
     ],
-    "sha256": "7ddc142214ef44cf690a4184c3906fe8275b0126d17f97e09e3cb9302c9102d8",
-    "file_count": 11,
+    "sha256": "df4d05e84e7f4cb9c9813b9b0110cf00255ebf2749cf13d19b471f5548d24d29",
+    "file_count": 14,
     "files": {
       "Sources/AppConfiguration.swift": "66d1b04072dbcbcbbc556afb79be1181396fc8bd1a6940d5960adea742219edc",
       "Sources/AppLifecycleUI.swift": "c5bfb42bb97555125d3822a98ab0bab71adf368f0de1439f170f0dddb7456974",
       "Sources/AppLifecycle.swift": "07adaba8327f855b9a497346384ece9f8a526089c1c2f987b8873ab95a4fec3c",
-      "Sources/CLI.swift": "bbd67a2b811578827fc3bbb83335106b30d0cf66e7f747894b628daac61cb915",
+      "Sources/ResourceActions.swift": "c345318a34a3e2b6708fabac8820e3334d13ed72650d095be7fd83847a426cae",
+      "Sources/DiagnosticsUI.swift": "37da03870f03b17d491e5262f00ac8d36608aa5fed7312bf26230a8dffcf46c7",
+      "Sources/CLI.swift": "dc2ff575ea0fc14b66784ebaacba5f823d87a125102d00b81557d7b03603d5ec",
       "Sources/Metrics.swift": "7cf32ac9f3efa887926fcb5b81869edc5b892065d65d591f7383a2c351dda6d1",
-      "Sources/main.swift": "4b48e34d4d3fa3f2afbd282172a6bb391ccac3bebd085dea96eca09daa022236",
-      "Sources/App.swift": "818cb51aca0d1f85f4d5455e747d8ef7a758834c48929bc070784ae6a73eadda",
-      "Tests/main.swift": "80ad2c2e1230af17607ba17a67e975f08805f840a8ed3ff32cb9f9dd7fcb8f22",
-      "Info.plist": "1452ac9d9dba820a367ac78a97d057f8bcfe21033b227ad064d994a6cd63f2cf",
+      "Sources/main.swift": "8bc0fc31c4c092d2448b467f3dfba62ffe5922b88529da68c2dee629b95a7f6e",
+      "Sources/App.swift": "cdca045cd038810b28c25cea4bc32e3c322baf554fbea2d78ea5584b94cdff78",
+      "Sources/Diagnostics.swift": "5bb0ad61357092bca363c20587b60182810f85335f476f78adf298c3ff339975",
+      "Tests/main.swift": "3c65954a68ddf2a484dc01084821135e65620e9334b28bb4e7d06f57cb1d6b3c",
+      "Info.plist": "1e913dfd02292f0b21f6d7453865e883f13d45c44383c0b2d0f9ef49181d0114",
       "icon/AppIcon.icns": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f",
-      "build.sh": "afafc053dae4ee8dea6c25809e6c5f58655c6ad6465c7e4efd70738dc426d37e"
+      "build.sh": "4526ef1aac72a844c515458f2ac66c77a4a6fca41de06dcc8fe405c7d9c1fd2a"
     },
-    "commit": "c90f89c391b6b478584eb06f2bcb1387fca1f58f",
+    "commit": "5b8e39c07d065a8300d5c838729a8bf9d225a663",
     "dirty_scope": "组件当前 Git 工作树；跨仓/软链输入的实际内容由 sha256 核验",
     "dirty": false
   },
-  "build_command_sha256": "9837c459ad0a20455347134fe7a54dee4bd92b0cf14ce69c901c61a42f1ad403"
+  "build_command_sha256": "fdd07a116927da454cbbed4c526950e1be531c79b22b39f32b3a30cebc6e5713"
 }

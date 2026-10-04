@@ -5,6 +5,7 @@
 - 新增原生按需诊断、应用进程合并、内存/CPU 排行、正常退出和受控重启后复查；OrbStack 官方命令与 Shadowrocket 系统连接适配。保留 56 pt 菜单栏与原采样节奏。
 - 核心检查 65 项、离屏界面检查 15 项、CLI 检查及隐私边界通过。公开截图使用固定示例值，真实动作与个人机器调查记录仅保存在本机 build/。
 - 新版正式性能待空闲重测，保留 perf/lightweight.json 原版历史实测；当前发布与装机事实以 release/latest.json 和 perf/build-receipt.json 为准。
+- 0.2.0 (5) 已 Developer ID 签名并完成 ZIP/DMG 公证、装机及后台重启；源码 5b8e39c，GitHub CI 通过，发行入口为 v0.2.0。本机 CLI 已核版本、诊断输出和唯一菜单栏实例。
 
 2026-09-26。用户要求极简 CPU/内存/磁盘监控、紧凑菜单栏、改名且保留 Stats；随后授权 GitHub 与 product-homepage 推广。
 
