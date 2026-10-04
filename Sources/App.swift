@@ -87,6 +87,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     fileprivate var lastTitle = ""
     private let summary = SummaryView(frame: NSRect(x: 0, y: 0, width: 304, height: 276))
     private var diagnosticWindow: DiagnosticWindowController?
+    private var automaticCare: AutomaticCareController?
+    private var terminationDeferred = false
+    private var careStatusItem: NSMenuItem?
+    private var quitAfterCare = false
 
     init(benchmark: String?) { self.benchmark = benchmark }
 
@@ -106,6 +110,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.setAccessibilityLabel("轻仪：CPU、内存、磁盘")
         buildMenu()
         statusItem.menu = menu
+        if benchmark == nil {
+            let care = AutomaticCareController()
+            care.changed = { [weak self] text in self?.careStatusItem?.title = text }
+            care.finished = { [weak self] in
+                guard let self else { return }
+                if self.terminationDeferred { NSApp.reply(toApplicationShouldTerminate: true) }
+                else if self.quitAfterCare { NSApp.terminate(nil) }
+                else { self.diagnosticWindow?.diagnosticView.refresh() }
+            }
+            automaticCare = care; care.start()
+        }
         startObservingSleep()
         requestSample(forceDisk: true)
         startTimer()
@@ -120,9 +135,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let refresh = NSMenuItem(title: "立即刷新", action: #selector(refreshNow), keyEquivalent: "r")
         refresh.target = self
         menu.addItem(refresh)
-        let diagnose = NSMenuItem(title: "资源诊断与处理…", action: #selector(openDiagnosis), keyEquivalent: "")
+        let diagnose = NSMenuItem(title: "资源建议与自动处理…", action: #selector(openDiagnosis), keyEquivalent: "")
         diagnose.target = self
         menu.addItem(diagnose)
+        let careStatus = NSMenuItem(title: "自动处理未开启", action: nil, keyEquivalent: "")
+        careStatus.isEnabled = false; careStatusItem = careStatus; menu.addItem(careStatus)
         let activity = NSMenuItem(title: "打开活动监视器…", action: #selector(openActivityMonitor), keyEquivalent: "")
         activity.target = self
         menu.addItem(activity)
@@ -165,6 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func apply(_ snapshot: MetricsSnapshot) {
         latest = snapshot
+        automaticCare?.sample(snapshot)
         let title = MetricFormat.status(snapshot)
         if lastTitle != title {
             lastTitle = title
@@ -201,6 +219,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             requestSample(forceDisk: true)
             startTimer()
         } else {
+            automaticCare?.suspend()
             timer?.cancel()
             timer = nil
         }
@@ -218,7 +237,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func openActivityMonitor() {
         NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
     }
-    @objc private func quit() { NSApp.terminate(nil) }
+    @objc private func quit() { requestQuit() }
+    func requestQuit() {
+        if automaticCare?.isHandling == true {
+            quitAfterCare = true; automaticCare?.suspend()
+            careStatusItem?.title = "完成后台恢复后退出轻仪"
+        } else { NSApp.terminate(nil) }
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard automaticCare?.isHandling == true else { return .terminateNow }
+        terminationDeferred = true; automaticCare?.suspend()
+        careStatusItem?.title = "完成后台恢复后退出轻仪"
+        return .terminateLater
+    }
 
     func applicationWillTerminate(_ notification: Notification) {
         timer?.cancel()
@@ -336,9 +368,9 @@ extension AppDelegate {
         let items = menu.items
         let refresh = items.first { $0.title == "立即刷新" }, quit = items.first { $0.title == "退出轻仪" }
         let activity = items.first { $0.title == "打开活动监视器…" }
-        let diagnose = items.first { $0.title == "资源诊断与处理…" }
+        let diagnose = items.first { $0.title == "资源建议与自动处理…" }
         checks["menu_structure"] = items.count >= 7 && items[0].view === summary && items.last === quit
-            && ["立即刷新", "退出轻仪", "打开活动监视器…", "资源诊断与处理…"].allSatisfy { title in items.filter { $0.title == title }.count == 1 }
+            && ["立即刷新", "退出轻仪", "打开活动监视器…", "资源建议与自动处理…"].allSatisfy { title in items.filter { $0.title == title }.count == 1 }
         checks["shortcuts_cmd_r_q"] = refresh?.keyEquivalent == "r" && quit?.keyEquivalent == "q"
             && refresh?.keyEquivalentModifierMask == .command && quit?.keyEquivalentModifierMask == .command
         checks["actions_wired"] = [refresh, quit, activity, diagnose].allSatisfy { item in
@@ -396,7 +428,12 @@ extension AppDelegate {
         diagnosticView.view.layoutSubtreeIfNeeded()
         checks["diagnosis_live_groups"] = diagnosis.ok && !diagnosticView.rows.isEmpty
         checks["diagnosis_offscreen_renders"] = png(diagnosticView.view, "native-ui-diagnosis.png") > 1000
-        checks["diagnosis_no_automatic_work"] = !diagnosticView.busy && diagnosticWindow == nil
+        checks["diagnosis_preview_does_not_act"] = !diagnosticView.busy && diagnosticWindow == nil
+        let report = CarePlanner.report(diagnosis, policy: CarePolicy(enabled: true), journal: CareJournal(),
+            context: CareContext(userID: getuid(), idleSeconds: 180, foregroundBundle: nil))
+        diagnosticView.apply(diagnosis, careReport: report)
+        checks["recommendations_without_row_selection"] = diagnosticView.recommendationsWithoutSelection
+        checks["combined_action_without_row_selection"] = diagnosticView.batchWithoutSelection
 
         let ok = checks.values.allSatisfy { $0 }
         let result: [String: Any] = ["ok": ok, "checks": checks, "screenshots": ["native-ui-panel-initial.png", "native-ui-panel.png",

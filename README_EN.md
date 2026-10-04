@@ -1,6 +1,6 @@
 # LiteGauge
 
-“Check for Updates…” queries this product's GitHub Release on demand and offers an upgrade. No metrics are uploaded and no background update polling is added. This monitor currently has no separate preferences to migrate.
+“Check for Updates…” queries this product's GitHub Release on demand and offers an upgrade. No metrics are uploaded and no background update polling is added. Automatic-care policy and results stay local.
 
 [中文](README.md) | **English**
 
@@ -19,7 +19,7 @@ A stacked CPU label and percentage are followed by two vertical bars for memory 
 - **Three focused readings.** CPU and memory update every 2 seconds; disk capacity every 60 seconds. Open the menu or press ⌘R to refresh immediately.
 - **Native local sampling.** Swift + AppKit, no third-party runtime dependencies or shell-based polling. Sampling stays offline; only an explicit update check contacts the release channel. No account is required.
 - **Less background work.** Periodic collection pauses during system sleep, display sleep, and screen lock. CPU sampling resets on resume, and the menu bar updates only when visible integer values change.
-- **Diagnose and act.** On-demand resource diagnosis groups apps and their helpers, ranks memory or CPU usage, and offers graceful quit or controlled restart with a before/after check. OrbStack uses its official CLI to stop/start the VM service; Shadowrocket reconnects its tunnel through the OS connection API.
+- **Advice and automatic care.** Get concrete recommendations without selecting apps one at a time. After one opt-in, sustained memory pressure triggers guarded Shadowrocket reconnection or OrbStack restart, followed by a memory check and a local result. aTrust and work apps are retained.
 - **Ready for scripts and agents.** The same executable provides `status --json`, `watch` for readings at the app's cadence, and `app status` for the menu-bar instance; GUI and CLI share their collection code and colour thresholds.
 
 ## Download and install
@@ -41,20 +41,22 @@ No login item is added automatically, and other monitoring apps are not reconfig
 | Click the menu-bar CPU / bars | Open CPU, memory, and disk details |
 | ⌘R while the menu is open | Refresh immediately |
 | ⌘Q while the menu is open | Quit LiteGauge |
-| Resource diagnosis and actions | App rankings, memory-pressure explanation, graceful quit and restart with a follow-up check |
+| Resource advice and automatic care | Concrete recommendations, automatic-care status and optional process details |
 | Open Activity Monitor | Inspect individual processes |
 
 The native menu supports arrow keys and Return. No global shortcuts are registered. The first CPU value requires approximately one second of sampling.
 
-### Resource diagnosis and actions (since 0.2.0)
+### Resource advice and automatic care (since 0.3.0)
 
 <img src="docs/media/diagnosis.png" width="740" alt="Resource diagnosis: app rankings, pressure and action controls; sample-value render of the production AppKit view">
 
 Each diagnosis samples for approximately one second and groups executables under their outer app bundle. Memory is `phys_footprint`, including compressed/swapped accounting, so app totals must not be added as physical RAM. Interval CPU uses 100% per core, unlike the menu bar's normalized whole-system 0–100%. Unreadable, exited and newly started processes are marked as unavailable or partial coverage.
 
-Select an app to quit gracefully or restart and recheck. The impact is shown for confirmation; normal save prompts are preserved and an app that refuses to quit is never force-killed. OrbStack restart briefly interrupts containers/VMs; Shadowrocket restart briefly interrupts networking. Settings, images and data are retained. System processes, standalone background tasks and ambiguous app instances are read-only. Before/after values describe app memory accounting, not the amount of physical RAM freed.
+Automatic care defaults to off for public installs. After one opt-in, memory pressure must stay elevated for 90 seconds before a scan, with at least two minutes between scans and no additional process scans at normal pressure. Shadowrocket must exceed 512 MiB or OrbStack 2 GiB on two observations. The user must be idle for two minutes, the target must be in the background, and its CPU must be below 10%. Incomplete readings, identity changes and busy apps defer action.
 
-Scanning runs only when diagnosis opens or Refresh is clicked. No background process polling, system cache purge or automatic quit/restart is added. Closing the window releases its controller.
+Each check handles at most one allowed service. A successful action has a one-hour cooldown; failure pauses retries for six hours. OrbStack restarts briefly interrupt containers/VMs; Shadowrocket reconnects briefly interrupt networking. Settings, images and data remain intact. aTrust, browsers, editors and indexers are retained, and normal VM or stable index memory gets a keep recommendation. A single “Run recommendations” control provides an immediate check without per-app selection.
+
+Policy and the last 20 results stay in the owner-only `~/Library/Application Support/LiteGauge/` folder. Nothing is uploaded. Before/after values describe app memory accounting, not physical RAM freed. Quitting waits for an ongoing service restoration. Processes are never force-killed and system caches are never purged.
 
 ## Command line
 
@@ -78,6 +80,10 @@ litegauge status                   # one reading: CPU / memory / disk (about 1 s
 litegauge status --json            # the same as one JSON object
 litegauge diagnose --sort memory --limit 10 --json # rankings, pressure, coverage and advice
 litegauge diagnose --sort cpu      # interval CPU ranking (100% = one core)
+litegauge care plan --json         # concrete recommendations and reasons to defer or retain
+litegauge care enable --yes        # opt in once; care disable pauses automatic care
+litegauge care status --json       # policy, last check and action results
+litegauge care run --dry-run --json # preview the combined operation; --yes performs it
 litegauge process restart --pid 123 --token 123:1790000000:0 --dry-run --json # read token from diagnosis; --yes performs the action
 litegauge watch --count 5 --json   # stream at the app's cadence (every 2 s by default), one JSON object per line (NDJSON)
 litegauge watch --interval 10      # one text line every 10 s until Ctrl-C
@@ -144,7 +150,7 @@ These are measurements on the listed device and refresh settings, not a guarante
 
 **Why does free disk space differ from Finder?** LiteGauge reads the startup Data volume's APFS container capacity and currently available blocks. It does not add capacities across shared volumes or include purgeable space. Disk values use decimal GB. The bar shows used capacity; the detail panel shows available space.
 
-**Does it monitor network, temperature, fans, or individual processes?** The menu bar shows CPU, memory, and startup-disk capacity. Resource diagnosis provides on-demand application and process rankings, with supported quit or restart actions and a follow-up check. Network speed, sensors, fan control, disk throughput, and history charts are not included.
+**Does it monitor network, temperature, fans, or individual processes?** The menu bar shows CPU, memory, and startup-disk capacity. Resource advice includes process details and opt-in automatic care for the two supported background services. Network speed, sensors, fan control, disk throughput, and history charts are not included.
 
 **Can I keep Stats installed too?** Yes. They have different names and bundle identifiers. Running both adds their resource use together; keep both installed and run one at a time if you prefer.
 
@@ -152,7 +158,7 @@ These are measurements on the listed device and refresh settings, not a guarante
 
 **What if macOS refuses to open it?** Confirm you downloaded from this repository's Release and compare the file with `SHA256SUMS`. Official artifacts are signed and notarized. If it still fails, report the full message, macOS version, chip, and app version in an Issue. Do not disable Gatekeeper.
 
-**How do I uninstall it?** Quit LiteGauge from its menu and move the app to Trash. Remove the optional CLI symlink and login item if you added them. The app does not store monitoring history.
+**How do I uninstall it?** Quit LiteGauge from its menu and move the app to Trash. Remove the optional CLI symlink and login item if you added them. Delete `~/Library/Application Support/LiteGauge/` to remove local automatic-care policy and results too.
 
 ## Build from source
 

@@ -38,7 +38,7 @@ struct ResourceActionResult: Encodable {
 }
 
 /// Explicit actions only. Each adapter uses the application's own shutdown or the OS connection API.
-/// No cache purges, forced termination, automatic actions or changes to login items.
+/// The opt-in care controller shares these adapters. No cache purges, forced termination or login-item changes.
 enum ResourceActions {
     private final class OpenResult {
         private let lock = NSLock()
@@ -57,6 +57,9 @@ enum ResourceActions {
         guard ["quit", "restart"].contains(action), let (identity, _) = NativeProcessReader.identity(pid),
               identity.token == token, identity.userID == getuid(), pid != getpid(), pid > 1 else {
             throw ResourceActionError(message: "进程已变化、已退出或不属于当前用户；请重新诊断。")
+        }
+        guard !identity.executablePath.localizedCaseInsensitiveContains("atrust") else {
+            throw ResourceActionError(message: "aTrust 按保留规则略过，不安排退出或重启。")
         }
         guard let bundlePath = ResourceDiagnostics.outerBundle(identity.executablePath),
               !bundlePath.hasPrefix("/System/"), let bundle = Bundle(path: bundlePath),
@@ -138,11 +141,13 @@ enum ResourceActions {
         return rows.compactMap(\.footprintBytes).reduce(0, +)
     }
 
-    static func perform(pid: Int32, token: String, action: String, dryRun: Bool) -> ResourceActionResult {
+    static func perform(pid: Int32, token: String, action: String, dryRun: Bool, leaseOwned: Bool = false) -> ResourceActionResult {
         var plan: ResourceActionPlan?, before: UInt64?
         do {
             let p = try prepare(pid: pid, token: token, action: action); plan = p
             if dryRun { return ResourceActionResult(ok: true, dryRun: true, status: "preview", message: p.warning, plan: p, beforeBytes: nil, afterBytes: nil) }
+            let lease = leaseOwned ? nil : try CareLease()
+            defer { withExtendedLifetime(lease) {} }
             before = footprint(bundlePath: p.bundlePath)
             guard NativeProcessReader.identity(pid)?.0 == p.target else { throw ResourceActionError(message: "进程身份已经变化，请重新诊断。") }
             switch p.kind {

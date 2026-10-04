@@ -20,6 +20,20 @@ WATCH="$("$EXE" watch --interval 1 --count 2 --json)"
 # Menu-bar instances outside this acceptance run's temporary copies (other acceptors may start test instances from theirs).
 APPS="$("$EXE" app status --json)"; PIDS="$(ps -axo pid=,comm= | awk '$2 ~ /\/LiteGauge$/ && $2 !~ /litegauge-accept/ {print $1}' | tr '\n' ' ')"
 "$EXE" diagnose --limit 5 --json > "$WORK/diagnosis.json"
+"$EXE" care status --json > "$WORK/care-before.json"
+"$EXE" care plan --json > "$WORK/care-plan.json"
+"$EXE" care run --dry-run --json > "$WORK/care-preview.json"
+"$EXE" care status --json > "$WORK/care-after.json"
+python3 - "$WORK" <<'PY'
+import json, pathlib, sys
+p=pathlib.Path(sys.argv[1]); read=lambda name: json.loads((p/name).read_text())
+assert read('care-before.json') == read('care-after.json'), 'read-only planning must not change policy or journal'
+plan=read('care-plan.json'); preview=read('care-preview.json')
+assert plan['suggestions'] and isinstance(plan['enabled'],bool)
+assert preview['ok'] and preview['actions'] == [] and preview['report']['suggestions']
+assert all(r.get('service') in ('shadowrocket','orbstack') for r in plan['suggestions'] if r['state']=='ready')
+print('具体建议与统一处理预览 4/4 项通过（未操作应用）')
+PY
 # A bad identity must fail before attempting any action, even with --yes.
 set +e
 "$EXE" process restart --pid 2 --token 2:1:0 --yes --json > "$WORK/rejected-action.json"

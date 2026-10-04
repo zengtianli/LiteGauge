@@ -125,17 +125,20 @@ case .status(let json):
 case .diagnose(let json, let sort, let limit):
     let result = ResourceDiagnostics.collect()
     let groups = Array(result.sorted(sort).prefix(limit))
+    let recommendations = try? CareRuntime.preview(result)
     if json {
         // Preserve complete coverage metadata while returning only the requested ranking.
         var object = (try JSONSerialization.jsonObject(with: Data(CLIOutput.json(result, pretty: false).utf8))) as! [String: Any]
         object["groups"] = try JSONSerialization.jsonObject(with: Data(CLIOutput.json(groups, pretty: false).utf8))
         object["sort"] = sort.rawValue; object["limit"] = limit
+        if let recommendations { object["recommendations"] = try JSONSerialization.jsonObject(with: Data(CLIOutput.json(recommendations, pretty: false).utf8)) }
         writeJSONObject(object)
     } else {
         var lines = CLIOutput.statusLines(result.system)
         lines.append("应用 / 进程\t内存计账\tCPU（100%=单核）\t进程数")
         lines += groups.map { "\($0.name)\t\(DiagnosticFormat.memory($0))\t\(DiagnosticFormat.cpu($0))\t\($0.processes.count)" }
         lines += result.advice
+        lines += recommendations?.lines ?? ["操作策略不可读，自动处理已暂停。"]
         lines.append("身份不可读 \(result.unreadableIdentityCount) 个 · \(result.memoryAccounting)")
         CLIOutput.write(lines.joined(separator: "\n") + "\n")
     }
@@ -145,6 +148,33 @@ case .processAction(let json, let dryRun, let action, let pid, let token):
     if json { CLIOutput.write(try CLIOutput.json(result, pretty: true)) }
     else { CLIOutput.write(result.message + "\n", to: result.ok ? .standardOutput : .standardError) }
     exit(result.ok ? 0 : 1)
+case .care(let operation, let json, let dryRun):
+    do {
+        let store = CareStore()
+        switch operation {
+        case "enable", "disable":
+            try store.setEnabled(operation == "enable")
+            let policy = try store.policy()
+            if json { CLIOutput.write(try CLIOutput.json(policy, pretty: true)) }
+            else { CLIOutput.write(policy.enabled ? "已开启后台自动处理：Shadowrocket / OrbStack；aTrust 和工作应用保留。\n" : "已暂停后台自动处理。\n") }
+        case "status":
+            if json { writeJSONObject(["ok": true, "policy": try JSONSerialization.jsonObject(with: Data(CLIOutput.json(store.policy(), pretty: false).utf8)), "history": try JSONSerialization.jsonObject(with: Data(CLIOutput.json(store.journal(), pretty: false).utf8))]) }
+            else { CLIOutput.write("自动处理\(try store.policy().enabled ? "已开启" : "未开启")\n\(try store.journal().summary)\n") }
+        case "plan":
+            let report = try CareRuntime.preview(ResourceDiagnostics.collect())
+            if json { CLIOutput.write(try CLIOutput.json(report, pretty: true)) }
+            else { CLIOutput.write(report.lines.joined(separator: "\n") + "\n") }
+        default:
+            let result = try CareRuntime.run(batch: true, dryRun: dryRun)
+            if json { CLIOutput.write(try CLIOutput.json(result, pretty: true)) }
+            else { CLIOutput.write(result.report.lines.joined(separator: "\n") + "\n" + result.message + "\n") }
+            exit(result.ok ? 0 : 1)
+        }
+    } catch {
+        let message = (error as? ResourceActionError)?.message ?? error.localizedDescription
+        if json { writeJSONObject(["ok": false, "message": message]) } else { CLIOutput.write(message + "\n", to: .standardError) }
+        exit(1)
+    }
 case .watch(let options):
     let (stop, sources) = CLISampling.stopOnSignals()
     let code = try CLISampling.watch(options, stop: stop) { CLIOutput.write($0) }
@@ -167,6 +197,11 @@ case .gui(let benchmark):
     app.setActivationPolicy(.accessory)
     let delegate = AppDelegate(benchmark: benchmark)
     app.delegate = delegate
+    signal(SIGTERM, SIG_IGN)
+    let terminateSignal = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+    terminateSignal.setEventHandler { delegate.requestQuit() }; terminateSignal.resume()
     app.run()
+    terminateSignal.cancel()
+    withExtendedLifetime(terminateSignal) {}
     withExtendedLifetime(delegate) {}
 }

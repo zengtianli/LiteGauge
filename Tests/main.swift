@@ -210,4 +210,96 @@ let groupJSON = object(try CLIOutput.json(ownGroup, pretty: false))
 let processesJSON = groupJSON["processes"] as? [[String: Any]] ?? []
 check(groupJSON["footprintBytes"] as? Int == 30 && groupJSON["missingCPUCount"] as? Int == 1
       && processesJSON.allSatisfy { $0["token"] is String }, "JSON includes aggregate counters, missing coverage and stable action tokens")
+// Automatic care must conserve work and avoid turning a single large reading into a restart.
+let careNow = Date(timeIntervalSince1970: 2000)
+let careContext = CareContext(userID: 501, idleSeconds: 180, foregroundBundle: nil)
+func careGroup(_ name: String, memory: UInt64? = 3 * 1_073_741_824, cpu: Double? = 1,
+               uid: UInt32 = 501, start: UInt64 = 1) -> ResourceGroup {
+    let path = "/Applications/\(name).app/Contents/MacOS/\(name)"
+    return ResourceGroup(id: name, name: name, bundlePath: ResourceDiagnostics.outerBundle(path), processes: [
+        ProcessUsage(identity: ProcessIdentity(pid: 29000, startSeconds: start, startMicroseconds: 0, executablePath: path, userID: uid),
+                     name: name, footprintBytes: memory, cpuPercent: cpu)])
+}
+func careDiagnosis(_ groups: [ResourceGroup], pressure: String = "偏高", errors: [String] = []) -> ResourceDiagnosis {
+    let system = MetricsSnapshot(sampledAt: careNow, cpuPercent: 25,
+        memory: MemoryReading(totalBytes: 16 * 1_073_741_824, usedBytes: 13 * 1_073_741_824,
+                              compressedBytes: 0, swapUsedBytes: 0, pressure: pressure), disk: fixtureDisk, errors: [])
+    return ResourceDiagnosis(sampledAt: careNow, system: system, sampleSeconds: 1, groups: groups,
+                             enumeratedProcessCount: groups.count, unreadableIdentityCount: 0, errors: errors)
+}
+let managedGroup = careGroup("Shadowrocket")
+let careFixture = careDiagnosis([managedGroup])
+var careHistory = CareJournal()
+CarePlanner.observe(careFixture, journal: &careHistory, userID: 501, now: careNow.addingTimeInterval(-120))
+let enabledCare = CarePolicy(enabled: true)
+func careReady(_ value: ResourceDiagnosis = careFixture, policy: CarePolicy = enabledCare,
+               history: CareJournal = careHistory, context: CareContext = careContext, batch: Bool = false) -> Bool {
+    !CarePlanner.report(value, policy: policy, journal: history, context: context, now: careNow, batch: batch).ready.isEmpty
+}
+check(!CarePolicy().enabled && !careReady(policy: CarePolicy()), "public installs require one policy opt-in")
+check(careReady(), "sustained high footprint, pressure and idle may schedule the allowed adapter")
+check(!careReady(history: CareJournal()), "one high reading cannot trigger automatic restart")
+check(!careReady(careDiagnosis([careGroup("Shadowrocket", start: 2)])), "reused PID invalidates historical high-memory evidence")
+check(!careReady(careDiagnosis([careGroup("Shadowrocket", memory: nil)]))
+      && !careReady(careDiagnosis([careGroup("Shadowrocket", cpu: nil)])), "incomplete memory or CPU coverage stops care")
+check(!careReady(careDiagnosis([careGroup("Shadowrocket", uid: 502)])), "care never targets another user")
+check(!careReady(careDiagnosis([careGroup("Shadowrocket", cpu: 10)])), "busy background service is preserved")
+check(!careReady(context: CareContext(userID: 501, idleSeconds: nil, foregroundBundle: nil))
+      && !careReady(context: CareContext(userID: 501, idleSeconds: 119, foregroundBundle: nil)), "unknown or recent input prevents automatic action")
+check(!careReady(context: CareContext(userID: 501, idleSeconds: 180, foregroundBundle: managedGroup.bundlePath)), "frontmost service is preserved")
+check(!careReady(careDiagnosis([managedGroup], pressure: "正常"))
+      && !careReady(careDiagnosis([managedGroup], pressure: "未知"))
+      && !careReady(careDiagnosis([managedGroup], errors: ["unavailable"])), "normal, unknown pressure or failed diagnosis prevents care")
+check(!careReady(careDiagnosis([careGroup("OrbStack", memory: 1_500_000_000)])), "ordinary VM footprint is retained")
+let protectedReport = CarePlanner.report(careDiagnosis([careGroup("aTrustAgent"), careGroup("Dia"), careGroup("Sift")]),
+    policy: enabledCare, journal: careHistory, context: careContext, now: careNow, batch: true)
+check(protectedReport.ready.isEmpty && protectedReport.suggestions.first(where: { $0.name == "aTrustAgent" })?.state == "ignored"
+      && protectedReport.suggestions.first(where: { $0.name == "Sift" })?.state == "keep", "aTrust, browsers and indexers never enter automatic adapters")
+var cooling = careHistory
+cooling.events = [CareEvent(at: careNow.addingTimeInterval(-3599), service: .shadowrocket, ok: true, message: "done", beforeBytes: nil, afterBytes: nil)]
+check(!careReady(history: cooling, batch: true), "even an explicit batch observes successful-action cooldown")
+cooling.events = [CareEvent(at: careNow.addingTimeInterval(-21599), service: .shadowrocket, ok: false, message: "failed", beforeBytes: nil, afterBytes: nil)]
+check(!careReady(history: cooling), "failed adapter pauses automatic retries for six hours")
+check(careReady(history: CareJournal(), context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: nil), batch: true),
+      "explicit batch can act without waiting for idle or a second sample")
+let orderedCare = CarePlanner.report(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824), managedGroup]),
+    policy: enabledCare, journal: careHistory, context: careContext, now: careNow)
+check(orderedCare.suggestions.first?.service == .shadowrocket, "concrete managed operations precede read-only work app advice")
+var careSchedule = CareSchedule()
+check(!careSchedule.due(.elevated, enabled: true, uptime: 0)
+      && !careSchedule.due(.elevated, enabled: true, uptime: 89)
+      && careSchedule.due(.elevated, enabled: true, uptime: 90)
+      && !careSchedule.due(.elevated, enabled: true, uptime: 209)
+      && careSchedule.due(.elevated, enabled: true, uptime: 210), "care waits ninety seconds and limits diagnosis cadence to two minutes")
+check(!careSchedule.due(.normal, enabled: true, uptime: 220)
+      && !careSchedule.due(.elevated, enabled: true, uptime: 400), "normal pressure resets sustained-pressure evidence")
+careSchedule.reset()
+check(!careSchedule.due(.critical, enabled: true, uptime: 1000)
+      && !careSchedule.due(.critical, enabled: false, uptime: 2000), "sleep reset and disabled policy prevent scans")
+check(parsed(["care", "plan", "--json"]) == .care(operation: "plan", json: true, dryRun: false)
+      && parsed(["care", "run", "--dry-run"]) == .care(operation: "run", json: false, dryRun: true), "care supports concrete read-only plans and previews")
+check([["care", "enable"], ["care", "run"], ["care", "run", "--yes", "--dry-run"],
+       ["care", "plan", "--yes"]].allSatisfy(rejected), "care mutations require explicit CLI intent")
+let careDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("litegauge-care-test-\(UUID().uuidString)")
+defer { try? FileManager.default.removeItem(at: careDirectory) }
+let careStore = CareStore(directory: careDirectory)
+let absentPolicy = try careStore.policy()
+check(!absentPolicy.enabled, "missing policy defaults to disabled")
+try careStore.setEnabled(true); try careStore.save(careHistory)
+let fileMode = try FileManager.default.attributesOfItem(atPath: careDirectory.appendingPathComponent("care-policy.json").path)[.posixPermissions] as? Int
+let folderMode = try FileManager.default.attributesOfItem(atPath: careDirectory.path)[.posixPermissions] as? Int
+let savedPolicy = try careStore.policy(), savedJournal = try careStore.journal()
+check(savedPolicy.enabled && savedJournal.points.count == 1 && fileMode == 0o600 && folderMode == 0o700,
+      "policy and evidence persist locally with owner-only permissions")
+var firstLease: CareLease? = try CareLease(directory: careDirectory)
+var leaseBlocked = false
+do { _ = try CareLease(directory: careDirectory) } catch { leaseBlocked = true }
+check(firstLease != nil && leaseBlocked, "cross-process action lease excludes another action")
+firstLease = nil
+let nextLease = try CareLease(directory: careDirectory)
+check(nextLease !== firstLease, "completed action releases its lease")
+try Data("broken".utf8).write(to: careDirectory.appendingPathComponent("care-policy.json"))
+var corruptRejected = false
+do { _ = try careStore.policy() } catch { corruptRejected = true }
+check(corruptRejected, "unreadable policy fails closed instead of silently enabling automation")
 print("PASS \(checks) checks")

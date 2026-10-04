@@ -112,14 +112,14 @@ struct ResourceDiagnosis: Encodable {
         if let memory = system.memory {
             switch memory.pressureLevel {
             case .normal: lines.append("内存压力正常；占用比例高时，先看压力和交换变化，无需为了空闲比例清缓存。")
-            case .elevated, .critical: lines.append("内存压力\(memory.pressure)：先查看占用靠前的应用，保存工作，再关闭不用的页面、容器或正常退出应用。")
+            case .elevated, .critical: lines.append("内存压力\(memory.pressure)：按具体建议处理已允许的异常后台应用，保留正在使用的工作。")
             case .unknown: lines.append("内存压力不可读，暂时无法判断是否吃紧。")
             }
             if let swap = memory.swapUsedBytes, swap > 0 {
                 lines.append("交换使用 \(MetricFormat.gib(swap))；它反映当前换出数据，不能仅凭这个数字断定应用泄漏。")
             }
         }
-        if let busiest = sorted(.cpu).first, busiest.cpuPercent >= 80 {
+        if let busiest = sorted(.cpu).first(where: { !CarePlanner.protected($0) }), busiest.cpuPercent >= 80 {
             lines.append("\(busiest.name) 在本次采样占用 \(Int(busiest.cpuPercent.rounded()))% CPU；短时高占用需再次采样确认。")
         }
         if unreadableIdentityCount > 0 || groups.contains(where: { $0.missingMemoryCount + $0.missingCPUCount > 0 }) {

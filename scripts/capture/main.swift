@@ -38,7 +38,7 @@ try save(bar, out.appendingPathComponent("menubar.png"))
 
 // Public diagnostic screenshot: deterministic examples, no local process paths or private usage history.
 let exampleApps: [(String, String, UInt64, Double)] = [
-    ("Browser", "/Applications/Browser.app/Contents/MacOS/Browser", 2_600_000_000, 8),
+    ("Google Chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", 2_600_000_000, 8),
     ("OrbStack", "/Applications/OrbStack.app/Contents/MacOS/OrbStack", 1_350_000_000, 3),
     ("Shadowrocket", "/Applications/Shadowrocket.app/Contents/MacOS/Shadowrocket", 160_000_000, 1),
     ("Notes", "/Applications/Notes.app/Contents/MacOS/Notes", 90_000_000, 0.1)
@@ -52,7 +52,9 @@ let diagnosis = ResourceDiagnosis(sampledAt: fixture.sampledAt, system: fixture,
     enumeratedProcessCount: 4, unreadableIdentityCount: 0, errors: [])
 let diagnosticView = DiagnosticViewController()
 diagnosticView.view.appearance = NSAppearance(named: .aqua)
-diagnosticView.apply(diagnosis)
+let careReport = CarePlanner.report(diagnosis, policy: CarePolicy(enabled: true), journal: CareJournal(),
+    context: CareContext(userID: UInt32.max, idleSeconds: 180, foregroundBundle: nil))
+diagnosticView.apply(diagnosis, careReport: careReport)
 diagnosticView.view.layoutSubtreeIfNeeded()
 let diagnosticRep = diagnosticView.view.bitmapImageRepForCachingDisplay(in: diagnosticView.view.bounds)!
 diagnosticView.view.cacheDisplay(in: diagnosticView.view.bounds, to: diagnosticRep)

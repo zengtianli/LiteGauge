@@ -59,7 +59,17 @@ if { [ -e "$LINK" ] || [ -L "$LINK" ]; } && [ "$(readlink "$LINK" || true)" != "
 fi
 
 for pid in $PIDS; do
-  "$NEW" app quit --yes --pid "$pid"
+  if ! "$NEW" app quit --yes --pid "$pid"; then
+    echo 'Waiting for the active background service to finish restoring before upgrade…'
+    for _ in $(seq 120); do
+      kill -0 "$pid" 2>/dev/null || break
+      sleep 1
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      echo 'Background restoration is still running; upgrade stopped without forcing exit.' >&2
+      exit 1
+    fi
+  fi
   WAS_RUNNING=1
 done
 

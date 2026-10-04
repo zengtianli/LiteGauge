@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>轻仪 LiteGauge — 小小菜单栏，看清 Mac 状态</title>
-  <meta name="description" content="轻仪是免费的原生 macOS 菜单栏监控工具。在 56 点宽度里查看 CPU、内存和启动磁盘，按需诊断应用占用、正常退出或重启后复查。">
+  <meta name="description" content="轻仪是免费的原生 macOS 菜单栏监控工具。在 56 点宽度里查看 CPU、内存和启动磁盘，给出具体资源建议，一次允许后自动处理异常后台占用。">
   <link rel="canonical" href="{{SITE_URL}}/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="zh_CN">
@@ -49,7 +49,7 @@
     <section class="essentials wrap" aria-label="产品特点">
       <article><span class="feature-index">01</span><div><h2>一眼看三项</h2><p>CPU 数字，内存与磁盘竖条。<br>菜单栏固定 {{MENU_WIDTH}} 点宽。</p></div></article>
       <article><span class="feature-index">02</span><div><h2>原生，少负担</h2><p>只用 Apple 系统框架。<br>锁屏与睡眠时暂停周期采集。</p></div></article>
-      <article><span class="feature-index">03</span><div><h2>按需查清占用</h2><p>应用内存与 CPU 排行。<br>正常退出或重启后复查。</p></div></article>
+      <article><span class="feature-index">03</span><div><h2>建议与自动处理</h2><p>一次允许，后台安排处理。<br>无需逐个点选应用。</p></div></article>
     </section>
 
     {{PERFORMANCE_SECTION}}
@@ -68,19 +68,19 @@
         <div class="demo-notes">
           <article><span>01</span><div><h3>收起，保持简洁</h3><p>CPU 和内存每 2 秒更新，磁盘容量每 60 秒更新。竖条越满，已用比例越高。</p></div></article>
           <article><span>02</span><div><h3>展开，看看细节</h3><p>查看内存压力、交换空间和磁盘剩余容量。菜单里的「立即刷新」也支持 <kbd>⌘</kbd> <kbd>R</kbd>。</p></div></article>
-          <article><span>03</span><div><h3>需要排查，再深入</h3><p>选择「资源诊断与处理…」，查看应用占用排行，正常退出或重启后复查。退出轻仪可用 <kbd>⌘</kbd> <kbd>Q</kbd>。</p></div></article>
+          <article><span>03</span><div><h3>建议直接给，后台安排做</h3><p>「资源建议与自动处理…」显示具体建议。一次允许后，异常后台占用按规则处理并复查。退出轻仪可用 <kbd>⌘</kbd> <kbd>Q</kbd>。</p></div></article>
         </div>
       </div>
     </section>
 
     <section class="section wrap" aria-labelledby="diagnosis-title">
-      <div class="section-heading"><div><p class="eyebrow">资源诊断 · v0.2.0 起</p><h2 id="diagnosis-title">找出占用，处理后复查。</h2></div><p>从菜单打开「资源诊断与处理…」。<br>只在打开或刷新时扫描，日常采样节奏保持不变。</p></div>
+      <div class="section-heading"><div><p class="eyebrow">自动处理 · v0.3.0 起</p><h2 id="diagnosis-title">给出建议，也替你处理。</h2></div><p>一次允许，无需逐个点选。<br>持续高压力才检查，空闲时处理，完成后复查。</p></div>
       <div class="demo-grid">
-        <figure class="video-figure"><img src="media/diagnosis.png" width="740" height="640" loading="lazy" style="width:100%;height:auto" alt="资源诊断：按应用合并内存与 CPU，占用排行和处理入口"><figcaption>同源 AppKit 离屏渲染，固定示例值；操作确认和真实重启未包含在截图中。</figcaption></figure>
+        <figure class="video-figure"><img src="media/diagnosis.png" width="740" height="740" loading="lazy" style="width:100%;height:auto" alt="具体资源建议、自动处理状态与可核对的进程明细"><figcaption>同源 AppKit 离屏渲染，固定示例值；真实自动重启与结果未包含在截图中。</figcaption></figure>
         <div class="demo-notes">
-          <article><span>01</span><div><h3>先看压力，再看排行</h3><p>合并应用及其辅助进程，按内存或 CPU 排序。内存包含压缩与换出计账，不能直接相加当作物理 RAM。</p></div></article>
-          <article><span>02</span><div><h3>选择处理，确认影响</h3><p>正常退出应用并保留保存提示；重启 OrbStack 会短暂中断容器，重连 Shadowrocket 会短暂断网。配置与数据保留。</p></div></article>
-          <article><span>03</span><div><h3>处理完成，查看变化</h3><p>自动复查前后应用计账内存。不自动结束进程或清系统缓存；受系统权限限制的读数会注明覆盖范围。</p></div></article>
+          <article><span>01</span><div><h3>直接看建议</h3><p>告诉你哪个后台应用值得处理、哪个占用应保留；无需从排行榜逐项判断。aTrust、工作应用和稳定文件索引保留。</p></div></article>
+          <article><span>02</span><div><h3>一次允许，空闲时自动做</h3><p>仅处理持续异常的 Shadowrocket / OrbStack。重连或正常重启会短暂中断网络或容器；忙碌、前台使用或读数不完整时暂缓，配置与数据保留。</p></div></article>
+          <article><span>03</span><div><h3>复查效果，避免重复</h3><p>前后内存与最近 20 条结果只保存在本机。正常压力不扫描进程；成功后观察 1 小时，失败后暂停 6 小时。策略默认关闭，可随时暂停。</p></div></article>
         </div>
       </div>
     </section>
@@ -105,7 +105,7 @@
         <details><summary>为什么打开后没有窗口？</summary><p>轻仪是菜单栏应用，入口在屏幕右上角。看到 CPU 数字与两根竖条后，点击即可展开详情；资源诊断窗口从菜单按需打开。菜单栏空间不足时，可先收起其他菜单栏项目。</p></details>
         <details><summary>内存占用高，就代表内存不够吗？</summary><p>不一定。展开后结合「压力」和交换空间查看。轻仪从已用内存中扣除可回收文件缓存与可清除页；内存以 GiB 显示，16 GiB 的机器显示总量为 16.0 GiB。</p></details>
         <details><summary>磁盘可用空间为什么和访达不同？</summary><p>轻仪显示启动磁盘 Data 卷所在 APFS 容器的当前可用块，不加回系统可清除空间，所以可能与访达显示不同。磁盘竖条表示已用比例，展开后的数字表示剩余容量。</p></details>
-        <details><summary>会联网、收集数据或自动开机启动吗？</summary><p>资源采集和诊断离线进行，不设账号、不上传使用数据；只有主动检查更新时访问发行渠道，开机启动可由用户在菜单中选择。无需使用时，菜单中选择「退出轻仪」即可。</p></details>
+        <details><summary>会联网、收集数据或自动开机启动吗？</summary><p>资源采集和诊断离线进行，不设账号、不上传使用数据；自动处理策略与结果仅存在本机。只有主动检查更新时访问发行渠道，开机启动可由用户在菜单中选择。自动处理默认关闭，首次允许后生效。</p></details>
         <details><summary>会和已有监控软件冲突吗？</summary><p>可以保留其他监控软件，轻仪不会更改它们的设置。多款软件同时运行会叠加占用；日常选择其中一款运行即可。轻仪提供三项概览及按需进程诊断，没有网络速率、传感器、风扇控制或历史曲线。</p></details>
         <details><summary>出现「—」或「不可用」怎么办？</summary><p>刚启动时先等待约 1 秒建立 CPU 采样基线。若仍不可用，展开菜单选择「立即刷新」；仍未恢复时退出后重新打开。反馈问题时附上 macOS 版本与不可用的指标即可，不需要上传个人文件。</p></details>
         <details><summary>如何更新或卸载？</summary><p>更新前先从菜单选择「退出轻仪」，下载新版并用它替换「应用程序」里的 LiteGauge.app。卸载时退出应用，再将它移到废纸篓；没有另装的后台服务需要清理。</p></details>

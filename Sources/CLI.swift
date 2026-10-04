@@ -3,7 +3,7 @@ import Foundation
 // Command-line surface for agents and scripts. Foundation only, so the core tests compile it without AppKit.
 // Readings come from the same MetricsSampler / MetricFormat / MetricThresholds the menu-bar App draws from.
 
-let version = "0.2.0"
+let version = "0.3.0"
 
 struct WatchOptions: Equatable {
     var interval: TimeInterval = MetricsSampler.sampleInterval
@@ -18,6 +18,7 @@ enum CLICommand: Equatable {
     case status(json: Bool)
     case diagnose(json: Bool, sort: DiagnosticSort, limit: Int)
     case processAction(json: Bool, dryRun: Bool, action: String, pid: Int32, token: String)
+    case care(operation: String, json: Bool, dryRun: Bool)
     case watch(WatchOptions)
     case appStatus(json: Bool)
     case appQuit(json: Bool, dryRun: Bool, pid: Int32?)
@@ -44,6 +45,12 @@ enum CLI {
           按需扫描并合并应用进程，报告内存压力、主要占用与建议；CPU 的 100% 表示一个核心。
       litegauge process quit|restart --pid <pid> --token <诊断中的token> (--dry-run | --yes) [--json]
           正常退出或受控重启所选应用，核对进程身份，完成后复查占用；不强制结束系统进程。
+      litegauge care plan|status [--json]
+          汇总具体操作建议，或查看自动处理策略与最近结果，不需要逐个选择进程。
+      litegauge care enable --yes [--json] | care disable [--json]
+          一次允许/暂停 Shadowrocket、OrbStack 的后台自动处理。隧道/容器可能短暂中断，aTrust 和工作应用保留。
+      litegauge care run (--dry-run | --yes) [--json]
+          按建议处理已允许且占用异常的后台应用并复查，最多执行一项；正常占用保留。
       litegauge watch [--interval <秒>] [--count <次数>] [--json]
           按 App 的节奏持续输出：默认每 \(Int(MetricsSampler.sampleInterval)) 秒（1–3600），磁盘容量缓存 \(Int(MetricsSampler.diskInterval)) 秒；
           --json 时每行一个 JSON 对象（NDJSON）。次数到达或 Ctrl-C 后结束。
@@ -67,7 +74,7 @@ enum CLI {
     """
 
     static let usageText = """
-    用法：litegauge status [--json] | diagnose [--sort memory|cpu] [--limit 1..50] [--json] | process quit|restart --pid <pid> --token <token> (--dry-run | --yes) | watch [--interval <秒>] [--count <次数>] [--json] | app status [--json] | app quit (--dry-run | --yes) [--pid <pid>] [--json] | --version | --help
+    用法：litegauge status [--json] | care plan|status|enable|disable|run [--json] | diagnose [--sort memory|cpu] [--limit 1..50] [--json] | process quit|restart --pid <pid> --token <token> (--dry-run | --yes) | watch [--interval <秒>] [--count <次数>] [--json] | app status [--json] | app quit (--dry-run | --yes) [--pid <pid>] [--json] | --version | --help
     litegauge 不带参数不会启动菜单栏 App；从「应用程序」打开，或 open -g -j /Applications/LiteGauge.app。
     """
 
@@ -92,6 +99,14 @@ enum CLI {
                     return fail("diagnose 的 --sort 须为 memory 或 cpu，--limit 须为 1 到 50")
                 }
                 return .success(.diagnose(json: found["--json"] != nil, sort: sort, limit: limit))
+            }
+        case "care":
+            guard let operation = rest.first, ["plan", "status", "enable", "disable", "run"].contains(operation) else { return fail("care 需要 plan、status、enable、disable 或 run") }
+            let switches: Set<String> = operation == "run" ? ["--json", "--yes", "--dry-run"] : operation == "enable" ? ["--json", "--yes"] : ["--json"]
+            return options(Array(rest.dropFirst()), switches: switches).flatMap { found in
+                if operation == "enable" && found["--yes"] == nil { return fail("开启后台自动处理须加 --yes；允许已列明的短暂隧道/容器中断") }
+                if operation == "run" && ((found["--yes"] != nil) == (found["--dry-run"] != nil)) { return fail("care run 需要 --dry-run 或 --yes，任选一个") }
+                return .success(.care(operation: operation, json: found["--json"] != nil, dryRun: found["--dry-run"] != nil))
             }
         case "process":
             guard let action = rest.first, ["quit", "restart"].contains(action) else { return fail("process 需要子命令 quit 或 restart") }

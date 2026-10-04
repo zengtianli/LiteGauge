@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build/media docs/media
-xcrun swiftc -swift-version 5 -O -sdk "$(xcrun --sdk macosx --show-sdk-path)" Sources/Metrics.swift Sources/Diagnostics.swift Sources/CLI.swift Sources/ResourceActions.swift Sources/DiagnosticsUI.swift Sources/App.swift Sources/AppLifecycle.swift Sources/AppConfiguration.swift Sources/AppLifecycleUI.swift scripts/capture/main.swift -o build/media/capture
+xcrun swiftc -swift-version 5 -O -sdk "$(xcrun --sdk macosx --show-sdk-path)" Sources/Metrics.swift Sources/Diagnostics.swift Sources/ResourceCare.swift Sources/ResourceCareRuntime.swift Sources/CLI.swift Sources/ResourceActions.swift Sources/DiagnosticsUI.swift Sources/App.swift Sources/AppLifecycle.swift Sources/AppConfiguration.swift Sources/AppLifecycleUI.swift scripts/capture/main.swift -o build/media/capture
 build/media/capture build/media
 cp build/media/panel.png build/media/menubar.png build/media/diagnosis.png docs/media/
 ffmpeg -hide_banner -loglevel error -y -framerate 1 -i build/media/frames/%03d.png -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -r 30 -movflags +faststart docs/media/demo.mp4
@@ -22,13 +22,13 @@ media = root / 'docs/media'
 00:16.000 --> 00:24.000
 磁盘详情显示剩余空间；日常点击菜单或按 ⌘R 可立即刷新。
 ''')
-sources = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [root/'Sources/App.swift', root/'Sources/Metrics.swift', root/'Sources/Diagnostics.swift', root/'Sources/DiagnosticsUI.swift', root/'Sources/ResourceActions.swift']}
+sources = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [root/'Sources/App.swift', root/'Sources/Metrics.swift', root/'Sources/Diagnostics.swift', root/'Sources/DiagnosticsUI.swift', root/'Sources/ResourceActions.swift', root/'Sources/ResourceCare.swift', root/'Sources/ResourceCareRuntime.swift']}
 version = plistlib.loads((root / 'Info.plist').read_bytes())['CFBundleShortVersionString']
 manifest = {'version': version, 'recorded_at': datetime.datetime.now().astimezone().isoformat(),
     'method': 'Production AppKit views rendered offscreen; 24 seconds of real MetricsSampler readings. No synthetic clicks or desktop screen recording.',
     'screenshots': 'Deterministic fixture: CPU 22%, memory 10/16 GiB, disk 180/500 GB free. Same production renderer.',
-    'coverage': ['Compact 56-point status indicator', 'CPU updates at 2-second cadence', 'Memory pressure and swap', 'Disk remaining capacity', 'Resource diagnosis screenshot with deterministic example values'],
-    'not_covered': ['Finder installation', 'Actual menu clicks and keyboard actions', 'Actual sleep/wake cycle'],
+    'coverage': ['Compact 56-point status indicator', 'CPU updates at 2-second cadence', 'Memory pressure and swap', 'Disk remaining capacity', 'Operation advice and enabled automatic-care screenshot with deterministic example values'],
+    'not_covered': ['Finder installation', 'Actual menu clicks and keyboard actions', 'Actual sleep/wake cycle', 'Actual automated restarts and their outcomes'],
     'sources_sha256': sources, 'raw': 'build/media/frames/', 'samples': 'build/media/samples.json',
     'clips': [{'start':0,'end':8,'topic':'CPU and status item'}, {'start':8,'end':16,'topic':'Memory pressure'}, {'start':16,'end':24,'topic':'Disk remaining capacity'}]}
 (media/'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2)+'\n')

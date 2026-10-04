@@ -7,7 +7,7 @@ form: mac
 lifecycle: active
 bundle_id: cyou.tianli.litegauge
 origin: own
-description: 极简菜单栏 CPU、内存、启动磁盘监控，原生 AppKit，共享采集 CLI。
+description: 极简菜单栏 CPU、内存、启动磁盘监控，具体资源建议与已允许后台应用自动处理；原生 AppKit，共享 CLI。
 surfaces:
 - type: vhost
   id: litegauge.tianli.cyou
@@ -49,6 +49,7 @@ sop:
   ui:
   - Sources/App.swift
   - Sources/DiagnosticsUI.swift
+  - Sources/ResourceCareRuntime.swift
   source:
   - Sources/**
   - Tests/**

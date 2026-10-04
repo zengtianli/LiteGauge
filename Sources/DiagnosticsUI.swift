@@ -3,26 +3,29 @@ import AppKit
 final class DiagnosticViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
     private let summary = NSTextField(wrappingLabelWithString: "点击刷新，检查当前资源占用。")
     private let advice = NSTextField(wrappingLabelWithString: "")
-    private let detail = NSTextField(wrappingLabelWithString: "选择应用查看进程和处理方式。")
+    private let detail = NSTextField(wrappingLabelWithString: "下面的进程列表可用于核对；建议和后台处理不需要逐个选择。")
     private let status = NSTextField(wrappingLabelWithString: "")
     private let table = NSTableView()
     private let sortControl = NSSegmentedControl(labels: ["按内存", "按 CPU"], trackingMode: .selectOne, target: nil, action: nil)
     private let refreshButton = NSButton(title: "刷新诊断", target: nil, action: nil)
-    private let quitButton = NSButton(title: "正常退出…", target: nil, action: nil)
-    private let restartButton = NSButton(title: "重启并复查…", target: nil, action: nil)
+    private let autoButton = NSButton(title: "开启自动处理…", target: nil, action: nil)
+    private let batchButton = NSButton(title: "按建议处理", target: nil, action: nil)
+    private let autoState = NSTextField(wrappingLabelWithString: "")
     private let work = DispatchQueue(label: "cyou.tianli.litegauge.diagnosis", qos: .utility)
     private(set) var diagnosis: ResourceDiagnosis?
     private(set) var rows: [ResourceGroup] = []
     private(set) var busy = false
+    var recommendationsWithoutSelection: Bool { !advice.stringValue.isEmpty && table.selectedRow == -1 }
+    var batchWithoutSelection: Bool { batchButton.isEnabled && table.selectedRow == -1 }
     private var selectedGroup: ResourceGroup? { rows.indices.contains(table.selectedRow) ? rows[table.selectedRow] : nil }
 
     override func loadView() {
-        let root = NSBox(frame: NSRect(x: 0, y: 0, width: 740, height: 640))
+        let root = NSBox(frame: NSRect(x: 0, y: 0, width: 740, height: 740))
         root.boxType = .custom; root.borderWidth = 0; root.fillColor = .windowBackgroundColor
         root.contentViewMargins = .zero
         view = root
         let content = root.contentView!
-        let heading = NSTextField(labelWithString: "找出占用，处理后复查")
+        let heading = NSTextField(labelWithString: "建议操作，后台自动处理")
         heading.font = .systemFont(ofSize: 20, weight: .semibold)
         summary.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         advice.font = .systemFont(ofSize: 12); advice.textColor = .secondaryLabelColor
@@ -31,8 +34,9 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         sortControl.selectedSegment = 0; sortControl.target = self; sortControl.action = #selector(sortChanged)
         refreshButton.target = self; refreshButton.action = #selector(refresh)
         refreshButton.keyEquivalent = "r"; refreshButton.keyEquivalentModifierMask = .command
-        quitButton.target = self; quitButton.action = #selector(quitSelected)
-        restartButton.target = self; restartButton.action = #selector(restartSelected)
+        autoButton.target = self; autoButton.action = #selector(toggleAutomatic)
+        batchButton.target = self; batchButton.action = #selector(runRecommendations)
+        autoState.font = .systemFont(ofSize: 11); autoState.textColor = .secondaryLabelColor
         let toolbar = NSStackView(views: [sortControl, NSView(), refreshButton]); toolbar.orientation = .horizontal
         for (name, title, width) in [("app", "应用 / 后台进程", 330.0), ("memory", "内存", 112.0), ("cpu", "CPU · 单核 100%", 134.0), ("count", "进程", 70.0)] {
             let column = NSTableColumn(identifier: .init(name)); column.title = title; column.width = width
@@ -44,10 +48,10 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
-        let buttons = NSStackView(views: [quitButton, restartButton, NSView()]); buttons.orientation = .horizontal
-        let note = NSTextField(wrappingLabelWithString: "内存包含压缩及换出计账，不能相加当作物理 RAM。未知读数显示 —，部分可读显示 ≥。只在点击时扫描，不自动清缓存或结束进程。")
+        let buttons = NSStackView(views: [autoButton, batchButton, NSView()]); buttons.orientation = .horizontal
+        let note = NSTextField(wrappingLabelWithString: "自动处理只覆盖已允许的 Shadowrocket / OrbStack；aTrust 和工作应用保留。压力持续偏高且你空闲时检查，动作后复查并暂停重复操作。进程内存不能相加当作物理 RAM。")
         note.font = .systemFont(ofSize: 10); note.textColor = .tertiaryLabelColor
-        let stack = NSStackView(views: [heading, summary, advice, toolbar, scroll, detail, buttons, status, note])
+        let stack = NSStackView(views: [heading, summary, buttons, autoState, advice, toolbar, scroll, detail, status, note])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(stack)
@@ -59,10 +63,10 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 180),
             detail.heightAnchor.constraint(equalToConstant: 66), status.heightAnchor.constraint(greaterThanOrEqualToConstant: 18)
         ])
-        for sub in [summary, advice, toolbar, scroll, detail, buttons, status, note] {
+        for sub in [summary, advice, toolbar, scroll, detail, buttons, autoState, status, note] {
             sub.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
-        quitButton.isEnabled = false; restartButton.isEnabled = false
+        batchButton.isEnabled = false
     }
 
     func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
@@ -84,19 +88,15 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
     func tableViewSelectionDidChange(_ notification: Notification) { updateSelection() }
 
     private func updateSelection() {
-        guard let group = selectedGroup, let member = group.processes.first else {
-            detail.stringValue = "选择应用查看进程和处理方式。"; quitButton.isEnabled = false; restartButton.isEnabled = false; return
+        guard let group = selectedGroup else {
+            detail.stringValue = "下面的进程列表可用于核对；建议和后台处理不需要逐个选择。"; return
         }
         let processLines = group.processes.prefix(3).map {
             "\($0.name) · PID \($0.identity.pid) · \($0.footprintBytes.map(DiagnosticFormat.bytes) ?? "—") · CPU \($0.cpuPercent.map { String(format: "%.1f%%", $0) } ?? "—")"
         }
-        let quit = try? ResourceActions.prepare(pid: member.identity.pid, token: member.token, action: "quit")
-        let restart = try? ResourceActions.prepare(pid: member.identity.pid, token: member.token, action: "restart")
         detail.stringValue = processLines.joined(separator: "\n")
-            + (quit == nil && restart == nil ? "\n系统或独立后台服务：请在所属应用中处理。" : "")
-        quitButton.isEnabled = !busy && quit != nil; restartButton.isEnabled = !busy && restart != nil
     }
-    func apply(_ value: ResourceDiagnosis) {
+    func apply(_ value: ResourceDiagnosis, careReport: CareReport? = nil) {
         loadViewIfNeeded()
         diagnosis = value
         let previous = selectedGroup?.id
@@ -106,7 +106,16 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         if let m = value.system.memory {
             summary.stringValue = "内存 \(MetricFormat.gib(m.usedBytes)) / \(MetricFormat.gib(m.totalBytes)) · 压力\(m.pressure) · 压缩 \(MetricFormat.gib(m.compressedBytes)) · 交换 \(m.swapUsedBytes.map(MetricFormat.gib) ?? "—")"
         } else { summary.stringValue = "系统内存读数不可用" }
-        advice.stringValue = value.advice.prefix(2).joined(separator: "\n")
+        do {
+            let report = try careReport ?? CareRuntime.preview(value)
+            advice.stringValue = report.lines.prefix(5).joined(separator: "\n")
+            autoButton.title = report.enabled ? "暂停自动处理" : "开启自动处理…"
+            batchButton.isEnabled = !busy && report.enabled
+            autoState.stringValue = report.enabled ? "自动处理已开启 · 无需逐个点选，压力持续偏高时安排后台任务" : "自动处理未开启 · 首次允许后，后台任务按规则处理"
+        } catch {
+            advice.stringValue = "操作策略不可读，自动处理已暂停。"
+            batchButton.isEnabled = false
+        }
         if !value.errors.isEmpty { status.stringValue = value.errors.joined(separator: "；") }
         else if status.stringValue.isEmpty || status.stringValue.hasPrefix("正在") {
             let clock = DateFormatter(); clock.dateFormat = "HH:mm:ss"
@@ -115,7 +124,10 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         updateSelection()
     }
     private func setBusy(_ value: Bool) {
-        busy = value; refreshButton.isEnabled = !value; sortControl.isEnabled = !value; updateSelection()
+        busy = value; refreshButton.isEnabled = !value; sortControl.isEnabled = !value
+        autoButton.isEnabled = !value
+        batchButton.isEnabled = !value && ((try? CareStore().policy().enabled) == true)
+        updateSelection()
     }
     @objc func refresh() {
         guard !busy else { return }
@@ -126,27 +138,36 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         }
     }
     @objc private func sortChanged() { if let diagnosis { apply(diagnosis) } }
-    @objc private func quitSelected() { confirm(action: "quit") }
-    @objc private func restartSelected() { confirm(action: "restart") }
-    private func confirm(action: String) {
-        guard !busy, let member = selectedGroup?.processes.first, let window = view.window else { return }
+    @objc private func toggleAutomatic() {
+        guard !busy else { return }
         do {
-            let plan = try ResourceActions.prepare(pid: member.identity.pid, token: member.token, action: action)
-            let alert = NSAlert(); alert.messageText = "\(action == "restart" ? "重启" : "正常退出") \(plan.name)？"
-            alert.informativeText = plan.warning
-            alert.addButton(withTitle: action == "restart" ? "重启并复查" : "正常退出"); alert.addButton(withTitle: "取消")
+            let store = CareStore()
+            if try store.policy().enabled { try store.setEnabled(false); if let diagnosis { apply(diagnosis) }; return }
+            guard let window = view.window else { return }
+            let alert = NSAlert(); alert.messageText = "允许后台自动处理？"
+            alert.informativeText = "一次允许 Shadowrocket 重连隧道、OrbStack 正常重启虚拟机后台；网络或容器会短暂中断。仅在持续高占用、内存压力偏高且你空闲时执行，完成后复查并保留结果。aTrust、工作应用和正常占用保留。"
+            alert.addButton(withTitle: "允许自动处理"); alert.addButton(withTitle: "取消")
             alert.beginSheetModal(for: window) { [weak self] response in
                 guard response == .alertFirstButtonReturn, let self else { return }
-                self.setBusy(true); self.status.stringValue = "正在\(action == "restart" ? "重启" : "退出")并复查…"
-                self.work.async {
-                    let result = ResourceActions.perform(pid: member.identity.pid, token: member.token, action: action, dryRun: false)
-                    let fresh = ResourceDiagnostics.collect()
-                    DispatchQueue.main.async {
-                        self.setBusy(false); self.apply(fresh); self.status.stringValue = result.message
-                    }
-                }
+                do { try store.setEnabled(true); if let diagnosis = self.diagnosis { self.apply(diagnosis) } }
+                catch { self.status.stringValue = error.localizedDescription }
             }
         } catch { status.stringValue = (error as? ResourceActionError)?.message ?? error.localizedDescription }
+    }
+    @objc private func runRecommendations() {
+        guard !busy else { return }
+        setBusy(true); status.stringValue = "正在按建议处理并复查…"
+        work.async { [weak self] in
+            let result = Result { try CareRuntime.run(batch: true, dryRun: false) }
+            let fresh = ResourceDiagnostics.collect()
+            DispatchQueue.main.async {
+                guard let self else { return }; self.setBusy(false); self.apply(fresh)
+                switch result {
+                case .success(let value): self.status.stringValue = value.message
+                case .failure(let error): self.status.stringValue = (error as? ResourceActionError)?.message ?? error.localizedDescription
+                }
+            }
+        }
     }
 }
 
@@ -154,10 +175,10 @@ final class DiagnosticWindowController: NSWindowController, NSWindowDelegate {
     let diagnosticView = DiagnosticViewController()
     var didClose: (() -> Void)?
     init() {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 740, height: 640),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 740, height: 740),
             styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         super.init(window: window)
-        window.title = "LiteGauge · 资源诊断"; window.minSize = NSSize(width: 660, height: 600)
+        window.title = "LiteGauge · 资源建议与自动处理"; window.minSize = NSSize(width: 660, height: 700)
         window.contentViewController = diagnosticView; window.delegate = self; window.isReleasedWhenClosed = false
         window.center()
     }

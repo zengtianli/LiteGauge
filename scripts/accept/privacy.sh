@@ -2,8 +2,8 @@
 # privacy acceptance: metric/CLI modules have no network/process/defaults APIs; the vendored lifecycle
 # modules handle explicit release checks/downloads. Metric samples are never passed to them.
 # The app links system frameworks and has no entitlements or usage strings;
-# file writes happen only to paths passed explicitly (--benchmark/--snapshot/--ui-self-test);
-# a running instance holds no sockets and the app leaves no preferences or support folders.
+# Care policy and the last 20 action results stay in the owner-only LiteGauge support folder.
+# Resource collection stays offline; lifecycle updates are explicitly invoked.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 source scripts/accept/_build.sh
@@ -32,7 +32,7 @@ if out:
     open(os.path.join(out, "privacy.detail.json"), "w").write(json.dumps({"summary": summary, "checks": checks,
         "findings": {"non_system_libs": libs, "network_symbols": net, "urls": urls, "source_hits": src, "running_sockets": sock,
                      "existing_product_preference_paths": files},
-        "scope": "Metric/diagnostic collection uses native libproc, offline. Explicit OrbStack restart invokes its bundled official CLI without a shell; Shadowrocket restart uses the local OS connection API. Lifecycle update requests can create sockets and UI preferences; metric samples are never uploaded."},
+        "scope": "Metric/diagnostic collection uses native libproc, offline. Opt-in automatic care keeps its policy and at most 20 results locally in the owner-only LiteGauge support folder. OrbStack restart invokes its bundled official CLI without a shell; Shadowrocket restart uses the local OS connection API. Lifecycle update requests can create sockets and UI preferences; metric samples are never uploaded."},
         ensure_ascii=False, indent=2) + "\n")
 print(summary); sys.exit(1 if failed else 0)
 PY
