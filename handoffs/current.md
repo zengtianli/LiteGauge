@@ -4,7 +4,8 @@
 
 - 用户纠正逐个点击的处理流程。资源面板先给具体建议，主流程改为一次允许后的后台照料，aTrust 与工作应用保留。0.2.0 的逐项手动操作已被此流程替代。
 - 自动处理仅支持 Shadowrocket / OrbStack；公开默认关闭。本机会沿当前会话授权直接开启，用户无需逐个选择。持续高压力、两次高占用、空闲/前台/CPU/覆盖与身份共同约束，成功/失败有冷却，本机保留最近 20 条结果。
-- 已通过 91 项核心检查与 17 项离屏界面检查；正在完成签名、公证、装机与公开页面同步。当前真实装机仍以 release/latest.json 与 perf/build-receipt.json 核对。
+- 已通过 91 项核心检查、17 项离屏界面检查、CLI 与隐私边界；0.3.0 (6) 已 Developer ID 签名、公证、装机与后台重启。本机自动处理已开启，常驻实例已自行写入后台检查结果。构建来源 bfc9edc，GitHub CI 成功。
+- GitHub v0.3.0 已设为 Latest，官网已同步，14 个公开文件与 ZIP/DMG 哈希一致。Chrome 当前 683px 视口完整页面已审阅，演示视频实际播放至 24/24 秒；本轮没有重复 1440px / 390px 视口。验证范围见 perf/resource-care-verification.json 与 perf/promotion-verification.json。
 - 正式空闲性能重测仍需等待符合项目 in_use:false 门；历史 v0.1.2 实测明确标注，不能代表 0.3.0。个人机器调查在忽略入库的 build/，不公开。
 
 ## 0.2.0 历史诊断版本
@@ -20,14 +21,14 @@
 
 - 官网：<https://litegauge.tianli.cyou/>
 - 源码：<https://github.com/zengtianli/LiteGauge>，MIT，中文 README / 对应英文 README。
-- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.2.0>（Latest）；旧版本资产仍在。
+- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.3.0>（Latest）；旧版本资产仍在。
 - 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
-- 安装 /Applications/LiteGauge.app（0.2.0 (5)），普通模式运行；升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
+- 安装 /Applications/LiteGauge.app（0.3.0 (6)），普通模式运行，自动处理已开启；升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
 - 源目录 ~/Apps/litegauge（2026-09-27 由 tlstats 改名），登记 id/family 为 litegauge。
 
 ## 发行与验证
 
-当前发布与装机：0.2.0 (5)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。构建源码 5b8e39c；ZIP 1,851,270 bytes，DMG 2,191,584 bytes；均 Developer ID 签名、Apple 公证 Accepted（89ded056…、ca8bf9a2…）。可执行 SHA256：b924a76ebf129e38c2564f6177ce9e9d9c663d019c304286dd68961ba6142526。发布元数据以 release/latest.json 为准，历史发行经过保留在下方记录。
+当前发布与装机：0.3.0 (6)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。构建来源 bfc9edc；ZIP 1,909,034 bytes，DMG 1,967,263 bytes；均 Developer ID 签名、Apple 公证 Accepted。可执行 SHA256：83dd4fc13bfe1a97503c82620d708da010569c9f782e53f0b03cee568c6ec1d1。发布元数据以 release/latest.json 为准。0.2.0 历史构建来源 5b8e39c，ZIP 1,851,270 bytes / DMG 2,191,584 bytes。
 
 历史：0.1.0 (1) ZIP 1,626,948 bytes，DMG 2,129,632 bytes，可执行 SHA256 5f86b966…。perf/build-receipt.json 包围实际 bash scripts/package-release.sh 构建生成；独立解包、Gatekeeper、公证票据、DMG 内容、CLI JSON/错误码、干净源码副本构建已验；核心测试和 GitHub CI 通过。未在真实 macOS 14 设备运行。
 
@@ -35,7 +36,7 @@
 
 ## 实测
 
-最新正式实测为 0.1.2 (3)，2026-10-01：安装包 1.7 MB / 装后 1.9 MB、内存 15.7 MB、空闲 CPU 0%、首个 CPU 读数 1.2 s。0.2.0 待符合条件的空闲重测，官网明确标注上述数据属于历史版本。唯一事实源为 perf/lightweight.json。以下为 0.1.0 首测记录：
+最新正式实测为 0.1.2 (3)，2026-10-01：安装包 1.7 MB / 装后 1.9 MB、内存 15.7 MB、空闲 CPU 0%、首个 CPU 读数 1.2 s。0.3.0 待符合条件的空闲重测，官网明确标注上述数据属于历史版本。唯一事实源为 perf/lightweight.json。以下为 0.1.0 首测记录：
 
 M4 / 16 GiB，macOS 27.2，最终公证版菜单收起，启动后静置 45 秒，CPU 采样 60 秒，footprint 在窗口后取 3 次。
 

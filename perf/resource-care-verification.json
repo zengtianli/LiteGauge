@@ -18,7 +18,9 @@
     "Owner-only durable policy and journal, corrupt-policy rejection and action lease exclusion",
     "Advice and combined operation available without selecting a process row",
     "Read-only CLI planning and dry-run leave policy and journal unchanged",
-    "Native care engine performed a real healthy-service check with zero restart actions"
+    "Native care engine performed a real healthy-service check with zero restart actions",
+    "Installed signed resident instance automatically completed a check after sustained pressure; policy remained enabled",
+    "GitHub macos-14 CI passed for build source bfc9edc"
   ],
   "limits": [
     "Automatic decisions are tested with controlled fixtures; healthy live services were not made artificially abnormal.",

@@ -1,15 +1,25 @@
 {
-  "version": "0.2.0",
-  "verified_at": "2026-10-04 17:39:50 UTC",
+  "version": "0.3.0",
+  "verified_at": "2026-10-05T02:20:00+08:00",
   "website": "https://litegauge.tianli.cyou/",
-  "method": "Production page loaded in an offscreen WKWebView with prohibited activation; no focus changes or synthetic input.",
+  "method": "Current page inspected in Chrome through the supported Computer Use extension; earlier offscreen WKWebView viewport results are versioned below.",
+  "homepage_current": {
+    "version": "0.3.0",
+    "viewport_width": 683,
+    "document_scroll_width": 668,
+    "horizontal_overflow": false,
+    "result": "Full-page screenshot visually reviewed: current download, explicitly historical measurements, automatic-care advice screenshot, installation and FAQ readable.",
+    "images": "Main icon, menu-bar, panel and advice screenshot report complete with natural pixels. Repeated lazy footer icon has naturalWidth 1024 but complete false; its load completion was not verified. Shared asset passed HTTP byte verification."
+  },
   "homepage_desktop": {
+    "version": "0.2.0",
     "viewport_width": 1440,
     "document_scroll_width": 1440,
     "horizontal_overflow": false,
     "result": "Full-page screenshot visually inspected: diagnosis image, current download, historical measurements, installation and FAQ visible."
   },
   "homepage_mobile": {
+    "version": "0.2.0",
     "viewport_width": 390,
     "document_scroll_width": 390,
     "horizontal_overflow": false,
@@ -17,14 +27,15 @@
   },
   "http_verification": "scripts/verify-site.py passed: all 14 public files byte-equal; ZIP and DMG SHA-256 match release metadata; video byte range returns 206.",
   "media_playback": {
-    "status": "not_verified",
-    "method": "offscreen WKWebView",
+    "status": "passed",
+    "method": "Chrome video control activated through a tab-scoped Space key; read-only DOM observations confirm playback and completion.",
     "duration": 24,
-    "readyState": 1,
-    "currentTime": 0,
+    "readyState": 4,
+    "currentTime": 24,
+    "ended": true,
     "error": null,
     "cues": 3,
-    "note": "Both bounded offscreen playback attempts stayed at metadata-ready with no time advance. This does not verify interactive browser playback; no cause is asserted."
+    "note": "Current 0.3.0 video completed 24/24 seconds without error. The earlier 0.2.0 offscreen WKWebView attempts did not advance."
   },
   "video_file": {
     "codec": "h264",
@@ -33,12 +44,12 @@
     "height": 900,
     "duration_seconds": 24
   },
-  "download_bytes": 1851270,
+  "download_bytes": 1909034,
   "measured_version": "0.1.2 (3)",
   "historical_measurements": true,
   "limits": [
-    "Performance values are explicitly historical v0.1.2 evidence, not current v0.2.0 measurements.",
+    "Performance values are explicitly historical v0.1.2 evidence, not current v0.3.0 measurements.",
     "Product media uses production AppKit views rendered offscreen, not a physical menu-click recording.",
-    "Real GUI confirmation clicks, sleep/wake notifications and interactive browser playback were not verified this round."
+    "Real GUI confirmation clicks and sleep/wake notifications were not verified this round. Desktop 1440px/mobile 390px results are historical 0.2.0; current layout review used the existing 683px viewport."
   ]
 }
