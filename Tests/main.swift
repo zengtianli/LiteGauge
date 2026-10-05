@@ -290,7 +290,7 @@ check(careReady(careDiagnosis([careGroup("Dia", cpu: 60)], pressure: "正常"), 
       "explicit close may target the browser in use while automatic close still requires idle background")
 let browserReport = CarePlanner.report(browserFixture, policy: browserPolicy, journal: browserHistory, context: careContext, now: careNow)
 var failedBrowserHistory = browserHistory
-failedBrowserHistory.events = [CareEvent(at: careNow, service: .dia, ok: false, message: "quit blocked", beforeBytes: nil, afterBytes: nil)]
+failedBrowserHistory.events = [CareEvent(at: careNow, service: .dia, ok: false, message: "quit blocked", beforeBytes: nil, afterBytes: nil, action: "quit")]
 check(careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: browserPolicy, history: failedBrowserHistory, batch: true)
       && !careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: browserPolicy, history: failedBrowserHistory), "explicit retry is not blocked by automatic failure cooldown")
 let noActionOutcome = CareRunResult(ok: false, report: browserReport, actions: [], message: "none")
