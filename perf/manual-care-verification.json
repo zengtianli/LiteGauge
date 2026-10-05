@@ -1,0 +1,61 @@
+{
+  "version": "0.4.1",
+  "build": "8",
+  "verified_at": "2026-10-05T03:20:35.544Z",
+  "source_commit": "dbd2d2e93ccce2c8c7da993a7fb5955eba477dbb",
+  "executable_sha256": "acc4e3379ffc65a453d630a0af9698e02f48f34ae3030dce782e97eed43e7e5f",
+  "source_input_sha256": "174bb84f1f62658368ba087eb59f24a2aedaed188b091379ad6713fee95e6c18",
+  "core_checks": 110,
+  "offscreen_ui_checks": 22,
+  "cli_counter_checks": 14,
+  "read_only_care_checks": 4,
+  "action_identity_checks": 4,
+  "test_scope": "Current-source builds before release signing. Signed installation and all 17 source inputs independently matched the build receipt.",
+  "source_ci": {
+    "run_id": 37258707299,
+    "platform": "macos-14",
+    "conclusion": "success"
+  },
+  "installed": {
+    "version": "0.4.1",
+    "build": "8",
+    "resident": true,
+    "signature": "Notarized Developer ID",
+    "receipt_matches": true
+  },
+  "native_actions": {
+    "graceful_browser_recovery_completed": 1,
+    "browser_exit_blocked_by_unsaved_changes_dialog": 1,
+    "tab_count_restore_verified": false,
+    "raw_evidence": "Private machine details retained only in ignored build/."
+  },
+  "promotion": {
+    "version_visible": "0.4.1",
+    "deployed_files_verified": 14,
+    "zip_dmg_sha256_verified": true,
+    "video_http_range": 206,
+    "browser": "Chrome extension",
+    "viewport_width": 683,
+    "document_scroll_width": 668,
+    "diagnosis_image_loaded": true,
+    "video_duration_seconds": 24,
+    "video_ended_seconds": 24,
+    "video_ready_state": 4,
+    "agent_tab_closed": true,
+    "original_user_tab_count_before": 5,
+    "original_user_tab_count_after": 5
+  },
+  "coverage": [
+    "Manual high-footprint actions work at normal memory pressure without idle input or a second observation; automatic pressure and idle guards are unchanged.",
+    "A single click drains the initial permitted plan sequentially, with fresh identity, foreground, CPU and cooldown checks before each action.",
+    "The actual AppKit button invokes its runner; controlled results verify successful, zero-action and multiple-action outcomes and condition changes.",
+    "Outcome text is visible at the top of the real offscreen diagnosis window; unavailable actions show reasons instead of claiming to be scheduled."
+  ],
+  "limits": [
+    "Live execution completed one browser recovery and encountered an unsaved-page quit confirmation for another; a full multi-browser live batch was not completed.",
+    "Normal tabs were requested for restoration; tab count, private pages, forms and downloads are not guaranteed.",
+    "Offscreen AppKit verification does not cover physical menu-bar clicks or actual sleep/wake notifications.",
+    "Formal current-version performance remains pending; v0.1.2 measurements are explicitly historical.",
+    "SOP check-only refresh met a concurrent owner lock; no claim of full SOP acceptance."
+  ]
+}
