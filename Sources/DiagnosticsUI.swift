@@ -18,7 +18,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
     private(set) var rows: [ResourceGroup] = []
     private(set) var busy = false
     // Used by the offscreen button acceptance; production always uses the shared native runtime.
-    var recommendationRunner: () throws -> CareRunResult = { try CareRuntime.run(batch: true, dryRun: false) }
+    var recommendationRunner: (() throws -> CareRunResult)?
     var operationOutcome: String { outcome.stringValue }
     var operationOutcomeVisible: Bool {
         view.layoutSubtreeIfNeeded()
@@ -124,24 +124,25 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             let report = try careReport ?? CareRuntime.preview(value, batch: true)
             advice.stringValue = report.lines.prefix(5).joined(separator: "\n")
             autoButton.title = report.enabled ? "暂停自动处理" : "开启自动处理…"
-            batchButton.isEnabled = !busy && !report.ready.isEmpty
-            batchButton.title = "按建议处理（\(report.ready.count) 项）"
-            batchButton.toolTip = report.ready.isEmpty ? report.noActionMessage : "立即处理已允许的高占用应用；不等待系统压力、空闲或第二次采样。"
             let policy = try carePolicy ?? CareStore().policy()
+            batchButton.isEnabled = !busy && policy.canHandleManually
+            batchButton.title = report.ready.isEmpty ? "复查并处理" : "按建议处理（\(report.ready.count) 项）"
+            batchButton.toolTip = report.ready.isEmpty ? "重新检查最新状态。" + report.noActionMessage : "立即处理已允许的高占用应用；不等待系统压力、空闲或第二次采样。"
             let browsers = policy.services.contains(.dia) && policy.services.contains(.chrome)
             browserButton.title = browsers ? "暂停浏览器恢复" : "允许浏览器恢复…"
             browserButton.isEnabled = !busy
-            autoState.stringValue = report.enabled ? "自动处理已开启 · 浏览器恢复\(browsers ? "已允许" : "未允许") · 你空闲时处理，无需逐个点选" : "自动处理已暂停 · 首次允许后按规则处理"
+            autoState.stringValue = report.enabled ? "自动处理已开启 · 浏览器恢复\(browsers ? "已允许" : "未允许") · 你空闲时处理，无需逐个点选" : "后台自动处理已暂停 · \(policy.canHandleManually ? "手动复查仍可使用" : "处理尚未允许")"
             if careReport == nil, let journal = try? CareStore().journal(), journal.checkedAt != nil {
                 let clock = DateFormatter(); clock.dateFormat = "HH:mm:ss"
-                status.stringValue = "最近检查 \(clock.string(from: journal.checkedAt!))：" + journal.summary
+                status.stringValue = "当前建议：" + (report.ready.isEmpty ? report.noActionMessage : "可处理 \(report.ready.count) 项。")
                 status.toolTip = status.stringValue
                 if outcome.stringValue.isEmpty, let event = journal.events.last {
-                    var result = "\(event.service.name)：\(event.message)"
+                    let running = value.groups.contains { CarePlanner.service($0) == event.service }
+                    var result = !event.ok && !running ? "\(event.service.name)：上次恢复未完成；当前未运行。" : "\(event.service.name)：\(event.message)"
                     if let before = event.systemBeforeBytes, let after = event.systemAfterBytes {
                         result += "系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))。"
                     }
-                    outcome.stringValue = "最近处理 \(clock.string(from: event.at))：" + result
+                    outcome.stringValue = "历史处理 \(clock.string(from: event.at))：" + result
                 }
             }
         } catch {
@@ -159,7 +160,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         busy = value; refreshButton.isEnabled = !value; sortControl.isEnabled = !value
         autoButton.isEnabled = !value
         browserButton.isEnabled = !value
-        batchButton.isEnabled = !value && ((diagnosis.flatMap { try? CareRuntime.preview($0, batch: true) }.map { !$0.ready.isEmpty }) == true)
+        batchButton.isEnabled = !value && ((try? CareStore().policy().canHandleManually) == true)
         updateSelection()
     }
     @objc func refresh() {
@@ -193,7 +194,12 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         status.stringValue = outcome.stringValue
         work.async { [weak self] in
             guard let self else { return }
-            let result = Result { try self.recommendationRunner() }
+            let result = Result {
+                if let runner = self.recommendationRunner { return try runner() }
+                return try CareRuntime.run(batch: true, dryRun: false, progress: { [weak self] message in
+                    DispatchQueue.main.async { guard let self, self.busy else { return }; self.outcome.stringValue = message }
+                })
+            }
             let fresh = ResourceDiagnostics.collect()
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }; self.setBusy(false); self.apply(fresh)

@@ -14,6 +14,11 @@ enum CareService: String, Codable, CaseIterable {
 struct CarePolicy: Codable {
     var enabled = false
     var services = CareService.basic
+    var manualAllowed: Bool? = nil
+    var canHandleManually: Bool { manualAllowed ?? (enabled || services.contains(where: \.browser)) }
+    func permits(_ service: CareService, manual: Bool) -> Bool {
+        services.contains(service) && (manual ? canHandleManually : enabled)
+    }
 }
 
 struct CareMemoryPoint: Codable {
@@ -41,6 +46,44 @@ struct CareJournal: Codable {
     var summary = "尚未检查；压力持续偏高时自动给出操作建议。"
 }
 
+struct CareRunResult: Encodable {
+    let ok: Bool
+    let report: CareReport
+    let actions: [CareEvent]
+    let message: String
+    var deferred: [String] = []
+    var dryRun = false
+    var attemptedCount: Int { actions.count }
+    var status: String {
+        if dryRun { return "preview" }
+        if actions.isEmpty { return "no_action" }
+        if performedCount == actions.count { return "completed" }
+        return performedCount == 0 ? "not_completed" : "partial"
+    }
+    var performedCount: Int { actions.filter(\.ok).count }
+    var displayMessage: String {
+        guard !actions.isEmpty else { return message }
+        var lines = actions.map { event -> String in
+            if event.ok, let before = event.beforeBytes, let after = event.afterBytes {
+                return "\(event.service.name)：\(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))"
+            }
+            return "\(event.service.name)：\(event.message)"
+        }
+        if let before = actions.first?.systemBeforeBytes, let after = actions.last?.systemAfterBytes {
+            lines.append("系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))，压力\(actions.last?.pressureAfter ?? "未知")。")
+        }
+        lines.append(contentsOf: deferred)
+        return lines.joined(separator: "\n")
+    }
+    private enum CodingKeys: String, CodingKey { case ok, report, actions, message, deferred, dryRun, attemptedCount, performedCount, status }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(ok, forKey: .ok); try c.encode(report, forKey: .report); try c.encode(actions, forKey: .actions)
+        try c.encode(message, forKey: .message); try c.encode(deferred, forKey: .deferred); try c.encode(dryRun, forKey: .dryRun)
+        try c.encode(attemptedCount, forKey: .attemptedCount); try c.encode(performedCount, forKey: .performedCount); try c.encode(status, forKey: .status)
+    }
+}
+
 struct CareContext {
     let userID: UInt32
     let idleSeconds: Double?
@@ -65,8 +108,10 @@ struct CareReport: Encodable {
     var pending: [CareSuggestion] { suggestions.filter { $0.state == "wait" || $0.state == "review" } }
     var noActionMessage: String {
         if let browser = pending.first(where: { $0.service?.browser == true }) { return "尚未恢复主要占用：" + browser.message }
-        if let pending = pending.first { return "本次暂缓：" + pending.message }
-        return "本次无需处理已允许的后台应用；当前占用保留。"
+        if let pending = pending.first(where: { $0.service != nil }) { return "本次暂缓：" + pending.message }
+        let retained = suggestions.filter { $0.service != nil && $0.state == "keep" }
+        if !retained.isEmpty { return "当前没有符合条件的处理项。" + retained.prefix(3).map(\.message).joined(separator: "；") }
+        return "当前没有符合条件的处理项；工作应用和 aTrust 保留。"
     }
 }
 
@@ -99,13 +144,14 @@ enum CarePlanner {
                 }
                 guard diagnosis.errors.isEmpty else { add("wait", "\(amount)，诊断读数不完整，暂缓处理。", service); continue }
                 guard batch || pressured else { add("wait", "\(amount)，系统压力正常，后台暂不重启；可主动按建议处理。", service); continue }
-                guard policy.enabled, policy.services.contains(service) else { add("review", "\(amount)，建议\(service.operation)；\(service.browser ? "浏览器恢复重启尚未允许，总占用不会因此自动降低。" : "自动处理尚未允许。")", service); continue }
+                guard policy.permits(service, manual: batch) else { add("review", "\(amount)，建议\(service.operation)；\(policy.services.contains(service) ? "当前处理未开启。" : "该项处理尚未允许。")", service); continue }
                 if let recent = journal.events.last(where: { $0.service == service }),
                    service.browser, recent.ok, let before = recent.beforeBytes, let after = recent.afterBytes,
                    Double(after) >= Double(before) * 0.9, now.timeIntervalSince(recent.at) < 86400 {
                     add("wait", "上次重启收益不足，暂停自动重试 24 小时；可能是保留的页面本身需要内存。", service); continue
                 }
                 if let recent = journal.events.last(where: { $0.service == service }),
+                   (!batch || recent.ok),
                    now.timeIntervalSince(recent.at) < (recent.ok && !service.browser ? successCooldown : failureCooldown) {
                     add("wait", "\(amount)，处于\(recent.ok ? "重启后观察期" : "失败后暂停期")，避免反复操作。", service); continue
                 }
@@ -184,12 +230,12 @@ struct CareStore {
     func journal() throws -> CareJournal { try read("care-history.json", default: CareJournal()) }
     func save(_ journal: CareJournal) throws { try write(journal, name: "care-history.json") }
     func setEnabled(_ enabled: Bool) throws {
-        var policy = try self.policy(); policy.enabled = enabled
+        var policy = try self.policy(); policy.manualAllowed = enabled || policy.canHandleManually; policy.enabled = enabled
         try write(policy, name: "care-policy.json")
         DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
     }
     func allowBrowsers() throws {
-        var policy = try self.policy(); policy.enabled = true
+        var policy = try self.policy(); policy.enabled = true; policy.manualAllowed = true
         policy.services = CareService.allCases
         try write(policy, name: "care-policy.json")
         DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)

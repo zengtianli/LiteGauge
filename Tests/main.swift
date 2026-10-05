@@ -267,10 +267,25 @@ let orderedCare = CarePlanner.report(careDiagnosis([careGroup("Dia", memory: 6 *
 check(orderedCare.suggestions.first?.service == .shadowrocket, "concrete managed operations precede read-only work app advice")
 let browserFixture = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824), careGroup("Google Chrome")])
 let browserPolicy = CarePolicy(enabled: true, services: CareService.allCases)
+let pausedBrowserPolicy = CarePolicy(enabled: false, services: CareService.allCases)
+check(pausedBrowserPolicy.canHandleManually && !CarePolicy().canHandleManually,
+      "paused existing browser permission still allows manual actions; missing permission does not")
+check(careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: pausedBrowserPolicy, batch: true)
+      && !careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: pausedBrowserPolicy), "manual and automatic policy gates remain separate")
 var browserHistory = CareJournal()
 CarePlanner.observe(browserFixture, journal: &browserHistory, userID: 501, now: careNow.addingTimeInterval(-120))
 check(!careReady(browserFixture, history: browserHistory), "existing basic policy cannot silently acquire browser restart permission")
 let browserReport = CarePlanner.report(browserFixture, policy: browserPolicy, journal: browserHistory, context: careContext, now: careNow)
+var failedBrowserHistory = browserHistory
+failedBrowserHistory.events = [CareEvent(at: careNow, service: .dia, ok: false, message: "quit blocked", beforeBytes: nil, afterBytes: nil)]
+check(careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: browserPolicy, history: failedBrowserHistory, batch: true)
+      && !careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: browserPolicy, history: failedBrowserHistory), "explicit retry is not blocked by automatic failure cooldown")
+let noActionOutcome = CareRunResult(ok: false, report: browserReport, actions: [], message: "none")
+let noActionJSON = try JSONSerialization.jsonObject(with: JSONEncoder().encode(noActionOutcome)) as! [String: Any]
+check(noActionJSON["status"] as? String == "no_action" && noActionJSON["performedCount"] as? Int == 0
+      && noActionJSON["attemptedCount"] as? Int == 0 && noActionJSON["ok"] as? Bool == false, "zero actions are machine-readable and cannot be reported as completed")
+check(CareRunResult(ok: true, report: browserReport, actions: [], message: "preview", dryRun: true).status == "preview", "read-only preview is distinct from an actual zero-action run")
+check(!CarePlanner.report(careDiagnosis([careGroup("Codex")]), policy: browserPolicy, journal: CareJournal(), context: careContext).noActionMessage.contains("本次暂缓：Codex"), "protected work advice is not presented as an executable care action")
 check(browserReport.ready.count == 2 && browserReport.ready.first?.service == .dia, "opted-in browsers use sustained idle policy and largest browser goes first")
 let normalBrowserFixture = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824), careGroup("Google Chrome")], pressure: "正常")
 let immediateBrowserReport = CarePlanner.report(normalBrowserFixture, policy: browserPolicy, journal: CareJournal(),
@@ -319,6 +334,10 @@ let savedPolicy = try careStore.policy(), savedJournal = try careStore.journal()
 check(savedPolicy.enabled && savedJournal.points.count == 1 && fileMode == 0o600 && folderMode == 0o700,
       "policy and evidence persist locally with owner-only permissions")
 try careStore.allowBrowsers()
+try careStore.setEnabled(false)
+let pausedSavedPolicy = try careStore.policy()
+check(pausedSavedPolicy.canHandleManually, "pausing the scheduler persists existing manual consent")
+try careStore.setEnabled(true)
 let allowedBrowsers = try careStore.policy()
 check(allowedBrowsers.enabled && allowedBrowsers.services.contains(.dia) && allowedBrowsers.services.contains(.chrome), "browser permission persists for resident automation")
 try careStore.retainBrowsers()

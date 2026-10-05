@@ -148,7 +148,8 @@ enum ResourceActions {
         return rows.compactMap(\.footprintBytes).reduce(0, +)
     }
 
-    static func perform(pid: Int32, token: String, action: String, dryRun: Bool, leaseOwned: Bool = false) -> ResourceActionResult {
+    static func perform(pid: Int32, token: String, action: String, dryRun: Bool, leaseOwned: Bool = false,
+                        progress: (String) -> Void = { _ in }) -> ResourceActionResult {
         var plan: ResourceActionPlan?, before: UInt64?
         do {
             let p = try prepare(pid: pid, token: token, action: action); plan = p
@@ -198,16 +199,20 @@ enum ResourceActions {
                 guard NativeProcessReader.identity(main.pid)?.0 == main,
                       let app = NSRunningApplication(processIdentifier: main.pid) else { throw ResourceActionError(message: "应用实例已变化，请重新诊断。") }
                 if p.kind == "browser" {
+                    progress("\(p.name)：正在保留普通会话备份…")
                     guard let id = app.bundleIdentifier else { throw ResourceActionError(message: "浏览器身份不可读，已暂缓重启。") }
                     _ = try BrowserRecovery.backup(bundleID: id)
                 }
                 var accepted = false
+                progress("\(p.name)：正在请求正常退出；保存或离开页面提示由浏览器处理…")
                 if Thread.isMainThread { accepted = app.terminate() }
                 else { DispatchQueue.main.sync { accepted = app.terminate() } }
-                guard accepted, wait(10, until: { app.isTerminated }) else {
-                    throw ResourceActionError(message: "应用尚未退出，可能正在等待保存或取消；未强制结束，也未打开第二个实例。")
+                guard accepted else { throw ResourceActionError(message: "正常退出请求未被接受；本次未完成重启。") }
+                guard wait(p.kind == "browser" ? 30 : 10, until: { NativeProcessReader.identity(main.pid)?.0 != main }) else {
+                    throw ResourceActionError(message: "正常退出未在等待时间内完成；如有保存或离开页面提示，浏览器仍在等待确认。本次未完成恢复；未强制结束。")
                 }
                 if action == "restart" {
+                    progress("\(p.name)：已确认原实例退出，正在恢复应用…")
                     let config = NSWorkspace.OpenConfiguration(); config.activates = false; config.hides = true
                     config.arguments = p.launchArguments
                     let result = OpenResult()
@@ -222,7 +227,8 @@ enum ResourceActions {
                     }
                 }
             }
-            Thread.sleep(forTimeInterval: p.kind == "browser" ? 10 : 2)
+            progress(p.kind == "browser" ? "\(p.name)：等待页面恢复 30 秒，再复查实际占用…" : "\(p.name)：正在复查内存…")
+            Thread.sleep(forTimeInterval: p.kind == "browser" ? 30 : 2)
             let after = footprint(bundlePath: p.bundlePath)
             var message = "\(p.name)\(action == "restart" ? "已重启" : "已正常退出")。"
             if p.kind == "browser" { message += "已请求恢复普通标签，标签数量未核验。" }

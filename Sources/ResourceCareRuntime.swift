@@ -1,29 +1,6 @@
 import AppKit
 import IOKit
 
-struct CareRunResult: Encodable {
-    let ok: Bool
-    let report: CareReport
-    let actions: [CareEvent]
-    let message: String
-    var deferred: [String] = []
-    var performedCount: Int { actions.filter(\.ok).count }
-    var displayMessage: String {
-        guard !actions.isEmpty else { return message }
-        var lines = actions.map { event -> String in
-            if event.ok, let before = event.beforeBytes, let after = event.afterBytes {
-                return "\(event.service.name)：\(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))"
-            }
-            return "\(event.service.name)：\(event.message)"
-        }
-        if let before = actions.first?.systemBeforeBytes, let after = actions.last?.systemAfterBytes {
-            lines.append("系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))，压力\(actions.last?.pressureAfter ?? "未知")。")
-        }
-        lines.append(contentsOf: deferred)
-        return lines.joined(separator: "\n")
-    }
-}
-
 enum CareRuntime {
     static func context() -> CareContext {
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOHIDSystem"))
@@ -46,11 +23,11 @@ enum CareRuntime {
 
     /// Automatic checks handle one app; an explicit click handles the initial allowed plan in sequence.
     static func run(store: CareStore = CareStore(), batch: Bool, dryRun: Bool,
-                    shouldContinue: () -> Bool = { true }) throws -> CareRunResult {
+                    shouldContinue: () -> Bool = { true }, progress: (String) -> Void = { _ in }) throws -> CareRunResult {
         let diagnosis = ResourceDiagnostics.collect()
         if dryRun {
             let report = CarePlanner.report(diagnosis, policy: try store.policy(), journal: try store.journal(), context: context(), batch: batch)
-            return CareRunResult(ok: true, report: report, actions: [], message: report.lines.joined(separator: "\n"))
+            return CareRunResult(ok: true, report: report, actions: [], message: report.lines.joined(separator: "\n"), dryRun: true)
         }
         let lease = try CareLease(directory: store.directory)
         defer { withExtendedLifetime(lease) {} }
@@ -66,7 +43,7 @@ enum CareRuntime {
             let current = index == 0 ? diagnosis : ResourceDiagnostics.collect()
             let currentPolicy = try store.policy()
             let currentReport = CarePlanner.report(current, policy: currentPolicy, journal: journal, context: context(), batch: batch)
-            guard currentPolicy.enabled, shouldContinue(), let suggestion = currentReport.ready.first(where: { $0.service == service }),
+            guard currentPolicy.permits(service, manual: batch), shouldContinue(), let suggestion = currentReport.ready.first(where: { $0.service == service }),
                   let target = suggestion.target else {
                 deferred.append(currentReport.suggestions.first(where: { $0.service == service })?.message ?? "\(service.name)：条件已变化，略过。")
                 continue
@@ -74,9 +51,10 @@ enum CareRuntime {
             // Name matching creates advice only; the executable's actual bundle ID must select the expected adapter.
             var event: CareEvent
             do {
+                progress("正在处理 \(index + 1)/\(candidates.count)：\(service.name)…")
                 let plan = try ResourceActions.prepare(pid: target.pid, token: target.token, action: "restart")
                 guard plan.kind == service.adapter else { throw ResourceActionError(message: "应用身份与建议不符，本次自动操作已取消。") }
-                let result = ResourceActions.perform(pid: target.pid, token: target.token, action: "restart", dryRun: false, leaseOwned: true)
+                let result = ResourceActions.perform(pid: target.pid, token: target.token, action: "restart", dryRun: false, leaseOwned: true, progress: progress)
                 event = CareEvent(at: Date(), service: service, ok: result.ok, message: result.message,
                                   beforeBytes: result.beforeBytes, afterBytes: result.afterBytes)
             } catch {
@@ -99,7 +77,7 @@ enum CareRuntime {
         if !deferred.isEmpty { outcome += "\n" + deferred.joined(separator: "\n") }
         journal.summary = outcome
         try store.save(journal)
-        return CareRunResult(ok: events.allSatisfy(\.ok), report: report, actions: events,
+        return CareRunResult(ok: !events.isEmpty && events.allSatisfy(\.ok), report: report, actions: events,
                              message: outcome, deferred: deferred)
     }
 }

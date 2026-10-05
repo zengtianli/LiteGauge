@@ -446,9 +446,14 @@ extension AppDelegate {
         checks["recommendation_button_invokes_runner"] = wait(5) { !diagnosticView.busy } && invoked
         checks["recommendation_result_visible_at_top"] = diagnosticView.operationOutcome.contains("已处理 1 项")
         diagnosticView.apply(diagnosis, careReport: report)
-        diagnosticView.recommendationRunner = { CareRunResult(ok: true, report: report, actions: [], message: "本次处理 0 项。示例条件已变化。") }
+        diagnosticView.recommendationRunner = { CareRunResult(ok: false, report: report, actions: [], message: "本次处理 0 项。示例条件已变化。") }
         diagnosticView.activateRecommendationsForTest()
         checks["recommendation_zero_actions_explained"] = wait(5) { !diagnosticView.busy } && diagnosticView.operationOutcome.contains("处理 0 项")
+        let noReady = CareReport(enabled: false, checkedAt: Date(), suggestions: [])
+        diagnosticView.apply(diagnosis, careReport: noReady, carePolicy: CarePolicy(enabled: false, services: CareService.allCases))
+        checks["paused_manual_recheck_is_enabled_without_ready_items"] = diagnosticView.batchWithoutSelection
+        diagnosticView.apply(diagnosis, careReport: noReady, carePolicy: CarePolicy())
+        checks["missing_consent_keeps_manual_action_disabled"] = !diagnosticView.batchWithoutSelection
         diagnosticView.apply(diagnosis, careReport: report)
         diagnosticView.recommendationRunner = {
             let events = [CareService.dia, .chrome].map { CareEvent(at: Date(), service: $0, ok: true, message: "示例处理已完成。", beforeBytes: 3_000_000_000, afterBytes: 1_000_000_000) }
