@@ -241,7 +241,7 @@ struct CareStore {
         DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
     }
     func retainBrowsers() throws {
-        var policy = try self.policy(); policy.services.removeAll { $0.browser }
+        var policy = try self.policy(); policy.manualAllowed = policy.canHandleManually; policy.services.removeAll { $0.browser }
         try write(policy, name: "care-policy.json")
         DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
     }
