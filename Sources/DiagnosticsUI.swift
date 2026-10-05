@@ -2,6 +2,7 @@ import AppKit
 
 final class DiagnosticViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
     private let summary = NSTextField(wrappingLabelWithString: "点击刷新，检查当前资源占用。")
+    private let outcome = NSTextField(wrappingLabelWithString: "")
     private let advice = NSTextField(wrappingLabelWithString: "")
     private let detail = NSTextField(wrappingLabelWithString: "下面的进程列表可用于核对；建议和后台处理不需要逐个选择。")
     private let status = NSTextField(wrappingLabelWithString: "")
@@ -16,6 +17,15 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
     private(set) var diagnosis: ResourceDiagnosis?
     private(set) var rows: [ResourceGroup] = []
     private(set) var busy = false
+    // Used by the offscreen button acceptance; production always uses the shared native runtime.
+    var recommendationRunner: () throws -> CareRunResult = { try CareRuntime.run(batch: true, dryRun: false) }
+    var operationOutcome: String { outcome.stringValue }
+    var operationOutcomeVisible: Bool {
+        view.layoutSubtreeIfNeeded()
+        let frame = outcome.convert(outcome.bounds, to: view)
+        return !frame.isEmpty && view.bounds.contains(frame)
+    }
+    func activateRecommendationsForTest() { batchButton.performClick(nil) }
     var recommendationsWithoutSelection: Bool { !advice.stringValue.isEmpty && table.selectedRow == -1 }
     var batchWithoutSelection: Bool { batchButton.isEnabled && table.selectedRow == -1 }
     private var selectedGroup: ResourceGroup? { rows.indices.contains(table.selectedRow) ? rows[table.selectedRow] : nil }
@@ -29,9 +39,11 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         let heading = NSTextField(labelWithString: "建议操作，后台自动处理")
         heading.font = .systemFont(ofSize: 20, weight: .semibold)
         summary.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        outcome.font = .systemFont(ofSize: 13, weight: .semibold)
         advice.font = .systemFont(ofSize: 12); advice.textColor = .secondaryLabelColor
         detail.font = .systemFont(ofSize: 11); detail.textColor = .secondaryLabelColor
         status.font = .systemFont(ofSize: 12)
+        status.maximumNumberOfLines = 3; status.lineBreakMode = .byTruncatingTail
         sortControl.selectedSegment = 0; sortControl.target = self; sortControl.action = #selector(sortChanged)
         refreshButton.target = self; refreshButton.action = #selector(refresh)
         refreshButton.keyEquivalent = "r"; refreshButton.keyEquivalentModifierMask = .command
@@ -53,7 +65,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         let buttons = NSStackView(views: [autoButton, browserButton, batchButton, NSView()]); buttons.orientation = .horizontal
         let note = NSTextField(wrappingLabelWithString: "浏览器恢复另行允许一次；普通标签恢复由浏览器执行，不保证无痕页面、表单或下载恢复。aTrust 和工作应用保留。进程计账内存不能相加当作物理 RAM。")
         note.font = .systemFont(ofSize: 10); note.textColor = .tertiaryLabelColor
-        let stack = NSStackView(views: [heading, summary, buttons, autoState, advice, toolbar, scroll, detail, status, note])
+        let stack = NSStackView(views: [heading, summary, buttons, outcome, autoState, advice, toolbar, scroll, detail, status, note])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(stack)
@@ -65,7 +77,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 180),
             detail.heightAnchor.constraint(equalToConstant: 50), status.heightAnchor.constraint(greaterThanOrEqualToConstant: 34)
         ])
-        for sub in [summary, advice, toolbar, scroll, detail, buttons, autoState, status, note] {
+        for sub in [summary, advice, toolbar, scroll, detail, buttons, autoState, status, outcome, note] {
             sub.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
         batchButton.isEnabled = false
@@ -109,23 +121,27 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             summary.stringValue = "内存 \(MetricFormat.gib(m.usedBytes)) / \(MetricFormat.gib(m.totalBytes)) · 压力\(m.pressure) · 压缩 \(MetricFormat.gib(m.compressedBytes)) · 交换 \(m.swapUsedBytes.map(MetricFormat.gib) ?? "—")"
         } else { summary.stringValue = "系统内存读数不可用" }
         do {
-            let report = try careReport ?? CareRuntime.preview(value)
+            let report = try careReport ?? CareRuntime.preview(value, batch: true)
             advice.stringValue = report.lines.prefix(5).joined(separator: "\n")
             autoButton.title = report.enabled ? "暂停自动处理" : "开启自动处理…"
-            batchButton.isEnabled = !busy && report.enabled
+            batchButton.isEnabled = !busy && !report.ready.isEmpty
+            batchButton.title = "按建议处理（\(report.ready.count) 项）"
+            batchButton.toolTip = report.ready.isEmpty ? report.noActionMessage : "立即处理已允许的高占用应用；不等待系统压力、空闲或第二次采样。"
             let policy = try carePolicy ?? CareStore().policy()
             let browsers = policy.services.contains(.dia) && policy.services.contains(.chrome)
             browserButton.title = browsers ? "暂停浏览器恢复" : "允许浏览器恢复…"
             browserButton.isEnabled = !busy
             autoState.stringValue = report.enabled ? "自动处理已开启 · 浏览器恢复\(browsers ? "已允许" : "未允许") · 你空闲时处理，无需逐个点选" : "自动处理已暂停 · 首次允许后按规则处理"
             if careReport == nil, let journal = try? CareStore().journal(), journal.checkedAt != nil {
-                status.stringValue = "最近检查：" + journal.summary
-                if let event = journal.events.last {
-                    var result = event.message
+                let clock = DateFormatter(); clock.dateFormat = "HH:mm:ss"
+                status.stringValue = "最近检查 \(clock.string(from: journal.checkedAt!))：" + journal.summary
+                status.toolTip = status.stringValue
+                if outcome.stringValue.isEmpty, let event = journal.events.last {
+                    var result = "\(event.service.name)：\(event.message)"
                     if let before = event.systemBeforeBytes, let after = event.systemAfterBytes {
                         result += "系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))。"
                     }
-                    status.stringValue = "最近处理：" + result + "\n" + status.stringValue
+                    outcome.stringValue = "最近处理 \(clock.string(from: event.at))：" + result
                 }
             }
         } catch {
@@ -143,7 +159,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         busy = value; refreshButton.isEnabled = !value; sortControl.isEnabled = !value
         autoButton.isEnabled = !value
         browserButton.isEnabled = !value
-        batchButton.isEnabled = !value && ((try? CareStore().policy().enabled) == true)
+        batchButton.isEnabled = !value && ((diagnosis.flatMap { try? CareRuntime.preview($0, batch: true) }.map { !$0.ready.isEmpty }) == true)
         updateSelection()
     }
     @objc func refresh() {
@@ -173,15 +189,22 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
     }
     @objc private func runRecommendations() {
         guard !busy else { return }
-        setBusy(true); status.stringValue = "正在按建议处理并复查…"
+        setBusy(true); outcome.stringValue = "正在按建议处理并复查…"; outcome.textColor = .labelColor
+        status.stringValue = outcome.stringValue
         work.async { [weak self] in
-            let result = Result { try CareRuntime.run(batch: true, dryRun: false) }
+            guard let self else { return }
+            let result = Result { try self.recommendationRunner() }
             let fresh = ResourceDiagnostics.collect()
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 guard let self else { return }; self.setBusy(false); self.apply(fresh)
                 switch result {
-                case .success(let value): self.status.stringValue = value.message
-                case .failure(let error): self.status.stringValue = (error as? ResourceActionError)?.message ?? error.localizedDescription
+                case .success(let value):
+                    self.outcome.stringValue = value.actions.isEmpty ? value.message : "已处理 \(value.performedCount) 项。\n" + value.displayMessage
+                    self.outcome.textColor = value.performedCount > 0 ? .labelColor : .systemOrange
+                    self.status.stringValue = value.actions.isEmpty ? "本次未执行重启，具体原因见上方。" : "已完成逐项复查；普通标签恢复由浏览器执行，标签数量未核验。"
+                case .failure(let error):
+                    self.outcome.stringValue = "本次处理 0 项。" + ((error as? ResourceActionError)?.message ?? error.localizedDescription)
+                    self.outcome.textColor = .systemOrange; self.status.stringValue = self.outcome.stringValue
                 }
             }
         }

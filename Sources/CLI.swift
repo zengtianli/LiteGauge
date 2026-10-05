@@ -3,7 +3,7 @@ import Foundation
 // Command-line surface for agents and scripts. Foundation only, so the core tests compile it without AppKit.
 // Readings come from the same MetricsSampler / MetricFormat / MetricThresholds the menu-bar App draws from.
 
-let version = "0.4.0"
+let version = "0.4.1"
 
 struct WatchOptions: Equatable {
     var interval: TimeInterval = MetricsSampler.sampleInterval
@@ -52,7 +52,7 @@ enum CLI {
       litegauge care browsers (--yes | --disable) [--json]
           另行允许 Dia / Chrome 空闲时恢复重启；页面重新加载，无痕页面、未提交表单和下载不保证恢复。
       litegauge care run (--dry-run | --yes) [--json]
-          按建议处理已允许且占用异常的后台应用并复查，最多执行一项；正常占用保留。
+          主动立即逐项处理本次已允许且高占用的应用并复查，不等待压力升高、空闲或第二次采样；身份/忙碌/冷却保护仍生效。
       litegauge watch [--interval <秒>] [--count <次数>] [--json]
           按 App 的节奏持续输出：默认每 \(Int(MetricsSampler.sampleInterval)) 秒（1–3600），磁盘容量缓存 \(Int(MetricsSampler.diskInterval)) 秒；
           --json 时每行一个 JSON 对象（NDJSON）。次数到达或 Ctrl-C 后结束。

@@ -6,6 +6,22 @@ struct CareRunResult: Encodable {
     let report: CareReport
     let actions: [CareEvent]
     let message: String
+    var deferred: [String] = []
+    var performedCount: Int { actions.filter(\.ok).count }
+    var displayMessage: String {
+        guard !actions.isEmpty else { return message }
+        var lines = actions.map { event -> String in
+            if event.ok, let before = event.beforeBytes, let after = event.afterBytes {
+                return "\(event.service.name)：\(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))"
+            }
+            return "\(event.service.name)：\(event.message)"
+        }
+        if let before = actions.first?.systemBeforeBytes, let after = actions.last?.systemAfterBytes {
+            lines.append("系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))，压力\(actions.last?.pressureAfter ?? "未知")。")
+        }
+        lines.append(contentsOf: deferred)
+        return lines.joined(separator: "\n")
+    }
 }
 
 enum CareRuntime {
@@ -24,11 +40,11 @@ enum CareRuntime {
         return CareContext(userID: getuid(), idleSeconds: idle, foregroundBundle: foreground)
     }
 
-    static func preview(_ diagnosis: ResourceDiagnosis, store: CareStore = CareStore()) throws -> CareReport {
-        CarePlanner.report(diagnosis, policy: try store.policy(), journal: try store.journal(), context: context())
+    static func preview(_ diagnosis: ResourceDiagnosis, store: CareStore = CareStore(), batch: Bool = false) throws -> CareReport {
+        CarePlanner.report(diagnosis, policy: try store.policy(), journal: try store.journal(), context: context(), batch: batch)
     }
 
-    /// Uses the same verified adapters as an explicit action. One action per check, with a durable cooldown.
+    /// Automatic checks handle one app; an explicit click handles the initial allowed plan in sequence.
     static func run(store: CareStore = CareStore(), batch: Bool, dryRun: Bool,
                     shouldContinue: () -> Bool = { true }) throws -> CareRunResult {
         let diagnosis = ResourceDiagnostics.collect()
@@ -43,9 +59,18 @@ enum CareRuntime {
         let report = CarePlanner.report(diagnosis, policy: policy, journal: journal, context: context(), batch: batch)
         CarePlanner.observe(diagnosis, journal: &journal, userID: getuid(), now: report.checkedAt)
         var events: [CareEvent] = []
-        if policy.enabled, shouldContinue(), let suggestion = report.ready.first,
-           let service = suggestion.service, let target = suggestion.target,
-           try store.policy().enabled, try store.policy().services.contains(service) {
+        var deferred: [String] = []
+        let candidates = Array(report.ready.prefix(batch ? CareService.allCases.count : 1))
+        for (index, initial) in candidates.enumerated() {
+            guard let service = initial.service else { continue }
+            let current = index == 0 ? diagnosis : ResourceDiagnostics.collect()
+            let currentPolicy = try store.policy()
+            let currentReport = CarePlanner.report(current, policy: currentPolicy, journal: journal, context: context(), batch: batch)
+            guard currentPolicy.enabled, shouldContinue(), let suggestion = currentReport.ready.first(where: { $0.service == service }),
+                  let target = suggestion.target else {
+                deferred.append(currentReport.suggestions.first(where: { $0.service == service })?.message ?? "\(service.name)：条件已变化，略过。")
+                continue
+            }
             // Name matching creates advice only; the executable's actual bundle ID must select the expected adapter.
             var event: CareEvent
             do {
@@ -60,21 +85,22 @@ enum CareRuntime {
                                   beforeBytes: nil, afterBytes: nil)
             }
             if event.ok, let memory = MetricsSampler().sample().memory {
-                event.systemBeforeBytes = diagnosis.system.memory?.usedBytes
+                event.systemBeforeBytes = current.system.memory?.usedBytes
                 event.systemAfterBytes = memory.usedBytes
                 event.pressureAfter = memory.pressure
             }
             events.append(event); journal.events.append(event)
             journal.events = Array(journal.events.suffix(20))
         }
-        var outcome = events.last?.message ?? report.noActionMessage
-        if let event = events.last, let before = event.systemBeforeBytes, let after = event.systemAfterBytes {
+        var outcome = events.isEmpty ? "本次处理 0 项。" + report.noActionMessage : events.map(\.message).joined(separator: "\n")
+        if let event = events.last, let before = events.first?.systemBeforeBytes, let after = event.systemAfterBytes {
             outcome += "系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))，压力\(event.pressureAfter ?? "未知")。"
         }
+        if !deferred.isEmpty { outcome += "\n" + deferred.joined(separator: "\n") }
         journal.summary = outcome
         try store.save(journal)
         return CareRunResult(ok: events.allSatisfy(\.ok), report: report, actions: events,
-                             message: outcome)
+                             message: outcome, deferred: deferred)
     }
 }
 

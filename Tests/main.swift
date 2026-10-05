@@ -272,6 +272,14 @@ CarePlanner.observe(browserFixture, journal: &browserHistory, userID: 501, now: 
 check(!careReady(browserFixture, history: browserHistory), "existing basic policy cannot silently acquire browser restart permission")
 let browserReport = CarePlanner.report(browserFixture, policy: browserPolicy, journal: browserHistory, context: careContext, now: careNow)
 check(browserReport.ready.count == 2 && browserReport.ready.first?.service == .dia, "opted-in browsers use sustained idle policy and largest browser goes first")
+let normalBrowserFixture = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824), careGroup("Google Chrome")], pressure: "正常")
+let immediateBrowserReport = CarePlanner.report(normalBrowserFixture, policy: browserPolicy, journal: CareJournal(),
+    context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: nil), now: careNow, batch: true)
+check(immediateBrowserReport.ready.count == 2 && immediateBrowserReport.lines.first?.contains("可立即") == true,
+      "user click treats high browser footprint immediately even at normal pressure and with active input")
+check(!careReady(normalBrowserFixture, policy: browserPolicy, history: browserHistory), "manual pressure bypass does not change automatic care at normal pressure")
+check(!careReady(careDiagnosis([careGroup("Dia", memory: nil)], pressure: "正常"), policy: browserPolicy, batch: true)
+      && !careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)], pressure: "正常", errors: ["unavailable"]), policy: browserPolicy, batch: true), "manual action still requires complete readable diagnosis")
 check(!careReady(browserFixture, policy: browserPolicy, history: CareJournal())
       && !careReady(browserFixture, policy: browserPolicy, history: browserHistory, context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: nil)), "browser restart never follows a single reading or active input")
 let diaOnly = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)])

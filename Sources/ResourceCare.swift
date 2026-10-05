@@ -97,7 +97,8 @@ enum CarePlanner {
                 guard group.footprintBytes > service.threshold else {
                     add("keep", "\(amount)，目前保留。" + (service.browser ? "未达浏览器恢复阈值。" : service == .orbstack ? "运行虚拟机本身需要内存，反复重启收益有限。" : "隧道占用未达异常阈值。"), service); continue
                 }
-                guard pressured, diagnosis.errors.isEmpty else { add("wait", "\(amount)，等待持续内存压力和完整读数。", service); continue }
+                guard diagnosis.errors.isEmpty else { add("wait", "\(amount)，诊断读数不完整，暂缓处理。", service); continue }
+                guard batch || pressured else { add("wait", "\(amount)，系统压力正常，后台暂不重启；可主动按建议处理。", service); continue }
                 guard policy.enabled, policy.services.contains(service) else { add("review", "\(amount)，建议\(service.operation)；\(service.browser ? "浏览器恢复重启尚未允许，总占用不会因此自动降低。" : "自动处理尚未允许。")", service); continue }
                 if let recent = journal.events.last(where: { $0.service == service }),
                    service.browser, recent.ok, let before = recent.beforeBytes, let after = recent.afterBytes,
@@ -115,7 +116,7 @@ enum CarePlanner {
                 guard batch || context.idle else { add("wait", "\(amount)，已允许处理，等你空闲 2 分钟后自动执行。", service); continue }
                 guard context.foregroundBundle != group.bundlePath else { add("wait", "正在前台使用，稍后自动检查。", service); continue }
                 guard group.missingCPUCount == 0, group.cpuPercent < 10 else { add("wait", "后台仍在忙，等负载降低后自动处理。", service); continue }
-                add("ready", "\(amount)，已安排\(service.operation)并复查。", service)
+                add("ready", "\(amount)，\(batch ? "可立即" : "满足自动条件，可")\(service.operation)并复查。", service)
             } else if group.name.caseInsensitiveCompare("Sift") == .orderedSame {
                 add("keep", "\(amount)，文件索引需要常驻内存，建议保留；持续增长再追查。")
             } else if group.footprintBytes >= 1_073_741_824 {

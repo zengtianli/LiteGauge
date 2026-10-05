@@ -345,7 +345,7 @@ func renderSnapshot(to path: String) throws {
 }
 
 // In-process UI self-test: the real menu, panel and indicator are built offscreen and their action
-// code paths are called directly. No status item, window, focus change or synthesized input.
+// code paths are called directly. No status item, visible window, focus change or synthesized input.
 extension AppDelegate {
     func runUISelfTest(outDir: URL) -> Bool {
         var checks: [String: Bool] = [:]
@@ -422,22 +422,48 @@ extension AppDelegate {
         checks["indicator_bars_scale"] = full > empty && empty > 0 && none > 0
 
         let diagnosis = ResourceDiagnostics.collect()
-        let diagnosticView = DiagnosticViewController()
+        let diagnosticLayoutWindow = DiagnosticWindowController()
+        let diagnosticView = diagnosticLayoutWindow.diagnosticView
         diagnosticView.view.appearance = NSAppearance(named: .aqua)
         diagnosticView.apply(diagnosis)
         diagnosticView.view.layoutSubtreeIfNeeded()
         checks["diagnosis_live_groups"] = diagnosis.ok && !diagnosticView.rows.isEmpty
         checks["diagnosis_offscreen_renders"] = png(diagnosticView.view, "native-ui-diagnosis.png") > 1000
         checks["diagnosis_preview_does_not_act"] = !diagnosticView.busy && diagnosticWindow == nil
-        let report = CarePlanner.report(diagnosis, policy: CarePolicy(enabled: true), journal: CareJournal(),
-            context: CareContext(userID: getuid(), idleSeconds: 180, foregroundBundle: nil))
+        let report = CareReport(enabled: true, checkedAt: Date(), suggestions: [
+            CareSuggestion(name: "示例浏览器", state: "ready", message: "示例浏览器：可立即恢复重启。", service: .dia, target: nil)
+        ])
         diagnosticView.apply(diagnosis, careReport: report)
         checks["recommendations_without_row_selection"] = diagnosticView.recommendationsWithoutSelection
         checks["combined_action_without_row_selection"] = diagnosticView.batchWithoutSelection
+        var invoked = false
+        diagnosticView.recommendationRunner = {
+            invoked = true
+            let event = CareEvent(at: Date(), service: .dia, ok: true, message: "示例处理已完成。", beforeBytes: 3_000_000_000, afterBytes: 1_000_000_000)
+            return CareRunResult(ok: true, report: report, actions: [event], message: event.message)
+        }
+        diagnosticView.activateRecommendationsForTest()
+        checks["recommendation_button_invokes_runner"] = wait(5) { !diagnosticView.busy } && invoked
+        checks["recommendation_result_visible_at_top"] = diagnosticView.operationOutcome.contains("已处理 1 项")
+        diagnosticView.apply(diagnosis, careReport: report)
+        diagnosticView.recommendationRunner = { CareRunResult(ok: true, report: report, actions: [], message: "本次处理 0 项。示例条件已变化。") }
+        diagnosticView.activateRecommendationsForTest()
+        checks["recommendation_zero_actions_explained"] = wait(5) { !diagnosticView.busy } && diagnosticView.operationOutcome.contains("处理 0 项")
+        diagnosticView.apply(diagnosis, careReport: report)
+        diagnosticView.recommendationRunner = {
+            let events = [CareService.dia, .chrome].map { CareEvent(at: Date(), service: $0, ok: true, message: "示例处理已完成。", beforeBytes: 3_000_000_000, afterBytes: 1_000_000_000) }
+            return CareRunResult(ok: true, report: report, actions: events, message: "示例批量处理完成。", deferred: ["示例服务：条件变化，略过。"])
+        }
+        diagnosticView.activateRecommendationsForTest()
+        checks["one_click_displays_all_results_and_deferrals"] = wait(5) { !diagnosticView.busy }
+            && diagnosticView.operationOutcome.contains("已处理 2 项") && diagnosticView.operationOutcome.contains("Google Chrome")
+            && diagnosticView.operationOutcome.contains("条件变化，略过")
+        checks["recommendation_outcome_fits_visible_panel"] = diagnosticView.operationOutcomeVisible
+        _ = png(diagnosticView.view, "native-ui-recommendation-result.png")
 
         let ok = checks.values.allSatisfy { $0 }
         let result: [String: Any] = ["ok": ok, "checks": checks, "screenshots": ["native-ui-panel-initial.png", "native-ui-panel.png",
-            "native-ui-indicator-0.png", "native-ui-indicator-100.png", "native-ui-indicator-unavailable.png", "native-ui-diagnosis.png"],
+            "native-ui-indicator-0.png", "native-ui-indicator-100.png", "native-ui-indicator-unavailable.png", "native-ui-diagnosis.png", "native-ui-recommendation-result.png"],
             "not_covered": ["physical menu-bar click and AppKit menu tracking", "opening Activity Monitor", "actual quit", "real sleep/wake notifications"]]
         if let data = try? JSONSerialization.data(withJSONObject: result, options: .sortedKeys) { print(String(decoding: data, as: UTF8.self)) }
         return ok
