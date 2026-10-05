@@ -150,12 +150,9 @@ enum CarePlanner {
                 guard diagnosis.errors.isEmpty else { add("wait", "\(amount)，诊断读数不完整，暂缓处理。", service); continue }
                 guard batch || pressured else { add("wait", "\(amount)，系统压力正常，后台暂不处理；可主动按建议处理。", service); continue }
                 guard policy.permits(service, manual: batch) else { add("review", "\(amount)，建议\(service.operation)；\(service.browser && !policy.canCloseBrowsers ? "关闭浏览器尚未允许。" : policy.services.contains(service) ? "当前处理未开启。" : "该项处理尚未允许。")", service); continue }
-                if let recent = journal.events.last(where: { $0.service == service }),
-                   service.browser, !batch, recent.action != "quit", recent.ok, let before = recent.beforeBytes, let after = recent.afterBytes,
-                   Double(after) >= Double(before) * 0.9, now.timeIntervalSince(recent.at) < 86400 {
-                    add("wait", "上次重启收益不足，暂停自动重试 24 小时；可能是保留的页面本身需要内存。", service); continue
-                }
-                if !(batch && service.browser), let recent = journal.events.last(where: { $0.service == service }),
+                if !(batch && service.browser), let recent = journal.events.last(where: {
+                    $0.service == service && (!service.browser || $0.action == "quit")
+                }),
                    (!batch || recent.ok),
                    now.timeIntervalSince(recent.at) < (recent.ok && !service.browser ? successCooldown : failureCooldown) {
                     add("wait", "\(amount)，处于\(recent.ok ? "重启后观察期" : "失败后暂停期")，避免反复操作。", service); continue

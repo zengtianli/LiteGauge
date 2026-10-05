@@ -314,7 +314,10 @@ let diaOnly = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)])
 check(!careReady(diaOnly, policy: browserPolicy, history: browserHistory, context: CareContext(userID: 501, idleSeconds: 180, foregroundBundle: "/Applications/Dia.app")), "frontmost browser is retained")
 browserHistory.events = [CareEvent(at: careNow.addingTimeInterval(-3601), service: .dia, ok: true, message: "done", beforeBytes: nil, afterBytes: nil)]
 check(careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true)
-      && !careReady(diaOnly, policy: browserPolicy, history: browserHistory), "old recovery cooldown does not block explicit closure; automatic cooldown remains")
+      && careReady(diaOnly, policy: browserPolicy, history: browserHistory), "old recovery cooldown does not block a different close action")
+browserHistory.events = [CareEvent(at: careNow.addingTimeInterval(-3601), service: .dia, ok: true, message: "closed", beforeBytes: nil, afterBytes: nil, action: "quit")]
+check(careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true)
+      && !careReady(diaOnly, policy: browserPolicy, history: browserHistory), "automatic closure observes its own cooldown while explicit closure can proceed")
 browserHistory.events = [CareEvent(at: careNow.addingTimeInterval(-21601), service: .dia, ok: true, message: "done", beforeBytes: 6_000_000_000, afterBytes: 5_900_000_000)]
 check(careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true), "ineffective recovery must not prevent a user-requested close")
 check(CarePlanner.report(browserFixture, policy: enabledCare, journal: careHistory, context: careContext, now: careNow).noActionMessage.contains("尚未关闭浏览器"), "no-action outcome admits that browsers remain open")
