@@ -208,7 +208,10 @@ enum ResourceActions {
                 if Thread.isMainThread { accepted = app.terminate() }
                 else { DispatchQueue.main.sync { accepted = app.terminate() } }
                 guard accepted else { throw ResourceActionError(message: "正常退出请求未被接受；本次未完成重启。") }
-                guard wait(p.kind == "browser" ? 30 : 10, until: { NativeProcessReader.identity(main.pid)?.0 != main }) else {
+                guard wait(p.kind == "browser" ? 30 : 10, until: {
+                    // An unreadable identity is not proof of exit; fall back to the original AppKit handle.
+                    NativeProcessReader.identity(main.pid).map { $0.0 != main } ?? app.isTerminated
+                }) else {
                     throw ResourceActionError(message: "正常退出未在等待时间内完成；如有保存或离开页面提示，浏览器仍在等待确认。本次未完成恢复；未强制结束。")
                 }
                 if action == "restart" {
