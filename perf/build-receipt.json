@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-05T02:14:23+08:00",
+  "built_at": "2026-10-05T10:45:52+08:00",
   "artifact": {
     "bundle_id": "cyou.tianli.litegauge",
-    "version": "0.3.0",
-    "build": "6",
+    "version": "0.4.0",
+    "build": "7",
     "executable": "Contents/MacOS/LiteGauge",
-    "sha256": "83dd4fc13bfe1a97503c82620d708da010569c9f782e53f0b03cee568c6ec1d1",
+    "sha256": "2fb39f3001deec23288e35e1dd5d861db35c03b5c53ff686ae0f64cf9d48f685",
     "icon": {
       "path": "Contents/Resources/AppIcon.icns",
       "sha256": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f"
@@ -20,27 +20,28 @@
       "icon/AppIcon.icns",
       "build.sh"
     ],
-    "sha256": "b51a2650a32a4d6ff4f5f502efe11259dec53ea69eb87d547763b6b077f24d26",
-    "file_count": 16,
+    "sha256": "feeab899abd1c215b6281af2a1260c21ea10b19e4f60b68e1bd807aad258e15e",
+    "file_count": 17,
     "files": {
-      "Sources/ResourceCareRuntime.swift": "4d63ceb01f3e5cba179589e0ce0412d6278c9ea50838a4915b96fe11662cf021",
+      "Sources/ResourceCareRuntime.swift": "d2ea230ec3e15bdcb6537c5775636ba503df0674f8cea533f34adb5caa6327e3",
+      "Sources/BrowserRecovery.swift": "627171f0884d57c0a5f8f72c9af4576134af0cc30d5068e6e0d161a4a9a3f66e",
       "Sources/AppConfiguration.swift": "66d1b04072dbcbcbbc556afb79be1181396fc8bd1a6940d5960adea742219edc",
       "Sources/AppLifecycleUI.swift": "c5bfb42bb97555125d3822a98ab0bab71adf368f0de1439f170f0dddb7456974",
       "Sources/AppLifecycle.swift": "3033bc6f87a69a2402ff1cda2c8196a4abd677222582c75d21302a65626c2d89",
-      "Sources/ResourceActions.swift": "57d19e035080c7d488190407e357c7e73c42d85494c418327cb775463fbbddf4",
-      "Sources/DiagnosticsUI.swift": "4c8bff552d13581913b5f13a2cf5deaaa20031a22ad9cde403f2cc23bdc3d0ca",
-      "Sources/CLI.swift": "676481d087f99079a8d761c5ec05d7f2eabbddea9a575b30e32ef92c75d06457",
+      "Sources/ResourceActions.swift": "6eaf5d4e17a26f860a8165f6a1936a32b9eee5a55aa3a83a8691606a61675cfb",
+      "Sources/DiagnosticsUI.swift": "37e9c0e573d2275d73efd0fdd794ec2d129851b4fc7a4aab87c3dce34d39adb3",
+      "Sources/CLI.swift": "9e92add61cc423eb4bb092e8caa31c2d95a5ed939e360f3eead66b2e7fd3ec80",
       "Sources/Metrics.swift": "7cf32ac9f3efa887926fcb5b81869edc5b892065d65d591f7383a2c351dda6d1",
-      "Sources/main.swift": "6c6bc10b5da20b4fe850cc18505c326f9dda292cfeeba0f6cb2943dbcfab1f52",
+      "Sources/main.swift": "78c0790d15f001cc026b046b21aaacd0993e5870a4a20544d10644e298debddb",
       "Sources/App.swift": "f333b3af04d242cb6d047b03b69bc285c03a15dd9df525b969f67761373376de",
       "Sources/Diagnostics.swift": "e2071e86f6ec4ac1a4041f72859a486e1e33fdd09772d0b051017f650f280d9b",
-      "Sources/ResourceCare.swift": "e7e290270ae930904bea7c653fb32e687180f7579d38a599eb9b5d42c7cc1afb",
-      "Tests/main.swift": "fc36accfa49def9c7c7d420e3cc60b46735247654d5c42e91f285dc015f79d93",
-      "Info.plist": "447a181d0df8ebbfe97608533642ef717e670ce3b9f13660eaf91dded504d5b1",
+      "Sources/ResourceCare.swift": "f28a85555b45783efa28596f078d18e0af386fc70ca170758ec434f648cff0ac",
+      "Tests/main.swift": "d3460d914f90eeac62da7eeabc18938d5ea2d1780b1102fddd37f4017f6a0e2a",
+      "Info.plist": "fd9a51c28cd128cb27d9d7c46685600fd1b4837d595e5c70b606716fcf19520a",
       "icon/AppIcon.icns": "2bcee616e84ef4273727f859b9ea123bbc280d53ac16b918d7287bb7691c790f",
-      "build.sh": "662b7d869a4931d76828efd7f40c8e11aae588d261cbaf7edd5b0c7536e329d5"
+      "build.sh": "4957068350e6e7cbddadea9aaa469a397b0c27395275ff34b271223c2bdb84e9"
     },
-    "commit": "bfc9edc30f1296784bbdd7911c00a5fd24ee1172",
+    "commit": "14aad69ddce04920f95075b9adc2e399c47f76c8",
     "dirty_scope": "组件当前 Git 工作树；跨仓/软链输入的实际内容由 sha256 核验",
     "dirty": false
   },

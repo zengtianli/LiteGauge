@@ -1,6 +1,6 @@
 {
-  "version": "0.3.0",
-  "recorded_at": "2026-10-05T02:12:11.570036+08:00",
+  "version": "0.4.0",
+  "recorded_at": "2026-10-05T10:46:08.547180+08:00",
   "method": "Production AppKit views rendered offscreen; 24 seconds of real MetricsSampler readings. No synthetic clicks or desktop screen recording.",
   "screenshots": "Deterministic fixture: CPU 22%, memory 10/16 GiB, disk 180/500 GB free. Same production renderer.",
   "coverage": [
@@ -20,10 +20,11 @@
     "Sources/App.swift": "f333b3af04d242cb6d047b03b69bc285c03a15dd9df525b969f67761373376de",
     "Sources/Metrics.swift": "7cf32ac9f3efa887926fcb5b81869edc5b892065d65d591f7383a2c351dda6d1",
     "Sources/Diagnostics.swift": "e2071e86f6ec4ac1a4041f72859a486e1e33fdd09772d0b051017f650f280d9b",
-    "Sources/DiagnosticsUI.swift": "4c8bff552d13581913b5f13a2cf5deaaa20031a22ad9cde403f2cc23bdc3d0ca",
-    "Sources/ResourceActions.swift": "57d19e035080c7d488190407e357c7e73c42d85494c418327cb775463fbbddf4",
-    "Sources/ResourceCare.swift": "e7e290270ae930904bea7c653fb32e687180f7579d38a599eb9b5d42c7cc1afb",
-    "Sources/ResourceCareRuntime.swift": "4d63ceb01f3e5cba179589e0ce0412d6278c9ea50838a4915b96fe11662cf021"
+    "Sources/DiagnosticsUI.swift": "37e9c0e573d2275d73efd0fdd794ec2d129851b4fc7a4aab87c3dce34d39adb3",
+    "Sources/ResourceActions.swift": "6eaf5d4e17a26f860a8165f6a1936a32b9eee5a55aa3a83a8691606a61675cfb",
+    "Sources/ResourceCare.swift": "f28a85555b45783efa28596f078d18e0af386fc70ca170758ec434f648cff0ac",
+    "Sources/ResourceCareRuntime.swift": "d2ea230ec3e15bdcb6537c5775636ba503df0674f8cea533f34adb5caa6327e3",
+    "Sources/BrowserRecovery.swift": "627171f0884d57c0a5f8f72c9af4576134af0cc30d5068e6e0d161a4a9a3f66e"
   },
   "raw": "build/media/frames/",
   "samples": "build/media/samples.json",
