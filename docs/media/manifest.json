@@ -44,5 +44,18 @@
       "end": 24,
       "topic": "Disk remaining capacity"
     }
-  ]
+  ],
+  "diagnosis": {
+    "reused_for": "0.4.3 closure-only cooldown correction",
+    "reuse_basis": "Only historical cooldown selection changed. This deterministic screenshot uses an empty history; rendering, permissions and close advice are unchanged.",
+    "version": "0.4.3",
+    "recorded_at": "2026-10-05T13:33:55.480786+08:00",
+    "method": "Production diagnosis AppKit view rendered offscreen with deterministic sample values.",
+    "coverage": "One-click permitted browser closure and leave-closed advice; no real actions or synthetic clicks.",
+    "sources_sha256": {
+      "Sources/DiagnosticsUI.swift": "da289d4833e666dd0ea8c1ffabaa677fd139b8de7664907d96928f3277d39471",
+      "Sources/ResourceCare.swift": "d40864a65d4d394f9913779923e2ca82f24e8b7d7f193200b562d1bbfbb2cdb9",
+      "scripts/capture/main.swift": "46bddea210453713aa11e9bde61309e539b94e552d5dbc9c9936436eb9130fd5"
+    }
+  }
 }

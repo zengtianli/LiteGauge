@@ -1,11 +1,14 @@
 # 轻仪 LiteGauge · 当前交付
 
-## 2026-10-05 · 0.4.3 纠正浏览器操作目标（装机核验中）
+## 2026-10-05 · 0.4.3 关闭浏览器已装机；实际内存目标仍未达到
 
 - 用户明确纠正：Dia 等浏览器直接关闭即可，不要恢复重启；最终标准是实际释放内存，并由 LiteGauge 一次处理，无需逐个点击。该约束覆盖 GUI、CLI、规划、动作、策略、结果、测试和当前说明；aTrust 保留。旧重启模式停止使用。
 - 已用已安装 CLI 实际正常关闭 Dia，未再打开；Chrome 已不运行。复查证明浏览器进程退出、系统已用内存实际下降。个人机器原始证据仅存忽略的 build/browser-close-*.json；不能把暂时下降当作持续降低到一半。
 - 主动浏览器关闭不受旧高占用阈值、重启冷却、前台/CPU 条件限制；核权限、内存读数和真实身份，保存提示仍由应用处理。后台关闭保留高压力、持续高占用、空闲与低负载保护。旧重启许可不能自动授权保持关闭，本次用户已明确授权，装机后沿实际 CLI 开启关闭策略。
-- 仅更新此次受影响的资源诊断截图与中英文说明，沿用 CPU/内存/磁盘视频；不将公共推广发布作为本次本机内存处理的前置。核心检查 123 项已通过，正在签名装机并核对已安装版。
+- 0.4.3 (10) 已签名、公证、安装并后台运行。最终源码 72f08ddb0d2c77538989731335e6099858f77eaf，核心 124 项通过；已安装可执行 SHA256 b9228b98f19d51160a030065d45f32efec68f1551d0c907033c9146add2eaacf 与构建回执一致。真实已安装 CLI 零项路径返回 no_action / ok=false / 退出码 1，没有假报成功；关闭许可、后台开关保留。
+- 实际正常关闭 Dia、Sift、未播放的 Music；停止确认无连接且已结束用途的旧 WrongBook fixture 和邮件 mock 服务，保留工作应用与后台业务。用户进一步授权停用京东羊毛；青龙 48 个京东及 1 个顺丰积分任务、本机订阅与探活已暂停，容器和 OrbStack 服务、App 已正常停止，开机启动关闭；配置与数据保留，VPS 未动。现行暂停和回退入口在 Qinglong 原仓 handoffs/resource-pause-20261005.md。
+- 用户最终标准明确为 16 GiB 机器实际已用内存低于 8 GiB。停用青龙/OrbStack 后约 11.2 GiB / 70%，仍未达到，不能称高内存已解决。微信是否保持关闭正待用户答复，当前工作和 aTrust 保留；应用计账内存不能直接相加作为物理 RAM 收益。
+- 仅更新此次受影响的资源诊断截图与中英文说明，沿用 CPU/内存/磁盘视频。公开下载和官网仍为 0.4.1，本轮没有发布/部署；不将推广流程作为本机内存处理的前置。已安装版离屏 UI 25 项曾通过；最后冷却修正不改变界面，不把离屏核验写作实际用户点击验收。
 
 ## 2026-10-05 · 0.4.2 本机按钮与 CLI 真实核验
 
@@ -55,14 +58,14 @@
 
 - 官网：<https://litegauge.tianli.cyou/>
 - 源码：<https://github.com/zengtianli/LiteGauge>，MIT，中文 README / 对应英文 README。
-- 公开正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.4.1>（Latest）；本机 0.4.2 尚未公开发版，旧版本资产仍在。
+- 公开正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.4.1>（Latest）；本机 0.4.3 尚未公开发版，旧版本资产仍在。
 - 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
-- 安装 /Applications/LiteGauge.app（0.4.2 (9)），普通模式运行；后台当前暂停，已有允许保留。升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
+- 安装 /Applications/LiteGauge.app（0.4.3 (10)），普通模式运行；后台启用，正常关闭浏览器许可已开启。升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
 - 源目录 ~/Apps/litegauge（2026-09-27 由 tlstats 改名），登记 id/family 为 litegauge。
 
 ## 发行与验证
 
-当前发布与装机：0.3.0 (6)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。构建来源 bfc9edc；ZIP 1,909,034 bytes，DMG 1,967,263 bytes；均 Developer ID 签名、Apple 公证 Accepted。可执行 SHA256：83dd4fc13bfe1a97503c82620d708da010569c9f782e53f0b03cee568c6ec1d1。发布元数据以 release/latest.json 为准。0.2.0 历史构建来源 5b8e39c，ZIP 1,851,270 bytes / DMG 2,191,584 bytes。
+当前公开发布 0.4.1，本机装机 0.4.3 (10)，bundle cyou.tianli.litegauge，Apple Silicon / macOS 14+，中文界面。已安装构建来源与 SHA256 见本页顶部及 perf/build-receipt.json；公开发布元数据仍以 release/latest.json 为准。0.3.0 历史构建来源 bfc9edc，ZIP 1,909,034 bytes、DMG 1,967,263 bytes；0.2.0 历史构建来源 5b8e39c，ZIP 1,851,270 bytes、DMG 2,191,584 bytes，均曾 Developer ID 签名、公证。
 
 历史：0.1.0 (1) ZIP 1,626,948 bytes，DMG 2,129,632 bytes，可执行 SHA256 5f86b966…。perf/build-receipt.json 包围实际 bash scripts/package-release.sh 构建生成；独立解包、Gatekeeper、公证票据、DMG 内容、CLI JSON/错误码、干净源码副本构建已验；核心测试和 GitHub CI 通过。未在真实 macOS 14 设备运行。
 
