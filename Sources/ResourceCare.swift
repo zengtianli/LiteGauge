@@ -8,16 +8,20 @@ enum CareService: String, Codable, CaseIterable {
     var name: String { switch self { case .shadowrocket: return "Shadowrocket"; case .orbstack: return "OrbStack"; case .chrome: return "Google Chrome"; case .dia: return "Dia" } }
     var threshold: UInt64 { self == .shadowrocket ? 512 * 1_048_576 : (self == .dia ? 3 : 2) * 1_073_741_824 }
     var adapter: String { browser ? "browser" : self == .shadowrocket ? "vpn" : "orbstack" }
-    var operation: String { browser ? "重启浏览器并恢复普通标签" : self == .shadowrocket ? "重连隧道" : "正常重启虚拟机后台" }
+    var action: String { browser ? "quit" : "restart" }
+    var operation: String { browser ? "正常关闭浏览器，保持关闭" : self == .shadowrocket ? "重连隧道" : "正常重启虚拟机后台" }
 }
 
 struct CarePolicy: Codable {
     var enabled = false
     var services = CareService.basic
     var manualAllowed: Bool? = nil
+    // A prior restart allowance does not silently authorize leaving browsers closed.
+    var browserQuitAllowed: Bool? = nil
+    var canCloseBrowsers: Bool { browserQuitAllowed == true }
     var canHandleManually: Bool { manualAllowed ?? (enabled || services.contains(where: \.browser)) }
     func permits(_ service: CareService, manual: Bool) -> Bool {
-        services.contains(service) && (manual ? canHandleManually : enabled)
+        services.contains(service) && (!service.browser || canCloseBrowsers) && (manual ? canHandleManually : enabled)
     }
 }
 
@@ -37,6 +41,7 @@ struct CareEvent: Codable {
     var systemBeforeBytes: UInt64? = nil
     var systemAfterBytes: UInt64? = nil
     var pressureAfter: String? = nil
+    var action: String? = nil
 }
 
 struct CareJournal: Codable {
@@ -65,7 +70,7 @@ struct CareRunResult: Encodable {
         guard !actions.isEmpty else { return message }
         var lines = actions.map { event -> String in
             if event.ok, let before = event.beforeBytes, let after = event.afterBytes {
-                return "\(event.service.name)：\(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))"
+                return "\(event.service.name)：\(event.action == "quit" ? "已关闭，保持关闭；" : "")\(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))"
             }
             return "\(event.service.name)：\(event.message)"
         }
@@ -107,7 +112,7 @@ struct CareReport: Encodable {
     var lines: [String] { suggestions.map { $0.message } }
     var pending: [CareSuggestion] { suggestions.filter { $0.state == "wait" || $0.state == "review" } }
     var noActionMessage: String {
-        if let browser = pending.first(where: { $0.service?.browser == true }) { return "尚未恢复主要占用：" + browser.message }
+        if let browser = pending.first(where: { $0.service?.browser == true }) { return "尚未关闭浏览器：" + browser.message }
         if let pending = pending.first(where: { $0.service != nil }) { return "本次暂缓：" + pending.message }
         let retained = suggestions.filter { $0.service != nil && $0.state == "keep" }
         if !retained.isEmpty { return "当前没有符合条件的处理项。" + retained.prefix(3).map(\.message).joined(separator: "；") }
@@ -115,7 +120,7 @@ struct CareReport: Encodable {
     }
 }
 
-/// Decisions are shared by the GUI, resident automation and CLI. Browser recovery needs its own opt-in.
+/// GUI, resident automation and CLI share decisions. Browser closing needs a separate allowance.
 enum CarePlanner {
     static let successCooldown: TimeInterval = 3600
     static let failureCooldown: TimeInterval = 21600
@@ -139,18 +144,18 @@ enum CarePlanner {
             if protected(group) { add("ignored", "按保留规则略过。"); continue }
             if let service = service(group) {
                 guard group.missingMemoryCount == 0 else { add("wait", "内存读数不完整，暂缓处理。", service); continue }
-                guard group.footprintBytes > service.threshold else {
-                    add("keep", "\(amount)，目前保留。" + (service.browser ? "未达浏览器恢复阈值。" : service == .orbstack ? "运行虚拟机本身需要内存，反复重启收益有限。" : "隧道占用未达异常阈值。"), service); continue
+                guard (batch && service.browser) || group.footprintBytes > service.threshold else {
+                    add("keep", "\(amount)，目前保留。" + (service.browser ? "未达后台关闭阈值；主动处理可关闭已允许的浏览器。" : service == .orbstack ? "运行虚拟机本身需要内存，反复重启收益有限。" : "隧道占用未达异常阈值。"), service); continue
                 }
                 guard diagnosis.errors.isEmpty else { add("wait", "\(amount)，诊断读数不完整，暂缓处理。", service); continue }
-                guard batch || pressured else { add("wait", "\(amount)，系统压力正常，后台暂不重启；可主动按建议处理。", service); continue }
-                guard policy.permits(service, manual: batch) else { add("review", "\(amount)，建议\(service.operation)；\(policy.services.contains(service) ? "当前处理未开启。" : "该项处理尚未允许。")", service); continue }
+                guard batch || pressured else { add("wait", "\(amount)，系统压力正常，后台暂不处理；可主动按建议处理。", service); continue }
+                guard policy.permits(service, manual: batch) else { add("review", "\(amount)，建议\(service.operation)；\(service.browser && !policy.canCloseBrowsers ? "关闭浏览器尚未允许。" : policy.services.contains(service) ? "当前处理未开启。" : "该项处理尚未允许。")", service); continue }
                 if let recent = journal.events.last(where: { $0.service == service }),
-                   service.browser, recent.ok, let before = recent.beforeBytes, let after = recent.afterBytes,
+                   service.browser, !batch, recent.action != "quit", recent.ok, let before = recent.beforeBytes, let after = recent.afterBytes,
                    Double(after) >= Double(before) * 0.9, now.timeIntervalSince(recent.at) < 86400 {
                     add("wait", "上次重启收益不足，暂停自动重试 24 小时；可能是保留的页面本身需要内存。", service); continue
                 }
-                if let recent = journal.events.last(where: { $0.service == service }),
+                if !(batch && service.browser), let recent = journal.events.last(where: { $0.service == service }),
                    (!batch || recent.ok),
                    now.timeIntervalSince(recent.at) < (recent.ok && !service.browser ? successCooldown : failureCooldown) {
                     add("wait", "\(amount)，处于\(recent.ok ? "重启后观察期" : "失败后暂停期")，避免反复操作。", service); continue
@@ -160,8 +165,8 @@ enum CarePlanner {
                     && (60...600).contains(now.timeIntervalSince($0.at)) } == true
                 guard batch || stable else { add("wait", "\(amount)，等待第二次确认持续高占用。", service); continue }
                 guard batch || context.idle else { add("wait", "\(amount)，已允许处理，等你空闲 2 分钟后自动执行。", service); continue }
-                guard context.foregroundBundle != group.bundlePath else { add("wait", "正在前台使用，稍后自动检查。", service); continue }
-                guard group.missingCPUCount == 0, group.cpuPercent < 10 else { add("wait", "后台仍在忙，等负载降低后自动处理。", service); continue }
+                guard (batch && service.browser) || context.foregroundBundle != group.bundlePath else { add("wait", "正在前台使用，稍后自动检查。", service); continue }
+                guard (batch && service.browser) || (group.missingCPUCount == 0 && group.cpuPercent < 10) else { add("wait", "后台仍在忙，等负载降低后自动处理。", service); continue }
                 add("ready", "\(amount)，\(batch ? "可立即" : "满足自动条件，可")\(service.operation)并复查。", service)
             } else if group.name.caseInsensitiveCompare("Sift") == .orderedSame {
                 add("keep", "\(amount)，文件索引需要常驻内存，建议保留；持续增长再追查。")
@@ -236,12 +241,14 @@ struct CareStore {
     }
     func allowBrowsers() throws {
         var policy = try self.policy(); policy.enabled = true; policy.manualAllowed = true
+        policy.browserQuitAllowed = true
         policy.services = CareService.allCases
         try write(policy, name: "care-policy.json")
         DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
     }
     func retainBrowsers() throws {
         var policy = try self.policy(); policy.manualAllowed = policy.canHandleManually; policy.services.removeAll { $0.browser }
+        policy.browserQuitAllowed = false
         try write(policy, name: "care-policy.json")
         DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
     }

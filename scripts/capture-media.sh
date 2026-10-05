@@ -1,8 +1,33 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "$1" != '--diagnosis-only' ]; }; then
+  echo 'Usage: bash scripts/capture-media.sh [--diagnosis-only]' >&2
+  exit 2
+fi
 mkdir -p build/media docs/media
 xcrun swiftc -swift-version 5 -O -sdk "$(xcrun --sdk macosx --show-sdk-path)" Sources/Metrics.swift Sources/Diagnostics.swift Sources/ResourceCare.swift Sources/BrowserRecovery.swift Sources/ResourceCareRuntime.swift Sources/CLI.swift Sources/ResourceActions.swift Sources/DiagnosticsUI.swift Sources/App.swift Sources/AppLifecycle.swift Sources/AppConfiguration.swift Sources/AppLifecycleUI.swift scripts/capture/main.swift -o build/media/capture
+if [ "${1:-}" = '--diagnosis-only' ]; then
+  build/media/capture build/media --diagnosis-only
+  cp build/media/diagnosis.png docs/media/diagnosis.png
+  python3 - <<'PY'
+import datetime, hashlib, json, pathlib, plistlib
+root = pathlib.Path('.')
+path = root/'docs/media/manifest.json'
+manifest = json.loads(path.read_text())
+manifest['diagnosis'] = {
+    'version': plistlib.loads((root/'Info.plist').read_bytes())['CFBundleShortVersionString'],
+    'recorded_at': datetime.datetime.now().astimezone().isoformat(),
+    'method': 'Production diagnosis AppKit view rendered offscreen with deterministic sample values.',
+    'coverage': 'One-click permitted browser closure and leave-closed advice; no real actions or synthetic clicks.',
+    'sources_sha256': {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in
+        [root/'Sources/DiagnosticsUI.swift', root/'Sources/ResourceCare.swift', root/'scripts/capture/main.swift']}
+}
+path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2)+'\n')
+PY
+  echo 'Diagnosis screenshot: docs/media/diagnosis.png; existing CPU/memory/disk video retained.'
+  exit 0
+fi
 build/media/capture build/media
 cp build/media/panel.png build/media/menubar.png build/media/diagnosis.png docs/media/
 ffmpeg -hide_banner -loglevel error -y -framerate 1 -i build/media/frames/%03d.png -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -r 30 -movflags +faststart docs/media/demo.mp4

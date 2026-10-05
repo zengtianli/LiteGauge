@@ -10,7 +10,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
     private let sortControl = NSSegmentedControl(labels: ["按内存", "按 CPU"], trackingMode: .selectOne, target: nil, action: nil)
     private let refreshButton = NSButton(title: "刷新诊断", target: nil, action: nil)
     private let autoButton = NSButton(title: "开启自动处理…", target: nil, action: nil)
-    private let browserButton = NSButton(title: "允许浏览器恢复…", target: nil, action: nil)
+    private let browserButton = NSButton(title: "允许关闭浏览器…", target: nil, action: nil)
     private let batchButton = NSButton(title: "按建议处理", target: nil, action: nil)
     private let autoState = NSTextField(wrappingLabelWithString: "")
     private let work = DispatchQueue(label: "cyou.tianli.litegauge.diagnosis", qos: .utility)
@@ -48,7 +48,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         refreshButton.target = self; refreshButton.action = #selector(refresh)
         refreshButton.keyEquivalent = "r"; refreshButton.keyEquivalentModifierMask = .command
         autoButton.target = self; autoButton.action = #selector(toggleAutomatic)
-        browserButton.target = self; browserButton.action = #selector(allowBrowserRecovery)
+        browserButton.target = self; browserButton.action = #selector(allowBrowserClosing)
         batchButton.target = self; batchButton.action = #selector(runRecommendations)
         autoState.font = .systemFont(ofSize: 11); autoState.textColor = .secondaryLabelColor
         let toolbar = NSStackView(views: [sortControl, NSView(), refreshButton]); toolbar.orientation = .horizontal
@@ -63,7 +63,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
         let buttons = NSStackView(views: [autoButton, browserButton, batchButton, NSView()]); buttons.orientation = .horizontal
-        let note = NSTextField(wrappingLabelWithString: "浏览器恢复另行允许一次；普通标签恢复由浏览器执行，不保证无痕页面、表单或下载恢复。aTrust 和工作应用保留。进程计账内存不能相加当作物理 RAM。")
+        let note = NSTextField(wrappingLabelWithString: "浏览器处理会正常关闭并保持关闭，不再打开；下载和页面任务可能中断，保存提示由浏览器处理。aTrust 和其他工作应用保留。进程计账内存不能相加当作物理 RAM。")
         note.font = .systemFont(ofSize: 10); note.textColor = .tertiaryLabelColor
         let stack = NSStackView(views: [heading, summary, buttons, outcome, autoState, advice, toolbar, scroll, detail, status, note])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
@@ -127,18 +127,18 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             let policy = try carePolicy ?? CareStore().policy()
             batchButton.isEnabled = !busy && policy.canHandleManually
             batchButton.title = report.ready.isEmpty ? "复查并处理" : "按建议处理（\(report.ready.count) 项）"
-            batchButton.toolTip = report.ready.isEmpty ? "重新检查最新状态。" + report.noActionMessage : "立即处理已允许的高占用应用；不等待系统压力、空闲或第二次采样。"
-            let browsers = policy.services.contains(.dia) && policy.services.contains(.chrome)
-            browserButton.title = browsers ? "暂停浏览器恢复" : "允许浏览器恢复…"
+            batchButton.toolTip = report.ready.isEmpty ? "重新检查最新状态。" + report.noActionMessage : "关闭已允许的 Dia / Chrome 并保持关闭；同时处理异常后台服务。无需逐个选择。"
+            let browsers = policy.canCloseBrowsers && policy.services.contains(.dia) && policy.services.contains(.chrome)
+            browserButton.title = browsers ? "暂停关闭浏览器" : "允许关闭浏览器…"
             browserButton.isEnabled = !busy
-            autoState.stringValue = report.enabled ? "自动处理已开启 · 浏览器恢复\(browsers ? "已允许" : "未允许") · 你空闲时处理，无需逐个点选" : "后台自动处理已暂停 · \(policy.canHandleManually ? "手动复查仍可使用" : "处理尚未允许")"
+            autoState.stringValue = report.enabled ? "自动处理已开启 · 关闭浏览器\(browsers ? "已允许" : "未允许") · 你空闲时处理，无需逐个点选" : "后台自动处理已暂停 · \(policy.canHandleManually ? "手动复查仍可使用" : "处理尚未允许")"
             if careReport == nil, let journal = try? CareStore().journal(), journal.checkedAt != nil {
                 let clock = DateFormatter(); clock.dateFormat = "HH:mm:ss"
                 status.stringValue = "当前建议：" + (report.ready.isEmpty ? report.noActionMessage : "可处理 \(report.ready.count) 项。")
                 status.toolTip = status.stringValue
                 if outcome.stringValue.isEmpty, let event = journal.events.last {
                     let running = value.groups.contains { CarePlanner.service($0) == event.service }
-                    var result = !event.ok && !running ? "\(event.service.name)：上次恢复未完成；当前未运行。" : "\(event.service.name)：\(event.message)"
+                    var result = !event.ok && !running ? "\(event.service.name)：上次处理未完成；当前未运行。" : "\(event.service.name)：\(event.message)"
                     if let before = event.systemBeforeBytes, let after = event.systemAfterBytes {
                         result += "系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))。"
                     }
@@ -207,7 +207,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
                 case .success(let value):
                     self.outcome.stringValue = value.actions.isEmpty ? value.message : "已处理 \(value.performedCount) 项。\n" + value.displayMessage
                     self.outcome.textColor = value.performedCount > 0 ? .labelColor : .systemOrange
-                    self.status.stringValue = value.actions.isEmpty ? "本次未执行重启，具体原因见上方。" : "已完成逐项复查；普通标签恢复由浏览器执行，标签数量未核验。"
+                    self.status.stringValue = value.actions.isEmpty ? "本次未执行操作，具体原因见上方。" : "已完成逐项复查；关闭的浏览器保持关闭，不重新打开。"
                 case .failure(let error):
                     self.outcome.stringValue = "本次处理 0 项。" + ((error as? ResourceActionError)?.message ?? error.localizedDescription)
                     self.outcome.textColor = .systemOrange; self.status.stringValue = self.outcome.stringValue
@@ -215,16 +215,16 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             }
         }
     }
-    @objc private func allowBrowserRecovery() {
+    @objc private func allowBrowserClosing() {
         guard !busy, let window = view.window else { return }
-        if (try? CareStore().policy().services.contains(.dia)) == true {
+        if (try? CareStore().policy().canCloseBrowsers) == true {
             do { try CareStore().retainBrowsers(); if let diagnosis { apply(diagnosis) } }
             catch { status.stringValue = error.localizedDescription }
             return
         }
-        let alert = NSAlert(); alert.messageText = "允许 Dia / Chrome 空闲时恢复重启？"
-        alert.informativeText = "一次允许后，持续内存压力偏高且浏览器持续超阈值时，你空闲 2 分钟、浏览器不在前台且负载低才执行。先保留本地普通会话备份，再正常退出并请求恢复普通标签。页面会重载；无痕页面、未提交表单、下载和页面任务不保证恢复。每个浏览器成功后至少观察 6 小时。"
-        alert.addButton(withTitle: "允许浏览器恢复"); alert.addButton(withTitle: "取消")
+        let alert = NSAlert(); alert.messageText = "允许正常关闭 Dia / Chrome？"
+        alert.informativeText = "关闭后保持关闭，不再打开。主动按建议处理会关闭已允许的浏览器，不受内存阈值限制；下载和页面任务会中断，保存或离开页面提示由浏览器处理。后台仍只在持续高压力、高占用且你空闲 2 分钟、浏览器不在前台、低负载时执行。aTrust 和其他工作应用保留。"
+        alert.addButton(withTitle: "允许关闭浏览器"); alert.addButton(withTitle: "取消")
         alert.beginSheetModal(for: window) { [weak self] response in
             guard response == .alertFirstButtonReturn, let self else { return }
             do { try CareStore().allowBrowsers(); if let diagnosis = self.diagnosis { self.apply(diagnosis) } }

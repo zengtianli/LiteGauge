@@ -241,14 +241,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func requestQuit() {
         if automaticCare?.isHandling == true {
             quitAfterCare = true; automaticCare?.suspend()
-            careStatusItem?.title = "完成后台恢复后退出轻仪"
+            careStatusItem?.title = "完成后台处理后退出轻仪"
         } else { NSApp.terminate(nil) }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard automaticCare?.isHandling == true else { return .terminateNow }
         terminationDeferred = true; automaticCare?.suspend()
-        careStatusItem?.title = "完成后台恢复后退出轻仪"
+        careStatusItem?.title = "完成后台处理后退出轻仪"
         return .terminateLater
     }
 
@@ -431,7 +431,7 @@ extension AppDelegate {
         checks["diagnosis_offscreen_renders"] = png(diagnosticView.view, "native-ui-diagnosis.png") > 1000
         checks["diagnosis_preview_does_not_act"] = !diagnosticView.busy && diagnosticWindow == nil
         let report = CareReport(enabled: true, checkedAt: Date(), suggestions: [
-            CareSuggestion(name: "示例浏览器", state: "ready", message: "示例浏览器：可立即恢复重启。", service: .dia, target: nil)
+            CareSuggestion(name: "示例浏览器", state: "ready", message: "示例浏览器：可立即正常关闭，保持关闭。", service: .dia, target: nil)
         ])
         diagnosticView.apply(diagnosis, careReport: report)
         checks["recommendations_without_row_selection"] = diagnosticView.recommendationsWithoutSelection
@@ -439,12 +439,13 @@ extension AppDelegate {
         var invoked = false
         diagnosticView.recommendationRunner = {
             invoked = true
-            let event = CareEvent(at: Date(), service: .dia, ok: true, message: "示例处理已完成。", beforeBytes: 3_000_000_000, afterBytes: 1_000_000_000)
+            let event = CareEvent(at: Date(), service: .dia, ok: true, message: "浏览器已关闭，不重新打开。", beforeBytes: 3_000_000_000, afterBytes: 0, action: "quit")
             return CareRunResult(ok: true, report: report, actions: [event], message: event.message)
         }
         diagnosticView.activateRecommendationsForTest()
         checks["recommendation_button_invokes_runner"] = wait(5) { !diagnosticView.busy } && invoked
         checks["recommendation_result_visible_at_top"] = diagnosticView.operationOutcome.contains("已处理 1 项")
+        checks["browser_closure_result_leaves_closed"] = diagnosticView.operationOutcome.contains("保持关闭")
         diagnosticView.apply(diagnosis, careReport: report)
         diagnosticView.recommendationRunner = { CareRunResult(ok: false, report: report, actions: [], message: "本次处理 0 项。示例条件已变化。") }
         diagnosticView.activateRecommendationsForTest()

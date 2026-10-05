@@ -74,13 +74,13 @@
     </section>
 
     <section class="section wrap" aria-labelledby="diagnosis-title">
-      <div class="section-heading"><div><p class="eyebrow">浏览器恢复 · v0.4.0 起</p><h2 id="diagnosis-title">主要占用，也能安排处理。</h2></div><p>一次允许，无需逐个点选。<br>持续高压力才检查，空闲时处理，完成后复查。</p></div>
+      <div class="section-heading"><div><p class="eyebrow">浏览器关闭 · v0.4.3 起</p><h2 id="diagnosis-title">关闭闲置浏览器，释放当前占用。</h2></div><p>一次允许，无需逐个点选。<br>关闭后保持关闭，完成后复查实际内存。</p></div>
       <div class="demo-grid">
-        <figure class="video-figure"><img src="media/diagnosis.png" width="740" height="740" loading="lazy" style="width:100%;height:auto" alt="具体资源建议、自动处理状态与可核对的进程明细"><figcaption>同源 AppKit 离屏渲染，固定示例值；真实自动重启与结果未包含在截图中。</figcaption></figure>
+        <figure class="video-figure"><img src="media/diagnosis.png" width="740" height="740" loading="lazy" style="width:100%;height:auto" alt="具体资源建议、自动处理状态与可核对的进程明细"><figcaption>同源 AppKit 离屏渲染，固定示例值；真实关闭与结果未包含在截图中。</figcaption></figure>
         <div class="demo-notes">
           <article><span>01</span><div><h3>点一次，逐项处理</h3><p>「按建议处理」立即处理本次已允许的高占用应用，不等待压力升高或空闲。结果显示在面板顶部；没执行会说明原因。aTrust、工作应用和稳定文件索引保留。</p></div></article>
-          <article><span>02</span><div><h3>浏览器另行允许一次</h3><p>Dia / Chrome 可在持续高压力且你空闲时正常重启，先备份普通会话再请求恢复标签。页面重载；无痕页面、表单和下载不保证恢复。后台照料继续支持 Shadowrocket / OrbStack。</p></div></article>
-          <article><span>03</span><div><h3>复查效果，避免重复</h3><p>应用计账与系统已用内存分别复查，最近 20 条结果只在本机。基本服务成功后观察 1 小时，浏览器至少 6 小时；浏览器收益不足时暂停 24 小时。策略默认关闭，可随时暂停。</p></div></article>
+          <article><span>02</span><div><h3>浏览器关闭后保持关闭</h3><p>另行允许后，主动处理正常关闭 Dia / Chrome，不受浏览器内存阈值限制，也不再打开。下载和页面任务可能中断，保存提示由浏览器处理。后台只在高压力、空闲且低负载时关闭浏览器；Shadowrocket / OrbStack 继续正常恢复。</p></div></article>
+          <article><span>03</span><div><h3>复查效果，避免重复</h3><p>应用计账与系统已用内存分别复查，最近 20 条结果只在本机。基本服务成功后观察 1 小时，后台浏览器关闭后观察 6 小时；主动关闭不被旧重启观察期阻挡。策略默认关闭，可随时暂停。</p></div></article>
         </div>
       </div>
     </section>

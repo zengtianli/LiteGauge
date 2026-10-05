@@ -54,9 +54,10 @@ let diagnosis = ResourceDiagnosis(sampledAt: fixture.sampledAt, system: fixture,
 let diagnosticWindow = DiagnosticWindowController()
 let diagnosticView = diagnosticWindow.diagnosticView
 diagnosticView.view.appearance = NSAppearance(named: .aqua)
-let careReport = CarePlanner.report(diagnosis, policy: CarePolicy(enabled: true), journal: CareJournal(),
-    context: CareContext(userID: UInt32.max, idleSeconds: 180, foregroundBundle: nil))
-diagnosticView.apply(diagnosis, careReport: careReport, carePolicy: CarePolicy(enabled: true))
+let screenshotPolicy = CarePolicy(enabled: true, services: CareService.allCases, browserQuitAllowed: true)
+let careReport = CarePlanner.report(diagnosis, policy: screenshotPolicy, journal: CareJournal(),
+    context: CareContext(userID: UInt32.max, idleSeconds: 180, foregroundBundle: nil), batch: true)
+diagnosticView.apply(diagnosis, careReport: careReport, carePolicy: screenshotPolicy)
 diagnosticWindow.window?.contentView?.layoutSubtreeIfNeeded()
 diagnosticView.view.layoutSubtreeIfNeeded()
 RunLoop.current.run(until: Date().addingTimeInterval(0.1))
@@ -64,6 +65,7 @@ diagnosticView.view.layoutSubtreeIfNeeded()
 let diagnosticRep = diagnosticView.view.bitmapImageRepForCachingDisplay(in: diagnosticView.view.bounds)!
 diagnosticView.view.cacheDisplay(in: diagnosticView.view.bounds, to: diagnosticRep)
 try diagnosticRep.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent("diagnosis.png"))
+if CommandLine.arguments.contains("--diagnosis-only") { exit(0) }
 
 let captions = [
     ("01 / 菜单栏，一眼读懂", "左侧 CPU 百分比；右侧两根竖条依次表示内存、磁盘已用比例。"),

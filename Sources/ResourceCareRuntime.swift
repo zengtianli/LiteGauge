@@ -52,9 +52,9 @@ enum CareRuntime {
             var event: CareEvent
             do {
                 progress("正在处理 \(index + 1)/\(candidates.count)：\(service.name)…")
-                let plan = try ResourceActions.prepare(pid: target.pid, token: target.token, action: "restart")
+                let plan = try ResourceActions.prepare(pid: target.pid, token: target.token, action: service.action)
                 guard plan.kind == service.adapter else { throw ResourceActionError(message: "应用身份与建议不符，本次自动操作已取消。") }
-                let result = ResourceActions.perform(pid: target.pid, token: target.token, action: "restart", dryRun: false, leaseOwned: true, progress: progress)
+                let result = ResourceActions.perform(pid: target.pid, token: target.token, action: service.action, dryRun: false, leaseOwned: true, progress: progress)
                 event = CareEvent(at: Date(), service: service, ok: result.ok, message: result.message,
                                   beforeBytes: result.beforeBytes, afterBytes: result.afterBytes)
             } catch {
@@ -62,6 +62,7 @@ enum CareRuntime {
                                   message: (error as? ResourceActionError)?.message ?? error.localizedDescription,
                                   beforeBytes: nil, afterBytes: nil)
             }
+            event.action = service.action
             if event.ok, let memory = MetricsSampler().sample().memory {
                 event.systemBeforeBytes = current.system.memory?.usedBytes
                 event.systemAfterBytes = memory.usedBytes

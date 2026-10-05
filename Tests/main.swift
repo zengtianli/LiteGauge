@@ -266,15 +266,28 @@ let orderedCare = CarePlanner.report(careDiagnosis([careGroup("Dia", memory: 6 *
     policy: enabledCare, journal: careHistory, context: careContext, now: careNow)
 check(orderedCare.suggestions.first?.service == .shadowrocket, "concrete managed operations precede read-only work app advice")
 let browserFixture = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824), careGroup("Google Chrome")])
-let browserPolicy = CarePolicy(enabled: true, services: CareService.allCases)
-let pausedBrowserPolicy = CarePolicy(enabled: false, services: CareService.allCases)
+let browserPolicy = CarePolicy(enabled: true, services: CareService.allCases, browserQuitAllowed: true)
+let pausedBrowserPolicy = CarePolicy(enabled: false, services: CareService.allCases, browserQuitAllowed: true)
 check(pausedBrowserPolicy.canHandleManually && !CarePolicy().canHandleManually,
       "paused existing browser permission still allows manual actions; missing permission does not")
 check(careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: pausedBrowserPolicy, batch: true)
       && !careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)]), policy: pausedBrowserPolicy), "manual and automatic policy gates remain separate")
 var browserHistory = CareJournal()
 CarePlanner.observe(browserFixture, journal: &browserHistory, userID: 501, now: careNow.addingTimeInterval(-120))
-check(!careReady(browserFixture, history: browserHistory), "existing basic policy cannot silently acquire browser restart permission")
+check(!careReady(browserFixture, history: browserHistory), "existing basic policy cannot silently acquire browser close permission")
+let legacyBrowserPolicy = CarePolicy(enabled: true, services: CareService.allCases)
+check(!careReady(browserFixture, policy: legacyBrowserPolicy, history: browserHistory, batch: true),
+      "legacy browser restart consent does not authorize leaving browsers closed")
+check(CareService.dia.action == "quit" && CareService.chrome.action == "quit"
+      && CareService.orbstack.action == "restart" && CareService.shadowrocket.action == "restart",
+      "browser care closes while service care retains normal recovery")
+check(careReady(careDiagnosis([careGroup("Dia", memory: 500_000_000)], pressure: "正常"), policy: browserPolicy, history: CareJournal(), batch: true),
+      "explicit browser closing does not require reaching the restart threshold")
+check(!careReady(careDiagnosis([careGroup("Dia", memory: 500_000_000)]), policy: browserPolicy, history: browserHistory),
+      "manual low-footprint close does not expand background automation")
+check(careReady(careDiagnosis([careGroup("Dia", cpu: 60)], pressure: "正常"), policy: browserPolicy, history: CareJournal(),
+      context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: "/Applications/Dia.app"), batch: true),
+      "explicit close may target the browser in use while automatic close still requires idle background")
 let browserReport = CarePlanner.report(browserFixture, policy: browserPolicy, journal: browserHistory, context: careContext, now: careNow)
 var failedBrowserHistory = browserHistory
 failedBrowserHistory.events = [CareEvent(at: careNow, service: .dia, ok: false, message: "quit blocked", beforeBytes: nil, afterBytes: nil)]
@@ -291,19 +304,20 @@ let normalBrowserFixture = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741
 let immediateBrowserReport = CarePlanner.report(normalBrowserFixture, policy: browserPolicy, journal: CareJournal(),
     context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: nil), now: careNow, batch: true)
 check(immediateBrowserReport.ready.count == 2 && immediateBrowserReport.lines.first?.contains("可立即") == true,
-      "user click treats high browser footprint immediately even at normal pressure and with active input")
+      "user click closes allowed browsers immediately even at normal pressure and with active input")
 check(!careReady(normalBrowserFixture, policy: browserPolicy, history: browserHistory), "manual pressure bypass does not change automatic care at normal pressure")
 check(!careReady(careDiagnosis([careGroup("Dia", memory: nil)], pressure: "正常"), policy: browserPolicy, batch: true)
       && !careReady(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)], pressure: "正常", errors: ["unavailable"]), policy: browserPolicy, batch: true), "manual action still requires complete readable diagnosis")
 check(!careReady(browserFixture, policy: browserPolicy, history: CareJournal())
-      && !careReady(browserFixture, policy: browserPolicy, history: browserHistory, context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: nil)), "browser restart never follows a single reading or active input")
+      && !careReady(browserFixture, policy: browserPolicy, history: browserHistory, context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: nil)), "automatic browser closing never follows a single reading or active input")
 let diaOnly = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)])
 check(!careReady(diaOnly, policy: browserPolicy, history: browserHistory, context: CareContext(userID: 501, idleSeconds: 180, foregroundBundle: "/Applications/Dia.app")), "frontmost browser is retained")
 browserHistory.events = [CareEvent(at: careNow.addingTimeInterval(-3601), service: .dia, ok: true, message: "done", beforeBytes: nil, afterBytes: nil)]
-check(!careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true), "browser has a six-hour cooldown even for manual batch")
+check(careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true)
+      && !careReady(diaOnly, policy: browserPolicy, history: browserHistory), "old recovery cooldown does not block explicit closure; automatic cooldown remains")
 browserHistory.events = [CareEvent(at: careNow.addingTimeInterval(-21601), service: .dia, ok: true, message: "done", beforeBytes: 6_000_000_000, afterBytes: 5_900_000_000)]
-check(!careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true), "ineffective browser recovery pauses retries for a day")
-check(CarePlanner.report(browserFixture, policy: enabledCare, journal: careHistory, context: careContext, now: careNow).noActionMessage.contains("尚未恢复主要占用"), "no-action outcome admits that the main browser footprint remains untreated")
+check(careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true), "ineffective recovery must not prevent a user-requested close")
+check(CarePlanner.report(browserFixture, policy: enabledCare, journal: careHistory, context: careContext, now: careNow).noActionMessage.contains("尚未关闭浏览器"), "no-action outcome admits that browsers remain open")
 check(!careReady(careDiagnosis([careGroup("Codex"), careGroup("aTrustAgent"), careGroup("Sift")]), policy: browserPolicy, batch: true), "browser opt-in does not expand to current work, aTrust or indexer")
 check(parsed(["care", "browsers", "--yes"]) == .care(operation: "browsers", json: false, dryRun: false)
       && rejected(["care", "browsers"]), "browser opt-in needs separate explicit CLI intent")
@@ -339,10 +353,10 @@ let pausedSavedPolicy = try careStore.policy()
 check(pausedSavedPolicy.canHandleManually, "pausing the scheduler persists existing manual consent")
 try careStore.setEnabled(true)
 let allowedBrowsers = try careStore.policy()
-check(allowedBrowsers.enabled && allowedBrowsers.services.contains(.dia) && allowedBrowsers.services.contains(.chrome), "browser permission persists for resident automation")
+check(allowedBrowsers.enabled && allowedBrowsers.canCloseBrowsers && allowedBrowsers.services.contains(.dia) && allowedBrowsers.services.contains(.chrome), "explicit browser close permission persists for resident automation")
 try careStore.retainBrowsers()
 let retainedBrowsers = try careStore.policy()
-check(retainedBrowsers.enabled && retainedBrowsers.services == CareService.basic
+check(retainedBrowsers.enabled && !retainedBrowsers.canCloseBrowsers && retainedBrowsers.services == CareService.basic
       && parsed(["care", "browsers", "--disable"]) == .care(operation: "retain-browsers", json: false, dryRun: false)
       && rejected(["care", "browsers", "--yes", "--disable"]), "browser permission can be revoked while basic background care remains enabled")
 let oldEvent = Data("{\"at\":0,\"service\":\"shadowrocket\",\"ok\":true,\"message\":\"old\"}".utf8)
