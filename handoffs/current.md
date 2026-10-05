@@ -1,5 +1,15 @@
 # 轻仪 LiteGauge · 当前交付
 
+## 2026-10-05 · 0.4.2 本机按钮与 CLI 真实核验
+
+- 用户反馈按钮仍无效果，已通过 CUA 读取实际已安装 0.4.1 窗口：自动处理暂停，当前零项，按钮禁用；顶部还展示已不在运行的浏览器历史失败。实际 CLI `care run --yes --json` 零动作却返回成功。修复手动权限与后台开关耦合、零项不能重新扫描、历史结果与当前状态混淆、零动作假成功四处问题。
+- 0.4.2 (9) 已 Developer ID 签名、公证并安装到 /Applications；后台唯一菜单栏实例与 CLI 均为新版。已安装可执行 SHA256 f1d91c848e39e0b8d8e3b16d394da32bd3190595edd73eb938d9738287658757，与 perf/build-receipt.json 及全部 17 个源码输入一致；源码 56663b491bc687dac27a9268bcddbbcfa86731ca。
+- 核心 118 项、已安装版离屏 UI 24 项通过，macos-14 CI 37267410496 成功。已安装 CLI 实际返回 no_action / ok=false / attemptedCount=0 / performedCount=0 / 退出码 1；预览独立标记 preview、退出码 0。单次手动点击即使后台暂停且当前零项，也能在已有允许范围内重新诊断；没有允许时仍不可执行。
+- 本轮实际执行过一次 Dia 正常会话备份、正常退出与后台恢复，随后独立等待并复测，收益有限且使用后回升。原生实操使用的是升级前 0.4.1 适配器；0.4.2 安装后测试的是实际 CLI 零项路径，不能将其写成新版真实重启成功。没有核验恢复标签数，没有强杀浏览器或确认丢弃表单，aTrust 和工作应用保留。
+- 新版浏览器退出等待 30 秒，并区分拒绝与未退出；恢复后等 30 秒再复测。身份读取失败不能直接当成进程已退出。保持成功冷却与低收益保护，明确手动重试可略过失败冷却，后台仍保留保护。
+- 本机后台当前暂停，原有四项允许保留；未自动覆盖当前暂停状态。个人机器内存、进程和操作原始证据仅存忽略的 build/。总内存明显下降尚未达成，不能宣称已解决高占用或达到 50%；当前内存压力正常。公开证据见 perf/cli-care-verification.json。
+- GitHub 下载与官网仍为 0.4.1；0.4.2 签名候选包位于 build/release/，本轮以修复与装机验证为主，未发布新版下载或部署官网。同源离屏素材已更新为 0.4.2；不能称为实际用户点击录像。正式性能仍为历史 0.1.2。交付前 SOP test-only 已调用，返回增量状态待检查，不代表全量验收通过；保留其他后台作业的证据原件。
+
 ## 2026-10-05 · 0.4.1 修复「按建议处理」无效果
 
 - 实际原因：旧按钮在主动点击时仍要求系统高压力；正常压力下仅返回等待。主动操作现在略过压力、空闲与第二次读数条件，保持既有权限、完整读数、身份、前台、CPU 与冷却保护；后台自动规则不变。一次点击按初始可执行计划逐项处理，每项前复查条件。
@@ -38,9 +48,9 @@
 
 - 官网：<https://litegauge.tianli.cyou/>
 - 源码：<https://github.com/zengtianli/LiteGauge>，MIT，中文 README / 对应英文 README。
-- 正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.3.0>（Latest）；旧版本资产仍在。
+- 公开正式版：<https://github.com/zengtianli/LiteGauge/releases/tag/v0.4.1>（Latest）；本机 0.4.2 尚未公开发版，旧版本资产仍在。
 - 目录：<https://apps.tianli.cyou/mac.html>，轻仪卡片跳独立官网。
-- 安装 /Applications/LiteGauge.app（0.3.0 (6)），普通模式运行，自动处理已开启；升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
+- 安装 /Applications/LiteGauge.app（0.4.2 (9)），普通模式运行；后台当前暂停，已有允许保留。升级用 `bash scripts/install.sh --restart`；CLI `~/.local/bin/litegauge` 链到包内主程序，project.yaml 以 sop.cli 声明。Stats 的安装、运行与登录项保留。
 - 源目录 ~/Apps/litegauge（2026-09-27 由 tlstats 改名），登记 id/family 为 litegauge。
 
 ## 发行与验证

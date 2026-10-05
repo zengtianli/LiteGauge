@@ -1,0 +1,59 @@
+{
+  "version": "0.4.2",
+  "build": "9",
+  "verified_at": "2026-10-05T05:27:55Z",
+  "source_commit": "56663b491bc687dac27a9268bcddbbcfa86731ca",
+  "executable_sha256": "f1d91c848e39e0b8d8e3b16d394da32bd3190595edd73eb938d9738287658757",
+  "source_input_sha256": "6f5be3d3d1bd22096d40ca13f2ce205b77c3a8a423ee0bf7f45638e9e998dd5c",
+  "core_checks": 118,
+  "installed_offscreen_ui_checks": 24,
+  "source_ci": {
+    "run_id": 37267410496,
+    "platform": "macos-14",
+    "conclusion": "success"
+  },
+  "installed": {
+    "version": "0.4.2",
+    "build": "9",
+    "resident": true,
+    "signature": "Notarized Developer ID",
+    "receipt_matches": true,
+    "source_files_matched": 17
+  },
+  "installed_cli_execution": {
+    "command": "care run --yes --json",
+    "status": "no_action",
+    "ok": false,
+    "attemptedCount": 0,
+    "performedCount": 0,
+    "exit_code": 1
+  },
+  "preview_execution": {
+    "binary_scope": "Current-source build before release signing",
+    "status": "preview",
+    "ok": true,
+    "performedCount": 0,
+    "exit_code": 0
+  },
+  "native_action_probe": {
+    "adapter_version": "0.4.1",
+    "graceful_browser_recovery_completed": 1,
+    "independent_settled_measurement": true,
+    "sustained_large_physical_memory_drop_demonstrated": false,
+    "tab_count_restore_verified": false,
+    "raw_evidence": "Private machine diagnostics and process identities retained only in ignored build/."
+  },
+  "coverage": [
+    "An existing manual allowance remains usable while automatic care is paused, including a zero-ready-item recheck.",
+    "No executable actions return no_action and exit 1, rather than false success; preview is distinguishable.",
+    "Current managed-app conditions are separate from historical action failures and generic protected-work advice.",
+    "Installed AppKit button tests exercise its actual runner wiring using controlled outcomes without disturbing the foreground."
+  ],
+  "limits": [
+    "The installed-version real CLI run had no eligible actions; it does not demonstrate a live 0.4.2 browser restart.",
+    "Real browser recovery produced limited benefit with subsequent growth; reducing physical memory to half was not achieved.",
+    "Offscreen UI checks do not cover physical menu-bar clicks or real sleep/wake.",
+    "Automatic care was paused on this machine and its setting was preserved.",
+    "Public download and homepage remain 0.4.1; current-version formal performance and full SOP acceptance are not claimed."
+  ]
+}
