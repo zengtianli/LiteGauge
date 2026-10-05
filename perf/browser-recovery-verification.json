@@ -9,6 +9,20 @@
   "privacy_boundary_checks": 5,
   "live_browser_preflights": 2,
   "result": "passed",
+  "promotion": {
+    "version_visible": "0.4.0",
+    "browser": "Chrome extension",
+    "viewport_width": 683,
+    "document_scroll_width": 668,
+    "diagnosis_image_loaded": true,
+    "video_duration_seconds": 24,
+    "video_ended_seconds": 24,
+    "video_ready_state": 4,
+    "current_cooldown_copy_verified": true,
+    "agent_tab_closed": true,
+    "original_user_tabs_preserved": true,
+    "scope": "Existing viewport and actual playback; no new desktop/mobile viewport overrides."
+  },
   "coverage": [
     "Existing basic policy cannot silently gain browser permission; separate permission can be revoked",
     "Sustained pressure, two observations, idle input, foreground and CPU guards protect active work",
@@ -16,7 +30,7 @@
     "Valid SNSS files are backed up owner-only, without cookies, credentials or history databases; two snapshots retained",
     "Missing normal session files prevent browser quit; old action history remains readable",
     "Native adapters selected both installed browsers and requested --restore-last-session in read-only preflight",
-    "Installed signed executable matches receipt; resident controller wrote a browser high-memory observation without forcing action",
+    "Installed signed executable matches receipt; resident controller completed two sustained high-memory observations and deferred until idle input",
     "GitHub macos-14 core-test runs 37256751758 and 37256726033 succeeded",
     "Public files and ZIP/DMG hashes verified; video supports HTTP Range 206"
   ],
