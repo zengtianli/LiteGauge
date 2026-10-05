@@ -2,7 +2,7 @@
 # privacy acceptance: metric/CLI modules have no network/process/defaults APIs; the vendored lifecycle
 # modules handle explicit release checks/downloads. Metric samples are never passed to them.
 # The app links system frameworks and has no entitlements or usage strings;
-# Care policy and the last 20 action results stay in the owner-only LiteGauge support folder.
+# Care policy, 20 results and two normal-session backups per opted-in browser stay in the owner-only support folder.
 # Resource collection stays offline; lifecycle updates are explicitly invoked.
 set -euo pipefail
 cd "$(dirname "$0")/../.."

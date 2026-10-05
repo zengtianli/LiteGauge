@@ -3,7 +3,7 @@ import Foundation
 // Command-line surface for agents and scripts. Foundation only, so the core tests compile it without AppKit.
 // Readings come from the same MetricsSampler / MetricFormat / MetricThresholds the menu-bar App draws from.
 
-let version = "0.3.0"
+let version = "0.4.0"
 
 struct WatchOptions: Equatable {
     var interval: TimeInterval = MetricsSampler.sampleInterval
@@ -49,6 +49,8 @@ enum CLI {
           汇总具体操作建议，或查看自动处理策略与最近结果，不需要逐个选择进程。
       litegauge care enable --yes [--json] | care disable [--json]
           一次允许/暂停 Shadowrocket、OrbStack 的后台自动处理。隧道/容器可能短暂中断，aTrust 和工作应用保留。
+      litegauge care browsers (--yes | --disable) [--json]
+          另行允许 Dia / Chrome 空闲时恢复重启；页面重新加载，无痕页面、未提交表单和下载不保证恢复。
       litegauge care run (--dry-run | --yes) [--json]
           按建议处理已允许且占用异常的后台应用并复查，最多执行一项；正常占用保留。
       litegauge watch [--interval <秒>] [--count <次数>] [--json]
@@ -74,7 +76,7 @@ enum CLI {
     """
 
     static let usageText = """
-    用法：litegauge status [--json] | care plan|status|enable|disable|run [--json] | diagnose [--sort memory|cpu] [--limit 1..50] [--json] | process quit|restart --pid <pid> --token <token> (--dry-run | --yes) | watch [--interval <秒>] [--count <次数>] [--json] | app status [--json] | app quit (--dry-run | --yes) [--pid <pid>] [--json] | --version | --help
+    用法：litegauge status [--json] | care plan|status|enable|disable|browsers|run [--json] | diagnose [--sort memory|cpu] [--limit 1..50] [--json] | process quit|restart --pid <pid> --token <token> (--dry-run | --yes) | watch [--interval <秒>] [--count <次数>] [--json] | app status [--json] | app quit (--dry-run | --yes) [--pid <pid>] [--json] | --version | --help
     litegauge 不带参数不会启动菜单栏 App；从「应用程序」打开，或 open -g -j /Applications/LiteGauge.app。
     """
 
@@ -101,12 +103,13 @@ enum CLI {
                 return .success(.diagnose(json: found["--json"] != nil, sort: sort, limit: limit))
             }
         case "care":
-            guard let operation = rest.first, ["plan", "status", "enable", "disable", "run"].contains(operation) else { return fail("care 需要 plan、status、enable、disable 或 run") }
-            let switches: Set<String> = operation == "run" ? ["--json", "--yes", "--dry-run"] : operation == "enable" ? ["--json", "--yes"] : ["--json"]
+            guard let operation = rest.first, ["plan", "status", "enable", "disable", "browsers", "run"].contains(operation) else { return fail("care 需要 plan、status、enable、disable、browsers 或 run") }
+            let switches: Set<String> = operation == "run" ? ["--json", "--yes", "--dry-run"] : operation == "browsers" ? ["--json", "--yes", "--disable"] : operation == "enable" ? ["--json", "--yes"] : ["--json"]
             return options(Array(rest.dropFirst()), switches: switches).flatMap { found in
                 if operation == "enable" && found["--yes"] == nil { return fail("开启后台自动处理须加 --yes；允许已列明的短暂隧道/容器中断") }
+                if operation == "browsers" && ((found["--yes"] != nil) == (found["--disable"] != nil)) { return fail("浏览器恢复需要 --yes 或 --disable；页面重载，无痕页面、表单和下载不保证恢复") }
                 if operation == "run" && ((found["--yes"] != nil) == (found["--dry-run"] != nil)) { return fail("care run 需要 --dry-run 或 --yes，任选一个") }
-                return .success(.care(operation: operation, json: found["--json"] != nil, dryRun: found["--dry-run"] != nil))
+                return .success(.care(operation: found["--disable"] != nil ? "retain-browsers" : operation, json: found["--json"] != nil, dryRun: found["--dry-run"] != nil))
             }
         case "process":
             guard let action = rest.first, ["quit", "restart"].contains(action) else { return fail("process 需要子命令 quit 或 restart") }

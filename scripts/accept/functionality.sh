@@ -31,7 +31,8 @@ assert read('care-before.json') == read('care-after.json'), 'read-only planning 
 plan=read('care-plan.json'); preview=read('care-preview.json')
 assert plan['suggestions'] and isinstance(plan['enabled'],bool)
 assert preview['ok'] and preview['actions'] == [] and preview['report']['suggestions']
-assert all(r.get('service') in ('shadowrocket','orbstack') for r in plan['suggestions'] if r['state']=='ready')
+allowed=read('care-before.json')['policy']['services']
+assert all(r.get('service') in allowed for r in plan['suggestions'] if r['state']=='ready')
 print('具体建议与统一处理预览 4/4 项通过（未操作应用）')
 PY
 # A bad identity must fail before attempting any action, even with --yes.

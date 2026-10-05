@@ -13,6 +13,7 @@ struct ResourceActionPlan: Encodable {
     let mainProcess: ProcessIdentity?
     let serviceID: String?
     let executable: String?
+    var launchArguments: [String] = []
 }
 
 struct ResourceActionResult: Encodable {
@@ -89,6 +90,12 @@ enum ResourceActions {
         }
         guard apps.count == 1, let app = apps.first, let (main, _) = NativeProcessReader.identity(app.processIdentifier),
               main.userID == getuid() else { throw ResourceActionError(message: "后台服务或多个应用实例只提供诊断；无法确定唯一可正常退出的应用。") }
+        if action == "restart", let root = BrowserRecovery.root(bundleID: bundleID) {
+            _ = try BrowserRecovery.sessionFiles(at: root)
+            return ResourceActionPlan(action: action, kind: "browser", target: identity, bundlePath: bundlePath, name: name,
+                warning: "正常退出后请求恢复普通标签；页面会重新加载，下载和页面任务可能中断，无痕页面、未提交表单不保证恢复。先保留本地会话备份，不强制结束。",
+                mainProcess: main, serviceID: nil, executable: nil, launchArguments: ["--restore-last-session"])
+        }
         return ResourceActionPlan(action: action, kind: "application", target: identity, bundlePath: bundlePath, name: name,
             warning: action == "restart" ? "将正常退出并在后台重新打开应用；请先保存工作。浏览器是否恢复页面由其自身设置决定。"
                 : "将正常退出应用；保存提示由应用处理，不会强制结束。",
@@ -190,6 +197,10 @@ enum ResourceActions {
                 let main = p.mainProcess!
                 guard NativeProcessReader.identity(main.pid)?.0 == main,
                       let app = NSRunningApplication(processIdentifier: main.pid) else { throw ResourceActionError(message: "应用实例已变化，请重新诊断。") }
+                if p.kind == "browser" {
+                    guard let id = app.bundleIdentifier else { throw ResourceActionError(message: "浏览器身份不可读，已暂缓重启。") }
+                    _ = try BrowserRecovery.backup(bundleID: id)
+                }
                 var accepted = false
                 if Thread.isMainThread { accepted = app.terminate() }
                 else { DispatchQueue.main.sync { accepted = app.terminate() } }
@@ -198,6 +209,7 @@ enum ResourceActions {
                 }
                 if action == "restart" {
                     let config = NSWorkspace.OpenConfiguration(); config.activates = false; config.hides = true
+                    config.arguments = p.launchArguments
                     let result = OpenResult()
                     let open = {
                         NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: p.bundlePath), configuration: config) { _, error in
@@ -210,9 +222,10 @@ enum ResourceActions {
                     }
                 }
             }
-            Thread.sleep(forTimeInterval: 2)
+            Thread.sleep(forTimeInterval: p.kind == "browser" ? 10 : 2)
             let after = footprint(bundlePath: p.bundlePath)
             var message = "\(p.name)\(action == "restart" ? "已重启" : "已正常退出")。"
+            if p.kind == "browser" { message += "已请求恢复普通标签，标签数量未核验。" }
             if let before, let after {
                 message += "应用计账内存 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))。"
             } else { message += "部分内存不可读，无法计算变化。" }

@@ -254,7 +254,7 @@ check(!careReady(careDiagnosis([careGroup("OrbStack", memory: 1_500_000_000)])),
 let protectedReport = CarePlanner.report(careDiagnosis([careGroup("aTrustAgent"), careGroup("Dia"), careGroup("Sift")]),
     policy: enabledCare, journal: careHistory, context: careContext, now: careNow, batch: true)
 check(protectedReport.ready.isEmpty && protectedReport.suggestions.first(where: { $0.name == "aTrustAgent" })?.state == "ignored"
-      && protectedReport.suggestions.first(where: { $0.name == "Sift" })?.state == "keep", "aTrust, browsers and indexers never enter automatic adapters")
+      && protectedReport.suggestions.first(where: { $0.name == "Sift" })?.state == "keep", "basic opt-in preserves browsers, aTrust and indexers")
 var cooling = careHistory
 cooling.events = [CareEvent(at: careNow.addingTimeInterval(-3599), service: .shadowrocket, ok: true, message: "done", beforeBytes: nil, afterBytes: nil)]
 check(!careReady(history: cooling, batch: true), "even an explicit batch observes successful-action cooldown")
@@ -265,6 +265,25 @@ check(careReady(history: CareJournal(), context: CareContext(userID: 501, idleSe
 let orderedCare = CarePlanner.report(careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824), managedGroup]),
     policy: enabledCare, journal: careHistory, context: careContext, now: careNow)
 check(orderedCare.suggestions.first?.service == .shadowrocket, "concrete managed operations precede read-only work app advice")
+let browserFixture = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824), careGroup("Google Chrome")])
+let browserPolicy = CarePolicy(enabled: true, services: CareService.allCases)
+var browserHistory = CareJournal()
+CarePlanner.observe(browserFixture, journal: &browserHistory, userID: 501, now: careNow.addingTimeInterval(-120))
+check(!careReady(browserFixture, history: browserHistory), "existing basic policy cannot silently acquire browser restart permission")
+let browserReport = CarePlanner.report(browserFixture, policy: browserPolicy, journal: browserHistory, context: careContext, now: careNow)
+check(browserReport.ready.count == 2 && browserReport.ready.first?.service == .dia, "opted-in browsers use sustained idle policy and largest browser goes first")
+check(!careReady(browserFixture, policy: browserPolicy, history: CareJournal())
+      && !careReady(browserFixture, policy: browserPolicy, history: browserHistory, context: CareContext(userID: 501, idleSeconds: 0, foregroundBundle: nil)), "browser restart never follows a single reading or active input")
+let diaOnly = careDiagnosis([careGroup("Dia", memory: 6 * 1_073_741_824)])
+check(!careReady(diaOnly, policy: browserPolicy, history: browserHistory, context: CareContext(userID: 501, idleSeconds: 180, foregroundBundle: "/Applications/Dia.app")), "frontmost browser is retained")
+browserHistory.events = [CareEvent(at: careNow.addingTimeInterval(-3601), service: .dia, ok: true, message: "done", beforeBytes: nil, afterBytes: nil)]
+check(!careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true), "browser has a six-hour cooldown even for manual batch")
+browserHistory.events = [CareEvent(at: careNow.addingTimeInterval(-21601), service: .dia, ok: true, message: "done", beforeBytes: 6_000_000_000, afterBytes: 5_900_000_000)]
+check(!careReady(diaOnly, policy: browserPolicy, history: browserHistory, batch: true), "ineffective browser recovery pauses retries for a day")
+check(CarePlanner.report(browserFixture, policy: enabledCare, journal: careHistory, context: careContext, now: careNow).noActionMessage.contains("尚未恢复主要占用"), "no-action outcome admits that the main browser footprint remains untreated")
+check(!careReady(careDiagnosis([careGroup("Codex"), careGroup("aTrustAgent"), careGroup("Sift")]), policy: browserPolicy, batch: true), "browser opt-in does not expand to current work, aTrust or indexer")
+check(parsed(["care", "browsers", "--yes"]) == .care(operation: "browsers", json: false, dryRun: false)
+      && rejected(["care", "browsers"]), "browser opt-in needs separate explicit CLI intent")
 var careSchedule = CareSchedule()
 check(!careSchedule.due(.elevated, enabled: true, uptime: 0)
       && !careSchedule.due(.elevated, enabled: true, uptime: 89)
@@ -291,6 +310,41 @@ let folderMode = try FileManager.default.attributesOfItem(atPath: careDirectory.
 let savedPolicy = try careStore.policy(), savedJournal = try careStore.journal()
 check(savedPolicy.enabled && savedJournal.points.count == 1 && fileMode == 0o600 && folderMode == 0o700,
       "policy and evidence persist locally with owner-only permissions")
+try careStore.allowBrowsers()
+let allowedBrowsers = try careStore.policy()
+check(allowedBrowsers.enabled && allowedBrowsers.services.contains(.dia) && allowedBrowsers.services.contains(.chrome), "browser permission persists for resident automation")
+try careStore.retainBrowsers()
+let retainedBrowsers = try careStore.policy()
+check(retainedBrowsers.enabled && retainedBrowsers.services == CareService.basic
+      && parsed(["care", "browsers", "--disable"]) == .care(operation: "retain-browsers", json: false, dryRun: false)
+      && rejected(["care", "browsers", "--yes", "--disable"]), "browser permission can be revoked while basic background care remains enabled")
+let oldEvent = Data("{\"at\":0,\"service\":\"shadowrocket\",\"ok\":true,\"message\":\"old\"}".utf8)
+let decodedOldEvent = try JSONDecoder().decode(CareEvent.self, from: oldEvent)
+check(decodedOldEvent.systemAfterBytes == nil, "old history without system effect remains readable")
+let sessionRoot = careDirectory.appendingPathComponent("browser-test")
+let sessionDir = sessionRoot.appendingPathComponent("Default/Sessions")
+try FileManager.default.createDirectory(at: sessionDir, withIntermediateDirectories: true)
+let sessionData = Data("SNSS1234fixture".utf8)
+try sessionData.write(to: sessionDir.appendingPathComponent("Session_123"))
+try Data("SNSS1234tabs".utf8).write(to: sessionDir.appendingPathComponent("Tabs_123"))
+try Data("not-a-session".utf8).write(to: sessionDir.appendingPathComponent("Session_bad"))
+try Data("private-cookie-fixture".utf8).write(to: sessionRoot.appendingPathComponent("Default/Cookies"))
+let backupDest = careDirectory.appendingPathComponent("backups")
+let backup = try BrowserRecovery.backup(root: sessionRoot, destination: backupDest)
+let restoredData = try Data(contentsOf: backup.appendingPathComponent("Default/Sessions/Session_123"))
+let backupMode = try FileManager.default.attributesOfItem(atPath: backup.appendingPathComponent("Default/Sessions/Session_123").path)[.posixPermissions] as? Int
+check(restoredData == sessionData && backupMode == 0o600
+      && !FileManager.default.fileExists(atPath: backup.appendingPathComponent("Default/Cookies").path), "recovery backup preserves SNSS bytes owner-only and never copies cookies")
+let checkedSessionFiles = try BrowserRecovery.sessionFiles(at: sessionRoot)
+check(checkedSessionFiles.count == 2, "corrupt files are excluded from session backup")
+_ = try BrowserRecovery.backup(root: sessionRoot, destination: backupDest)
+_ = try BrowserRecovery.backup(root: sessionRoot, destination: backupDest)
+let retainedBackups = try FileManager.default.contentsOfDirectory(at: backupDest, includingPropertiesForKeys: nil)
+check(retainedBackups.count == 2, "browser snapshots are bounded to the newest two")
+try FileManager.default.removeItem(at: sessionDir.appendingPathComponent("Session_123"))
+var missingSessionRejected = false
+do { _ = try BrowserRecovery.backup(root: sessionRoot, destination: backupDest) } catch { missingSessionRejected = true }
+check(missingSessionRejected, "missing normal session blocks browser quit instead of risking an empty restore")
 var firstLease: CareLease? = try CareLease(directory: careDirectory)
 var leaseBlocked = false
 do { _ = try CareLease(directory: careDirectory) } catch { leaseBlocked = true }

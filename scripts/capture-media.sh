@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build/media docs/media
-xcrun swiftc -swift-version 5 -O -sdk "$(xcrun --sdk macosx --show-sdk-path)" Sources/Metrics.swift Sources/Diagnostics.swift Sources/ResourceCare.swift Sources/ResourceCareRuntime.swift Sources/CLI.swift Sources/ResourceActions.swift Sources/DiagnosticsUI.swift Sources/App.swift Sources/AppLifecycle.swift Sources/AppConfiguration.swift Sources/AppLifecycleUI.swift scripts/capture/main.swift -o build/media/capture
+xcrun swiftc -swift-version 5 -O -sdk "$(xcrun --sdk macosx --show-sdk-path)" Sources/Metrics.swift Sources/Diagnostics.swift Sources/ResourceCare.swift Sources/BrowserRecovery.swift Sources/ResourceCareRuntime.swift Sources/CLI.swift Sources/ResourceActions.swift Sources/DiagnosticsUI.swift Sources/App.swift Sources/AppLifecycle.swift Sources/AppConfiguration.swift Sources/AppLifecycleUI.swift scripts/capture/main.swift -o build/media/capture
 build/media/capture build/media
 cp build/media/panel.png build/media/menubar.png build/media/diagnosis.png docs/media/
 ffmpeg -hide_banner -loglevel error -y -framerate 1 -i build/media/frames/%03d.png -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -r 30 -movflags +faststart docs/media/demo.mp4
@@ -22,7 +22,7 @@ media = root / 'docs/media'
 00:16.000 --> 00:24.000
 磁盘详情显示剩余空间；日常点击菜单或按 ⌘R 可立即刷新。
 ''')
-sources = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [root/'Sources/App.swift', root/'Sources/Metrics.swift', root/'Sources/Diagnostics.swift', root/'Sources/DiagnosticsUI.swift', root/'Sources/ResourceActions.swift', root/'Sources/ResourceCare.swift', root/'Sources/ResourceCareRuntime.swift']}
+sources = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [root/'Sources/App.swift', root/'Sources/Metrics.swift', root/'Sources/Diagnostics.swift', root/'Sources/DiagnosticsUI.swift', root/'Sources/ResourceActions.swift', root/'Sources/ResourceCare.swift', root/'Sources/ResourceCareRuntime.swift', root/'Sources/BrowserRecovery.swift']}
 version = plistlib.loads((root / 'Info.plist').read_bytes())['CFBundleShortVersionString']
 manifest = {'version': version, 'recorded_at': datetime.datetime.now().astimezone().isoformat(),
     'method': 'Production AppKit views rendered offscreen; 24 seconds of real MetricsSampler readings. No synthetic clicks or desktop screen recording.',

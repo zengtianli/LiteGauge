@@ -45,9 +45,9 @@ enum CareRuntime {
         var events: [CareEvent] = []
         if policy.enabled, shouldContinue(), let suggestion = report.ready.first,
            let service = suggestion.service, let target = suggestion.target,
-           try store.policy().enabled {
+           try store.policy().enabled, try store.policy().services.contains(service) {
             // Name matching creates advice only; the executable's actual bundle ID must select the expected adapter.
-            let event: CareEvent
+            var event: CareEvent
             do {
                 let plan = try ResourceActions.prepare(pid: target.pid, token: target.token, action: "restart")
                 guard plan.kind == service.adapter else { throw ResourceActionError(message: "应用身份与建议不符，本次自动操作已取消。") }
@@ -59,13 +59,22 @@ enum CareRuntime {
                                   message: (error as? ResourceActionError)?.message ?? error.localizedDescription,
                                   beforeBytes: nil, afterBytes: nil)
             }
+            if event.ok, let memory = MetricsSampler().sample().memory {
+                event.systemBeforeBytes = diagnosis.system.memory?.usedBytes
+                event.systemAfterBytes = memory.usedBytes
+                event.pressureAfter = memory.pressure
+            }
             events.append(event); journal.events.append(event)
             journal.events = Array(journal.events.suffix(20))
         }
-        journal.summary = events.last?.message ?? report.lines.prefix(5).joined(separator: "\n")
+        var outcome = events.last?.message ?? report.noActionMessage
+        if let event = events.last, let before = event.systemBeforeBytes, let after = event.systemAfterBytes {
+            outcome += "系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))，压力\(event.pressureAfter ?? "未知")。"
+        }
+        journal.summary = outcome
         try store.save(journal)
         return CareRunResult(ok: events.allSatisfy(\.ok), report: report, actions: events,
-                             message: events.last?.message ?? "已检查并给出建议；本次没有需要重启的已允许后台应用。")
+                             message: outcome)
     }
 }
 
@@ -112,7 +121,7 @@ final class AutomaticCareController {
                 self.finished?()
                 guard self.generation == ticket else { return }
                 switch result {
-                case .success(let value): self.status = value.actions.last?.message ?? "已给出建议 · 无需后台重启"
+                case .success(let value): self.status = value.message
                 case .failure(let error): self.status = "自动处理暂缓：\((error as? ResourceActionError)?.message ?? error.localizedDescription)"
                 }
                 self.changed?(self.status)

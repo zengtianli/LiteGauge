@@ -54,7 +54,7 @@ let diagnosticView = DiagnosticViewController()
 diagnosticView.view.appearance = NSAppearance(named: .aqua)
 let careReport = CarePlanner.report(diagnosis, policy: CarePolicy(enabled: true), journal: CareJournal(),
     context: CareContext(userID: UInt32.max, idleSeconds: 180, foregroundBundle: nil))
-diagnosticView.apply(diagnosis, careReport: careReport)
+diagnosticView.apply(diagnosis, careReport: careReport, carePolicy: CarePolicy(enabled: true))
 diagnosticView.view.layoutSubtreeIfNeeded()
 RunLoop.current.run(until: Date().addingTimeInterval(0.1))
 diagnosticView.view.layoutSubtreeIfNeeded()

@@ -2,15 +2,18 @@ import Foundation
 import Darwin
 
 enum CareService: String, Codable, CaseIterable {
-    case shadowrocket, orbstack
-    var name: String { self == .shadowrocket ? "Shadowrocket" : "OrbStack" }
-    var threshold: UInt64 { self == .shadowrocket ? 512 * 1_048_576 : 2 * 1_073_741_824 }
-    var adapter: String { self == .shadowrocket ? "vpn" : "orbstack" }
+    case shadowrocket, orbstack, chrome, dia
+    static let basic: [CareService] = [.shadowrocket, .orbstack]
+    var browser: Bool { self == .chrome || self == .dia }
+    var name: String { switch self { case .shadowrocket: return "Shadowrocket"; case .orbstack: return "OrbStack"; case .chrome: return "Google Chrome"; case .dia: return "Dia" } }
+    var threshold: UInt64 { self == .shadowrocket ? 512 * 1_048_576 : (self == .dia ? 3 : 2) * 1_073_741_824 }
+    var adapter: String { browser ? "browser" : self == .shadowrocket ? "vpn" : "orbstack" }
+    var operation: String { browser ? "重启浏览器并恢复普通标签" : self == .shadowrocket ? "重连隧道" : "正常重启虚拟机后台" }
 }
 
 struct CarePolicy: Codable {
     var enabled = false
-    var services = CareService.allCases
+    var services = CareService.basic
 }
 
 struct CareMemoryPoint: Codable {
@@ -26,6 +29,9 @@ struct CareEvent: Codable {
     let message: String
     let beforeBytes: UInt64?
     let afterBytes: UInt64?
+    var systemBeforeBytes: UInt64? = nil
+    var systemAfterBytes: UInt64? = nil
+    var pressureAfter: String? = nil
 }
 
 struct CareJournal: Codable {
@@ -56,9 +62,15 @@ struct CareReport: Encodable {
     let suggestions: [CareSuggestion]
     var ready: [CareSuggestion] { suggestions.filter { $0.state == "ready" } }
     var lines: [String] { suggestions.map { $0.message } }
+    var pending: [CareSuggestion] { suggestions.filter { $0.state == "wait" || $0.state == "review" } }
+    var noActionMessage: String {
+        if let browser = pending.first(where: { $0.service?.browser == true }) { return "尚未恢复主要占用：" + browser.message }
+        if let pending = pending.first { return "本次暂缓：" + pending.message }
+        return "本次无需处理已允许的后台应用；当前占用保留。"
+    }
 }
 
-/// Decisions are shared by the GUI, resident automation and CLI. Only these two opt-in adapters can act.
+/// Decisions are shared by the GUI, resident automation and CLI. Browser recovery needs its own opt-in.
 enum CarePlanner {
     static let successCooldown: TimeInterval = 3600
     static let failureCooldown: TimeInterval = 21600
@@ -83,12 +95,17 @@ enum CarePlanner {
             if let service = service(group) {
                 guard group.missingMemoryCount == 0 else { add("wait", "内存读数不完整，暂缓处理。", service); continue }
                 guard group.footprintBytes > service.threshold else {
-                    add("keep", "\(amount)，目前保留。" + (service == .orbstack ? "运行虚拟机本身需要内存，反复重启收益有限。" : "隧道占用未达异常阈值。"), service); continue
+                    add("keep", "\(amount)，目前保留。" + (service.browser ? "未达浏览器恢复阈值。" : service == .orbstack ? "运行虚拟机本身需要内存，反复重启收益有限。" : "隧道占用未达异常阈值。"), service); continue
                 }
                 guard pressured, diagnosis.errors.isEmpty else { add("wait", "\(amount)，等待持续内存压力和完整读数。", service); continue }
-                guard policy.enabled, policy.services.contains(service) else { add("review", "\(amount)，建议\(service == .shadowrocket ? "重连隧道" : "正常停启虚拟机后台")；自动处理尚未允许。", service); continue }
+                guard policy.enabled, policy.services.contains(service) else { add("review", "\(amount)，建议\(service.operation)；\(service.browser ? "浏览器恢复重启尚未允许，总占用不会因此自动降低。" : "自动处理尚未允许。")", service); continue }
                 if let recent = journal.events.last(where: { $0.service == service }),
-                   now.timeIntervalSince(recent.at) < (recent.ok ? successCooldown : failureCooldown) {
+                   service.browser, recent.ok, let before = recent.beforeBytes, let after = recent.afterBytes,
+                   Double(after) >= Double(before) * 0.9, now.timeIntervalSince(recent.at) < 86400 {
+                    add("wait", "上次重启收益不足，暂停自动重试 24 小时；可能是保留的页面本身需要内存。", service); continue
+                }
+                if let recent = journal.events.last(where: { $0.service == service }),
+                   now.timeIntervalSince(recent.at) < (recent.ok && !service.browser ? successCooldown : failureCooldown) {
                     add("wait", "\(amount)，处于\(recent.ok ? "重启后观察期" : "失败后暂停期")，避免反复操作。", service); continue
                 }
                 let old = journal.points[service.rawValue]
@@ -98,7 +115,7 @@ enum CarePlanner {
                 guard batch || context.idle else { add("wait", "\(amount)，已允许处理，等你空闲 2 分钟后自动执行。", service); continue }
                 guard context.foregroundBundle != group.bundlePath else { add("wait", "正在前台使用，稍后自动检查。", service); continue }
                 guard group.missingCPUCount == 0, group.cpuPercent < 10 else { add("wait", "后台仍在忙，等负载降低后自动处理。", service); continue }
-                add("ready", "\(amount)，已安排\(service == .shadowrocket ? "自动重连隧道" : "正常重启虚拟机后台")并复查。", service)
+                add("ready", "\(amount)，已安排\(service.operation)并复查。", service)
             } else if group.name.caseInsensitiveCompare("Sift") == .orderedSame {
                 add("keep", "\(amount)，文件索引需要常驻内存，建议保留；持续增长再追查。")
             } else if group.footprintBytes >= 1_073_741_824 {
@@ -110,10 +127,11 @@ enum CarePlanner {
         // Put the concrete managed actions ahead of high-memory work apps and retained items.
         rows = rows.enumerated().sorted { a, b in
             func priority(_ row: CareSuggestion) -> Int {
-                if row.state == "ready" { return row.service == .shadowrocket ? 0 : 1 }
-                if row.service != nil { return 2 }
-                if row.state == "review" { return 3 }
-                return 4
+                if row.state == "ready" { return row.service?.browser == true ? 0 : 1 }
+                if row.service?.browser == true { return 2 }
+                if row.service != nil { return 3 }
+                if row.state == "review" { return 4 }
+                return 5
             }
             let x = priority(a.element), y = priority(b.element)
             return x == y ? a.offset < b.offset : x < y
@@ -166,6 +184,17 @@ struct CareStore {
     func save(_ journal: CareJournal) throws { try write(journal, name: "care-history.json") }
     func setEnabled(_ enabled: Bool) throws {
         var policy = try self.policy(); policy.enabled = enabled
+        try write(policy, name: "care-policy.json")
+        DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
+    }
+    func allowBrowsers() throws {
+        var policy = try self.policy(); policy.enabled = true
+        policy.services = CareService.allCases
+        try write(policy, name: "care-policy.json")
+        DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
+    }
+    func retainBrowsers() throws {
+        var policy = try self.policy(); policy.services.removeAll { $0.browser }
         try write(policy, name: "care-policy.json")
         DistributedNotificationCenter.default().postNotificationName(Self.policyChanged, object: nil, userInfo: nil, deliverImmediately: true)
     }

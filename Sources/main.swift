@@ -152,6 +152,14 @@ case .care(let operation, let json, let dryRun):
     do {
         let store = CareStore()
         switch operation {
+        case "retain-browsers":
+            try store.retainBrowsers()
+            if json { CLIOutput.write(try CLIOutput.json(store.policy(), pretty: true)) }
+            else { CLIOutput.write("已暂停浏览器恢复，保留其余后台处理策略。\n") }
+        case "browsers":
+            try store.allowBrowsers()
+            if json { CLIOutput.write(try CLIOutput.json(store.policy(), pretty: true)) }
+            else { CLIOutput.write("已允许 Dia / Chrome 空闲时恢复重启，并保留原后台处理；无痕页面、表单和下载不保证恢复。\n") }
         case "enable", "disable":
             try store.setEnabled(operation == "enable")
             let policy = try store.policy()

@@ -9,6 +9,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
     private let sortControl = NSSegmentedControl(labels: ["按内存", "按 CPU"], trackingMode: .selectOne, target: nil, action: nil)
     private let refreshButton = NSButton(title: "刷新诊断", target: nil, action: nil)
     private let autoButton = NSButton(title: "开启自动处理…", target: nil, action: nil)
+    private let browserButton = NSButton(title: "允许浏览器恢复…", target: nil, action: nil)
     private let batchButton = NSButton(title: "按建议处理", target: nil, action: nil)
     private let autoState = NSTextField(wrappingLabelWithString: "")
     private let work = DispatchQueue(label: "cyou.tianli.litegauge.diagnosis", qos: .utility)
@@ -35,6 +36,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         refreshButton.target = self; refreshButton.action = #selector(refresh)
         refreshButton.keyEquivalent = "r"; refreshButton.keyEquivalentModifierMask = .command
         autoButton.target = self; autoButton.action = #selector(toggleAutomatic)
+        browserButton.target = self; browserButton.action = #selector(allowBrowserRecovery)
         batchButton.target = self; batchButton.action = #selector(runRecommendations)
         autoState.font = .systemFont(ofSize: 11); autoState.textColor = .secondaryLabelColor
         let toolbar = NSStackView(views: [sortControl, NSView(), refreshButton]); toolbar.orientation = .horizontal
@@ -48,11 +50,11 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         let scroll = NSScrollView(); scroll.documentView = table; scroll.hasVerticalScroller = true
         scroll.borderType = .bezelBorder
-        let buttons = NSStackView(views: [autoButton, batchButton, NSView()]); buttons.orientation = .horizontal
-        let note = NSTextField(wrappingLabelWithString: "自动处理只覆盖已允许的 Shadowrocket / OrbStack；aTrust 和工作应用保留。压力持续偏高且你空闲时检查，动作后复查并暂停重复操作。进程内存不能相加当作物理 RAM。")
+        let buttons = NSStackView(views: [autoButton, browserButton, batchButton, NSView()]); buttons.orientation = .horizontal
+        let note = NSTextField(wrappingLabelWithString: "浏览器恢复另行允许一次；普通标签恢复由浏览器执行，不保证无痕页面、表单或下载恢复。aTrust 和工作应用保留。进程计账内存不能相加当作物理 RAM。")
         note.font = .systemFont(ofSize: 10); note.textColor = .tertiaryLabelColor
         let stack = NSStackView(views: [heading, summary, buttons, autoState, advice, toolbar, scroll, detail, status, note])
-        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 12
+        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(stack)
         NSLayoutConstraint.activate([
@@ -61,7 +63,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 20),
             stack.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -18),
             scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 180),
-            detail.heightAnchor.constraint(equalToConstant: 66), status.heightAnchor.constraint(greaterThanOrEqualToConstant: 18)
+            detail.heightAnchor.constraint(equalToConstant: 50), status.heightAnchor.constraint(greaterThanOrEqualToConstant: 34)
         ])
         for sub in [summary, advice, toolbar, scroll, detail, buttons, autoState, status, note] {
             sub.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
@@ -96,7 +98,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
         }
         detail.stringValue = processLines.joined(separator: "\n")
     }
-    func apply(_ value: ResourceDiagnosis, careReport: CareReport? = nil) {
+    func apply(_ value: ResourceDiagnosis, careReport: CareReport? = nil, carePolicy: CarePolicy? = nil) {
         loadViewIfNeeded()
         diagnosis = value
         let previous = selectedGroup?.id
@@ -111,7 +113,21 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
             advice.stringValue = report.lines.prefix(5).joined(separator: "\n")
             autoButton.title = report.enabled ? "暂停自动处理" : "开启自动处理…"
             batchButton.isEnabled = !busy && report.enabled
-            autoState.stringValue = report.enabled ? "自动处理已开启 · 无需逐个点选，压力持续偏高时安排后台任务" : "自动处理未开启 · 首次允许后，后台任务按规则处理"
+            let policy = try carePolicy ?? CareStore().policy()
+            let browsers = policy.services.contains(.dia) && policy.services.contains(.chrome)
+            browserButton.title = browsers ? "暂停浏览器恢复" : "允许浏览器恢复…"
+            browserButton.isEnabled = !busy
+            autoState.stringValue = report.enabled ? "自动处理已开启 · 浏览器恢复\(browsers ? "已允许" : "未允许") · 你空闲时处理，无需逐个点选" : "自动处理已暂停 · 首次允许后按规则处理"
+            if careReport == nil, let journal = try? CareStore().journal(), journal.checkedAt != nil {
+                status.stringValue = "最近检查：" + journal.summary
+                if let event = journal.events.last {
+                    var result = event.message
+                    if let before = event.systemBeforeBytes, let after = event.systemAfterBytes {
+                        result += "系统已用 \(DiagnosticFormat.bytes(before)) → \(DiagnosticFormat.bytes(after))。"
+                    }
+                    status.stringValue = "最近处理：" + result + "\n" + status.stringValue
+                }
+            }
         } catch {
             advice.stringValue = "操作策略不可读，自动处理已暂停。"
             batchButton.isEnabled = false
@@ -126,6 +142,7 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
     private func setBusy(_ value: Bool) {
         busy = value; refreshButton.isEnabled = !value; sortControl.isEnabled = !value
         autoButton.isEnabled = !value
+        browserButton.isEnabled = !value
         batchButton.isEnabled = !value && ((try? CareStore().policy().enabled) == true)
         updateSelection()
     }
@@ -167,6 +184,22 @@ final class DiagnosticViewController: NSViewController, NSTableViewDataSource, N
                 case .failure(let error): self.status.stringValue = (error as? ResourceActionError)?.message ?? error.localizedDescription
                 }
             }
+        }
+    }
+    @objc private func allowBrowserRecovery() {
+        guard !busy, let window = view.window else { return }
+        if (try? CareStore().policy().services.contains(.dia)) == true {
+            do { try CareStore().retainBrowsers(); if let diagnosis { apply(diagnosis) } }
+            catch { status.stringValue = error.localizedDescription }
+            return
+        }
+        let alert = NSAlert(); alert.messageText = "允许 Dia / Chrome 空闲时恢复重启？"
+        alert.informativeText = "一次允许后，持续内存压力偏高且浏览器持续超阈值时，你空闲 2 分钟、浏览器不在前台且负载低才执行。先保留本地普通会话备份，再正常退出并请求恢复普通标签。页面会重载；无痕页面、未提交表单、下载和页面任务不保证恢复。每个浏览器成功后至少观察 6 小时。"
+        alert.addButton(withTitle: "允许浏览器恢复"); alert.addButton(withTitle: "取消")
+        alert.beginSheetModal(for: window) { [weak self] response in
+            guard response == .alertFirstButtonReturn, let self else { return }
+            do { try CareStore().allowBrowsers(); if let diagnosis = self.diagnosis { self.apply(diagnosis) } }
+            catch { self.status.stringValue = error.localizedDescription }
         }
     }
 }

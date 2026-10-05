@@ -19,7 +19,7 @@ A stacked CPU label and percentage are followed by two vertical bars for memory 
 - **Three focused readings.** CPU and memory update every 2 seconds; disk capacity every 60 seconds. Open the menu or press ⌘R to refresh immediately.
 - **Native local sampling.** Swift + AppKit, no third-party runtime dependencies or shell-based polling. Sampling stays offline; only an explicit update check contacts the release channel. No account is required.
 - **Less background work.** Periodic collection pauses during system sleep, display sleep, and screen lock. CPU sampling resets on resume, and the menu bar updates only when visible integer values change.
-- **Advice and automatic care.** Get concrete recommendations without selecting apps one at a time. After one opt-in, sustained memory pressure triggers guarded Shadowrocket reconnection or OrbStack restart, followed by a memory check and a local result. aTrust and work apps are retained.
+- **Advice and automatic care.** Get concrete recommendations without selecting apps one at a time. Basic care handles Shadowrocket / OrbStack; since 0.4.0, a separate opt-in adds idle browser recovery for Dia / Chrome. Results show app-accounting and system-used memory changes, or why the main footprint remains untreated.
 - **Ready for scripts and agents.** The same executable provides `status --json`, `watch` for readings at the app's cadence, and `app status` for the menu-bar instance; GUI and CLI share their collection code and colour thresholds.
 
 ## Download and install
@@ -54,9 +54,13 @@ Each diagnosis samples for approximately one second and groups executables under
 
 Automatic care defaults to off for public installs. After one opt-in, memory pressure must stay elevated for 90 seconds before a scan, with at least two minutes between scans and no additional process scans at normal pressure. Shadowrocket must exceed 512 MiB or OrbStack 2 GiB on two observations. The user must be idle for two minutes, the target must be in the background, and its CPU must be below 10%. Incomplete readings, identity changes and busy apps defer action.
 
-Each check handles at most one allowed service. A successful action has a one-hour cooldown; failure pauses retries for six hours. OrbStack restarts briefly interrupt containers/VMs; Shadowrocket reconnects briefly interrupt networking. Settings, images and data remain intact. aTrust, browsers, editors and indexers are retained, and normal VM or stable index memory gets a keep recommendation. A single “Run recommendations” control provides an immediate check without per-app selection.
+Each check handles at most one allowed app. Basic services have a one-hour success cooldown; failure pauses retries for six hours. OrbStack restarts briefly interrupt containers/VMs; Shadowrocket reconnects briefly interrupt networking. Settings, images and data remain intact. aTrust, editors and indexers are retained, and normal VM or stable index memory gets a keep recommendation. A single “Run recommendations” control provides an immediate check without per-app selection.
 
-Policy and the last 20 results stay in the owner-only `~/Library/Application Support/LiteGauge/` folder. Nothing is uploaded. Before/after values describe app memory accounting, not physical RAM freed. Quitting waits for an ongoing service restoration. Processes are never force-killed and system caches are never purged.
+Since 0.4.0, a separate one-time browser opt-in adds Dia (above 3 GiB) and Chrome (above 2 GiB) to the same sustained-pressure, idle, background and low-CPU policy. Upgrading an existing basic policy does not grant browser permission. LiteGauge backs up readable normal session files before a graceful quit, then requests normal-tab restoration with `--restore-last-session`. Pages reload; private tabs, unsent forms, downloads and page tasks may be lost or interrupted. Missing readable session files defer the quit. Browsers have a six-hour cooldown after either success or failure. Browser care can be paused separately.
+
+If restarting reduces app-accounting memory by less than 10%, automatic retries pause for 24 hours; retained pages may simply need that memory.
+
+Policy and the last 20 results stay in the owner-only `~/Library/Application Support/LiteGauge/` folder. Nothing is uploaded. Only two normal-session backups per browser are retained; cookies, history databases and passwords are not copied. App-accounting and system-used memory changes are reported separately, alongside reasons for deferred action. Other tasks can affect system changes. Tab restoration is requested, but its tab count is not verified. Quitting waits for ongoing restoration. Processes are never force-killed and system caches are never purged.
 
 ## Command line
 
@@ -82,6 +86,7 @@ litegauge diagnose --sort memory --limit 10 --json # rankings, pressure, coverag
 litegauge diagnose --sort cpu      # interval CPU ranking (100% = one core)
 litegauge care plan --json         # concrete recommendations and reasons to defer or retain
 litegauge care enable --yes        # opt in once; care disable pauses automatic care
+litegauge care browsers --yes      # separately allow browser recovery; --disable pauses it
 litegauge care status --json       # policy, last check and action results
 litegauge care run --dry-run --json # preview the combined operation; --yes performs it
 litegauge process restart --pid 123 --token 123:1790000000:0 --dry-run --json # read token from diagnosis; --yes performs the action
