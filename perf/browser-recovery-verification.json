@@ -1,0 +1,30 @@
+{
+  "version": "0.4.0",
+  "build": "7",
+  "source_commit": "14aad69ddce04920f95075b9adc2e399c47f76c8",
+  "executable_sha256": "2fb39f3001deec23288e35e1dd5d861db35c03b5c53ff686ae0f64cf9d48f685",
+  "core_checks": 107,
+  "offscreen_ui_checks": 17,
+  "cli_counter_checks": 14,
+  "privacy_boundary_checks": 5,
+  "live_browser_preflights": 2,
+  "result": "passed",
+  "coverage": [
+    "Existing basic policy cannot silently gain browser permission; separate permission can be revoked",
+    "Sustained pressure, two observations, idle input, foreground and CPU guards protect active work",
+    "Browser restart has a six-hour cooldown; ineffective recovery pauses retries for a day",
+    "Valid SNSS files are backed up owner-only, without cookies, credentials or history databases; two snapshots retained",
+    "Missing normal session files prevent browser quit; old action history remains readable",
+    "Native adapters selected both installed browsers and requested --restore-last-session in read-only preflight",
+    "Installed signed executable matches receipt; resident controller wrote a browser high-memory observation without forcing action",
+    "GitHub macos-14 core-test runs 37256751758 and 37256726033 succeeded",
+    "Public files and ZIP/DMG hashes verified; video supports HTTP Range 206"
+  ],
+  "limits": [
+    "User authorized idle recovery; live browser recovery had not occurred at this verification, so memory reduction and tab restoration are not yet proven.",
+    "Private browser URLs, process identities and local usage history are excluded from this public evidence.",
+    "Browser tab-count restoration is requested, not verified; private tabs, forms, downloads and page tasks may be interrupted or lost.",
+    "Offscreen AppKit renders do not prove physical clicks or actual sleep/wake notifications.",
+    "Formal idle measurements for 0.4.0 are pending; v0.1.2 figures remain explicitly historical."
+  ]
+}

@@ -1,6 +1,6 @@
 import AppKit
 
-// Uses the production view and sampler. No windows, clicks, or desktop capture.
+// Uses the production view and sampler. No visible windows, clicks, or desktop capture.
 let app = NSApplication.shared
 app.setActivationPolicy(.prohibited)
 NSApp.appearance = NSAppearance(named: .aqua)
@@ -50,11 +50,14 @@ let groups = exampleApps.enumerated().map { index, item in
 }
 let diagnosis = ResourceDiagnosis(sampledAt: fixture.sampledAt, system: fixture, sampleSeconds: 1, groups: groups,
     enumeratedProcessCount: 4, unreadableIdentityCount: 0, errors: [])
-let diagnosticView = DiagnosticViewController()
+// Give AppKit the same content layout as the real window, without ordering it onscreen.
+let diagnosticWindow = DiagnosticWindowController()
+let diagnosticView = diagnosticWindow.diagnosticView
 diagnosticView.view.appearance = NSAppearance(named: .aqua)
 let careReport = CarePlanner.report(diagnosis, policy: CarePolicy(enabled: true), journal: CareJournal(),
     context: CareContext(userID: UInt32.max, idleSeconds: 180, foregroundBundle: nil))
 diagnosticView.apply(diagnosis, careReport: careReport, carePolicy: CarePolicy(enabled: true))
+diagnosticWindow.window?.contentView?.layoutSubtreeIfNeeded()
 diagnosticView.view.layoutSubtreeIfNeeded()
 RunLoop.current.run(until: Date().addingTimeInterval(0.1))
 diagnosticView.view.layoutSubtreeIfNeeded()
