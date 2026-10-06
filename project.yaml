@@ -46,6 +46,76 @@ sop:
     app: cyou.tianli.litegauge
     commands:
     - litegauge
+  # 界面功能对照：从 Sources/App.swift（菜单栏与菜单）、DiagnosticsUI.swift（诊断窗口）、SettingsUI.swift 与
+  # AppLifecycleUI.swift（设置窗口）逐项列出。human 的名字与 Sources/CLI.swift 的 windowOnly 一致，核心测试核对。
+  agent_cli:
+    readback: litegauge care status
+    features:
+    # 菜单栏与菜单
+    - name: 菜单栏指示图标（CPU 百分比、内存与磁盘填充条）
+      command: litegauge status
+    - name: 详情面板（CPU、内存已用与总量、压力、交换、启动磁盘剩余与总容量、读取错误）
+      command: litegauge status
+    - name: 读数每 2 秒自动更新
+      command: litegauge watch
+    - name: 立即刷新（⌘R）
+      command: litegauge status
+    - name: 资源建议与自动处理…
+      human: 只是打开诊断窗口；窗口里的读数、建议与处理各有命令（diagnose、care plan、care run）
+    - name: 菜单勾选「内存超预算时自动处理」
+      command: litegauge care budget
+    - name: 菜单状态行（自动处理现状、是否正在处理、最近一次结果）
+      command: litegauge care status
+    - name: 打开活动监视器…
+      human: 打开系统自带的活动监视器窗口，只在屏幕上有意义；进程占用用 diagnose 读
+    - name: 设置…
+      human: 只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里每一项各有命令（care status、care budget、care protect、care enable）
+    - name: 检查更新…（菜单与设置窗口）
+      missing: 共享生命周期模块暂无命令入口
+    - name: 退出轻仪（⌘Q）
+      command: litegauge app quit
+    - name: 菜单栏实例是否在运行、已装版本
+      command: litegauge app status
+    # 诊断窗口
+    - name: 诊断窗口：系统内存一行（已用、压力、压缩、交换）
+      command: litegauge status
+    - name: 诊断窗口：内存超预算时自动处理开关
+      command: litegauge care budget
+    - name: 诊断窗口：自动处理现状说明（预算、超过后做什么）
+      command: litegauge care budget
+    - name: 诊断窗口：按建议处理（含关闭数量确认）
+      command: litegauge care run
+    - name: 诊断窗口：处理进度与结果、历史处理
+      command: litegauge care status
+    - name: 诊断窗口：建议（将关闭的应用、受保护的应用、占用构成）
+      command: litegauge care plan
+    - name: 诊断窗口：按内存 / 按 CPU 排序
+      command: litegauge diagnose
+    - name: 诊断窗口：刷新诊断（⌘R）
+      command: litegauge diagnose
+    - name: 诊断窗口：应用与后台进程列表（内存、CPU、进程数）
+      command: litegauge diagnose
+    - name: 诊断窗口：选中一行查看其中的进程（PID、内存、CPU）
+      command: litegauge diagnose
+    - name: 诊断窗口：采样状态行（时间、进程数、身份不可读数、用时）
+      command: litegauge diagnose
+    # 设置窗口
+    - name: 设置：名称与当前版本
+      command: litegauge app status
+    - name: 设置：内存超过预算时自动处理开关
+      command: litegauge care budget
+    - name: 设置：内存预算（GiB）与本机内存、当前已用
+      command: litegauge care budget
+    - name: 设置：自动关闭闲置应用开关
+      command: litegauge care budget
+    - name: 设置：闲置多久后可以关闭
+      command: litegauge care budget
+    - name: 设置：异常恢复开关
+      command: litegauge care enable
+    - name: 设置：始终保留的应用（保护名单）
+      command: litegauge care protect
+    - name: 设置：升级到新版…
+      missing: 共享生命周期模块暂无命令入口
   ui:
   - Sources/App.swift
   - Sources/DiagnosticsUI.swift
