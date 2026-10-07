@@ -48,6 +48,7 @@ sop:
     - litegauge
   # 界面功能对照：从 Sources/App.swift（菜单栏与菜单）、DiagnosticsUI.swift（诊断窗口）、SettingsUI.swift 与
   # AppLifecycleUI.swift（设置窗口）逐项列出。human 的名字与 Sources/CLI.swift 的 windowOnly 一致，核心测试核对。
+  # 设置窗口「配置」「软件更新」两组的命令来自共享命令层（Sources/AppLifecycleCLI.swift，接线在 ProductLifecycle.swift）。
   agent_cli:
     readback: litegauge care status
     features:
@@ -69,9 +70,9 @@ sop:
     - name: 打开活动监视器…
       human: 打开系统自带的活动监视器窗口，只在屏幕上有意义；进程占用用 diagnose 读
     - name: 设置…
-      human: 只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里每一项各有命令（care status、care budget、care protect、care enable）
+      human: 只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check），暂缺的两项另列
     - name: 检查更新…（菜单与设置窗口）
-      missing: 共享生命周期模块暂无命令入口
+      command: litegauge update check
     - name: 退出轻仪（⌘Q）
       command: litegauge app quit
     - name: 菜单栏实例是否在运行、已装版本
@@ -114,8 +115,16 @@ sop:
       command: litegauge care enable
     - name: 设置：始终保留的应用（保护名单）
       command: litegauge care protect
-    - name: 设置：升级到新版…
-      missing: 共享生命周期模块暂无命令入口
+    - name: 设置：使用 iCloud 记住配置
+      command: litegauge config sync
+    - name: 设置：导出配置…
+      command: litegauge config export
+    - name: 设置：导入配置…
+      command: litegauge config import
+    - name: 设置：「导入与导出」一行下的配置同步状态那句话
+      missing: 实时同步状态由运行中的 App 持有，命令读不到；config sync on、config import 只回报它自己那一次同步的结果
+    - name: 设置：升级到新版… / 下载新版…
+      missing: 命令不做静默安装（做得到，只是不做）：update check 给出新版、按钮名、安装包地址与步骤，替换并重启 App 仍在设置窗口确认
   ui:
   - Sources/App.swift
   - Sources/DiagnosticsUI.swift

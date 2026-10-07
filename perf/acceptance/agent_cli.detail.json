@@ -1,8 +1,8 @@
 {
-  "summary": "暂缺 2 项：检查更新…（菜单与设置窗口）、设置：升级到新版…",
+  "summary": "暂缺 2 项：设置：「导入与导出」一行下的配置同步状态那句话、设置：升级到新版… / 下载新版…",
   "passed": false,
   "registered": true,
-  "digest": "4550d096f3921f0b3216f6c43e1226ad62dc3f2a496c447b7a4aafe91b5480cc",
+  "digest": "bb91f37a8990d81e48d4358abac677b418c8c774d6b718b4ad153b518e57f25c",
   "form": "mac",
   "readback": "litegauge care status",
   "readback_found": true,
@@ -10,19 +10,19 @@
     "exit_code": 0
   },
   "counts": {
-    "total": 31,
-    "command": 26,
+    "total": 35,
+    "command": 30,
     "human": 3,
     "missing": 2
   },
   "missing": [
     {
-      "name": "检查更新…（菜单与设置窗口）",
-      "reason": "共享生命周期模块暂无命令入口"
+      "name": "设置：「导入与导出」一行下的配置同步状态那句话",
+      "reason": "实时同步状态由运行中的 App 持有，命令读不到；config sync on、config import 只回报它自己那一次同步的结果"
     },
     {
-      "name": "设置：升级到新版…",
-      "reason": "共享生命周期模块暂无命令入口"
+      "name": "设置：升级到新版… / 下载新版…",
+      "reason": "命令不做静默安装（做得到，只是不做）：update check 给出新版、按钮名、安装包地址与步骤，替换并重启 App 仍在设置窗口确认"
     }
   ],
   "human": [
@@ -36,7 +36,7 @@
     },
     {
       "name": "设置…",
-      "reason": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里每一项各有命令（care status、care budget、care protect、care enable）"
+      "reason": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check），暂缺的两项另列"
     }
   ],
   "problems": [],
@@ -100,12 +100,13 @@
     {
       "name": "设置…",
       "kind": "human",
-      "value": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里每一项各有命令（care status、care budget、care protect、care enable）"
+      "value": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check），暂缺的两项另列"
     },
     {
       "name": "检查更新…（菜单与设置窗口）",
-      "kind": "missing",
-      "value": "共享生命周期模块暂无命令入口"
+      "kind": "command",
+      "value": "litegauge update check",
+      "found": true
     },
     {
       "name": "退出轻仪（⌘Q）",
@@ -228,9 +229,32 @@
       "found": true
     },
     {
-      "name": "设置：升级到新版…",
+      "name": "设置：使用 iCloud 记住配置",
+      "kind": "command",
+      "value": "litegauge config sync",
+      "found": true
+    },
+    {
+      "name": "设置：导出配置…",
+      "kind": "command",
+      "value": "litegauge config export",
+      "found": true
+    },
+    {
+      "name": "设置：导入配置…",
+      "kind": "command",
+      "value": "litegauge config import",
+      "found": true
+    },
+    {
+      "name": "设置：「导入与导出」一行下的配置同步状态那句话",
       "kind": "missing",
-      "value": "共享生命周期模块暂无命令入口"
+      "value": "实时同步状态由运行中的 App 持有，命令读不到；config sync on、config import 只回报它自己那一次同步的结果"
+    },
+    {
+      "name": "设置：升级到新版… / 下载新版…",
+      "kind": "missing",
+      "value": "命令不做静默安装（做得到，只是不做）：update check 给出新版、按钮名、安装包地址与步骤，替换并重启 App 仍在设置窗口确认"
     }
   ]
 }
