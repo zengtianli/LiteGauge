@@ -1,8 +1,8 @@
 {
-  "summary": "暂缺 2 项：设置：「导入与导出」一行下的配置同步状态那句话、设置：升级到新版… / 下载新版…",
-  "passed": false,
+  "summary": "界面功能对照 37 项：命令 34 项，只能真人或只在窗口 3 项，暂缺 0 项；读回 litegauge care status",
+  "passed": true,
   "registered": true,
-  "digest": "bb91f37a8990d81e48d4358abac677b418c8c774d6b718b4ad153b518e57f25c",
+  "digest": "33f3900849a465578bf8fe51e61a6aa93313d7a9a3bf5ea65c56848058391817",
   "form": "mac",
   "readback": "litegauge care status",
   "readback_found": true,
@@ -10,21 +10,13 @@
     "exit_code": 0
   },
   "counts": {
-    "total": 35,
-    "command": 30,
+    "total": 37,
+    "command": 34,
     "human": 3,
-    "missing": 2
+    "device": 0,
+    "missing": 0
   },
-  "missing": [
-    {
-      "name": "设置：「导入与导出」一行下的配置同步状态那句话",
-      "reason": "实时同步状态由运行中的 App 持有，命令读不到；config sync on、config import 只回报它自己那一次同步的结果"
-    },
-    {
-      "name": "设置：升级到新版… / 下载新版…",
-      "reason": "命令不做静默安装（做得到，只是不做）：update check 给出新版、按钮名、安装包地址与步骤，替换并重启 App 仍在设置窗口确认"
-    }
-  ],
+  "missing": [],
   "human": [
     {
       "name": "资源建议与自动处理…",
@@ -36,9 +28,10 @@
     },
     {
       "name": "设置…",
-      "reason": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check），暂缺的两项另列"
+      "reason": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check、update install）"
     }
   ],
+  "device": [],
   "problems": [],
   "commands": {
     "litegauge": {
@@ -46,7 +39,7 @@
       "exit_code": 0,
       "has_json": true,
       "has_exit_codes": true,
-      "summary": "轻仪 LiteGauge 0.5.2 — 极简 CPU / 内存 / 磁盘监控（菜单栏 App 与命令行共用同一采集层）",
+      "summary": "轻仪 LiteGauge 0.5.5 — 极简 CPU / 内存 / 磁盘监控（菜单栏 App 与命令行共用同一采集层）",
       "error": null
     }
   },
@@ -61,6 +54,18 @@
       "name": "详情面板（CPU、内存已用与总量、压力、交换、启动磁盘剩余与总容量、读取错误）",
       "kind": "command",
       "value": "litegauge status",
+      "found": true
+    },
+    {
+      "name": "AI 会话摘要（主会话、子 agent、状态与过期未知）",
+      "kind": "command",
+      "value": "litegauge sessions status",
+      "found": true
+    },
+    {
+      "name": "点击 AI 会话进入 Cadence 会话页",
+      "kind": "command",
+      "value": "litegauge sessions open",
       "found": true
     },
     {
@@ -100,7 +105,7 @@
     {
       "name": "设置…",
       "kind": "human",
-      "value": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check），暂缺的两项另列"
+      "value": "只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check、update install）"
     },
     {
       "name": "检查更新…（菜单与设置窗口）",
@@ -248,13 +253,15 @@
     },
     {
       "name": "设置：「导入与导出」一行下的配置同步状态那句话",
-      "kind": "missing",
-      "value": "实时同步状态由运行中的 App 持有，命令读不到；config sync on、config import 只回报它自己那一次同步的结果"
+      "kind": "command",
+      "value": "litegauge config status",
+      "found": true
     },
     {
       "name": "设置：升级到新版… / 下载新版…",
-      "kind": "missing",
-      "value": "命令不做静默安装（做得到，只是不做）：update check 给出新版、按钮名、安装包地址与步骤，替换并重启 App 仍在设置窗口确认"
+      "kind": "command",
+      "value": "litegauge update install",
+      "found": true
     }
   ]
 }

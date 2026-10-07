@@ -70,7 +70,7 @@ sop:
     - name: 打开活动监视器…
       human: 打开系统自带的活动监视器窗口，只在屏幕上有意义；进程占用用 diagnose 读
     - name: 设置…
-      human: 只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check），暂缺的两项另列
+      human: 只是打开设置窗口（菜单 ⌘, 与诊断窗口里的按钮）；窗口里的项各有命令（care status、care budget、care protect、care enable、config、update check、update install）
     - name: 检查更新…（菜单与设置窗口）
       command: litegauge update check
     - name: 退出轻仪（⌘Q）
@@ -122,9 +122,9 @@ sop:
     - name: 设置：导入配置…
       command: litegauge config import
     - name: 设置：「导入与导出」一行下的配置同步状态那句话
-      missing: 实时同步状态由运行中的 App 持有，命令读不到；config sync on、config import 只回报它自己那一次同步的结果
+      command: litegauge config status
     - name: 设置：升级到新版… / 下载新版…
-      missing: 命令不做静默安装（做得到，只是不做）：update check 给出新版、按钮名、安装包地址与步骤，替换并重启 App 仍在设置窗口确认
+      command: litegauge update install
   ui:
   - Sources/App.swift
   - Sources/DiagnosticsUI.swift

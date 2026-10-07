@@ -2,11 +2,24 @@ import AppKit
 
 // LiteGauge's side of the shared「配置与更新」layer (AppLifecycle*.swift, byte copies of swift-shared). This file is the
 // one place that names the product, its release channel and its portable settings. The settings window and the
-// `litegauge config …` / `litegauge update check` commands are both built from it, so they read and write one thing.
+// `litegauge config …` / `litegauge update check|install` commands are both built from it, so they read and write one thing.
 enum ProductLifecycle {
     static let name = "LiteGauge 轻仪"
-    /// The one release channel: the window's「检查更新」and `litegauge update check` both read it.
-    static let updateSource: AppUpdateSource = .github(repository: "zengtianli/LiteGauge")
+    /// The menu item that opens the shared window in LiteGauge: named in `update check`'s `upgrade.how`.
+    static let windowEntry = "设置…"
+    /// The one release channel: the window's「检查更新」/「升级到新版…」and `litegauge update check|install` all read it.
+    static var updateSource: AppUpdateSource {
+        updateChannel(isolated: isolatedRoot != nil, requested: ProcessInfo.processInfo.environment["LITEGAUGE_UPDATE_CHANNEL"])
+            .map { .privateCloud(channel: $0) } ?? .github(repository: "zengtianli/LiteGauge")
+    }
+    /// Only an isolated run (the lifecycle self-test) may name another channel, and only a throwaway one: the shared
+    /// layer then reads its release record from that run's own "cloud" folder (APP_LIFECYCLE_CLOUD_DIR), never from the
+    /// network or iCloud Drive. Everywhere else the variable is ignored and the channel is the public GitHub release.
+    static let isolatedChannelPrefix = "test."
+    static func updateChannel(isolated: Bool, requested: String?) -> String? {
+        guard isolated, let requested, requested.hasPrefix(isolatedChannelPrefix), requested.count > isolatedChannelPrefix.count else { return nil }
+        return requested
+    }
     /// CareStore's policy file. Only the protection list travels with「导出配置」and the optional iCloud copy.
     /// The automatic-handling switches, the memory budget and the idle threshold stay per Mac: the budget is sized to
     /// this Mac's memory, and turning a switch on is the consent for this Mac to close or restart apps on its own.
@@ -120,11 +133,19 @@ enum ProductLifecycle {
 
     /// The shared layer's own help lines for the top-level --help, so a subcommand it gains shows up there too.
     static var help: CLI.LifecycleHelp {
-        CLI.LifecycleHelp(read: AppLifecycleCLI.helpRead(CLI.shortName), write: AppLifecycleCLI.helpWrite(CLI.shortName),
-                          noCommand: AppLifecycleCLI.helpNoCommand)
+        CLI.LifecycleHelp(read: AppLifecycleCLI.helpRead(CLI.shortName), write: AppLifecycleCLI.helpWrite(CLI.shortName))
     }
 
-    /// `litegauge config …` and `litegauge update check`. `arguments` starts at the verb; call on the main thread.
+    /// The running menu-bar instance as the commands see it (`app_running`, the live sync sentence, and what
+    /// `update install` quits before it replaces the app). An isolated run never looks at the owner's instance, let
+    /// alone quits it: it sees only the process named in LITEGAUGE_LIFECYCLE_APP_PID (the self-test's own App), or none.
+    static let isolatedAppVariable = "LITEGAUGE_LIFECYCLE_APP_PID"
+    static func runningApp() -> [Int32] {
+        guard isolatedRoot != nil else { return RunningInstances.menuBar().map(\.processIdentifier) }
+        return ProcessInfo.processInfo.environment[isolatedAppVariable].flatMap { Int32($0) }.map { [$0] } ?? []
+    }
+
+    /// `litegauge config …` and `litegauge update check|install`. `arguments` starts at the verb; call on the main thread.
     static func run(_ arguments: [String]) -> Int32 {
         let store = store()
         let configuration = makeConfiguration(store: store)
@@ -132,8 +153,9 @@ enum ProductLifecycle {
         var printed = ""
         var product = AppLifecycleCLI.Product(command: CLI.shortName, name: name, configuration: configuration, updateSource: updateSource)
         product.bundle = hostBundle
+        product.windowEntry = windowEntry
         product.out = { printed += $0; CLIOutput.write($0 + "\n") }
-        product.runningApp = { RunningInstances.menuBar().map(\.processIdentifier) }
+        product.runningApp = runningApp
         product.changed = { if (try? configuration.exportData()) != before { policyApplied(store) } }
         let code = AppLifecycleCLI.run(arguments, product: product)
         // Like every other LiteGauge command: a usage error names its reason on stderr even when --json was asked for.
@@ -150,9 +172,10 @@ enum ProductLifecycle {
 
 // `--lifecycle-self-test [dir]`: this process is the running App. It runs the same `installApp()` the menu-bar App
 // runs, offscreen (activation policy .prohibited: no status item, no visible window, no Dock icon), and the real
-// `litegauge config …` commands are run against it as child processes of this same executable, through a symlink
-// named litegauge the way the installed command is called. Policy, preferences, "cloud" folder and the follow
-// channel are throwaway: the owner's policy, preferences, iCloud Drive and running menu-bar instance are not touched.
+// `litegauge config …` / `litegauge update …` commands are run against it as child processes of this same executable,
+// through a symlink named litegauge the way the installed command is called. Policy, preferences, "cloud" folder, the
+// follow channel and the release channel are throwaway: the owner's policy, preferences, iCloud Drive and running
+// menu-bar instance are not touched, no network is used, and the app under test is never replaced.
 extension ProductLifecycle {
     static func runSelfTest(outDir: URL) -> Bool {
         let files = FileManager.default
@@ -180,11 +203,14 @@ extension ProductLifecycle {
         let id = UUID().uuidString.lowercased()
         let root = outDir.appendingPathComponent("lifecycle-" + id.prefix(8), isDirectory: true)
         let support = root.appendingPathComponent("support", isDirectory: true), cloud = root.appendingPathComponent("cloud", isDirectory: true)
-        let suite = isolatedSuitePrefix + id
+        let suite = isolatedSuitePrefix + id, channel = isolatedChannelPrefix + id
         setenv("APP_LIFECYCLE_SUPPORT_DIR", support.path, 1)
         setenv("APP_LIFECYCLE_CLOUD_DIR", cloud.path, 1)
         setenv("APP_LIFECYCLE_FOLLOW_CHANNEL", "test." + id, 1)
         setenv("LITEGAUGE_PREFERENCES_SUITE", suite, 1)
+        // The commands' release channel and "running App" for this run: a local record, and this very process.
+        setenv("LITEGAUGE_UPDATE_CHANNEL", channel, 1)
+        setenv(isolatedAppVariable, String(ProcessInfo.processInfo.processIdentifier), 1)
         /// A removed throwaway domain leaves an empty 42-byte plist in ~/Library/Preferences, and the preferences daemon
         /// writes it seconds after this process has exited: nothing here can catch its own. Each run clears the empty
         /// shells earlier runs left (this test's prefix only), and the result names this run's domain so the caller can
@@ -243,9 +269,13 @@ extension ProductLifecycle {
             check("command_link", false); return report(checks, order, facts, outDir: outDir)
         }
         var commands = 0
-        func run(_ arguments: String...) -> (code: Int32, body: [String: Any], stderr: String) {
+        typealias Outcome = (code: Int32, body: [String: Any], stderr: String)
+        func run(_ arguments: String...) -> Outcome { launch(arguments, dropping: []) }
+        /// `dropping`: variables this one command does not inherit (dropping the App's pid = "no App is running").
+        func launch(_ arguments: [String], dropping: [String]) -> Outcome {
             let process = Process(), out = Pipe(), err = Pipe()
             process.executableURL = link; process.arguments = arguments + ["--json"]
+            if !dropping.isEmpty { process.environment = ProcessInfo.processInfo.environment.filter { !dropping.contains($0.key) } }
             process.standardOutput = out; process.standardError = err; process.standardInput = FileHandle.nullDevice
             guard (try? process.run()) != nil else { return (-1, [:], "not started") }
             commands += 1
@@ -268,7 +298,8 @@ extension ProductLifecycle {
             } while awake() < end
             return true
         }
-        func sync(_ target: Bool) -> (code: Int32, body: [String: Any], stderr: String) { run("config", "sync", target ? "on" : "off", "--yes") }
+        func sync(_ target: Bool) -> Outcome { run("config", "sync", target ? "on" : "off", "--yes") }
+        func errorCode(_ outcome: Outcome) -> String? { (outcome.body["error"] as? [String: Any])?["code"] as? String }
         var unfollowed: [[String: Any]] = []
         func follows(_ target: Bool) -> Bool {
             let began = awake(), clock = Date()
@@ -286,6 +317,12 @@ extension ProductLifecycle {
         check("status_reads_the_same_settings", first.code == 0 && first.body["has_settings"] as? Bool == true && first.body["sync_enabled"] as? Bool == false
               && first.body["keys"] as? [String] == ["file.0.protectedApps"] && first.body["problem"] is NSNull)
         check("status_writes_nothing", !files.fileExists(atPath: support.appendingPathComponent(AppIdentity.bundleID).path) && !files.fileExists(atPath: cloud.path))
+        // The sentence under the window's switch. Before the App's first pass it is the window's initial value.
+        let initial = first.body["sync_status"] as? [String: Any]
+        check("status_keeps_its_fields_and_adds_the_sync_sentence",
+              Set(first.body.keys) == ["ok", "command", "has_settings", "sync_enabled", "sync_status", "keys", "app_running", "problem"]
+              && first.body["app_running"] as? Bool == true && initial?["text"] as? String == off && initial?["text"] as? String == statusLine?.stringValue
+              && initial?["from"] as? String == "derived" && initial?["live"] as? Bool == true && initial?["at"] is NSNull)
 
         // Switch on and off, several rounds: the App follows each one and the stored value is never written back.
         let cloudFile = cloud.appendingPathComponent(AppIdentity.bundleID + ".json")
@@ -297,11 +334,32 @@ extension ProductLifecycle {
             if round == 1 {
                 let uploaded = ((try? JSONSerialization.jsonObject(with: Data(contentsOf: cloudFile))) as? [String: Any])?["values"] as? [String: Any]
                 check("sync_on_uploads_through_the_shared_reconcile", uploaded?["file.0.protectedApps"] as? [String] == ["com.example.Seed"])
+                // The command reads the running App's own sentence, word for word what the window shows…
+                var shown: [String: Any] = [:]
+                let live = wait(5) {
+                    shown = run("config", "status").body["sync_status"] as? [String: Any] ?? [:]
+                    return shown["from"] as? String == "app" && shown["text"] as? String == statusLine?.stringValue
+                }
+                facts["sync_sentence_live"] = shown
+                check("status_reports_the_running_apps_sync_sentence", live && shown["live"] as? Bool == true && shown["at"] is String
+                      && shown["text"] as? String != off)
+                // …and, when no App is running, the newest sentence left on record.
+                let apart = launch(["config", "status"], dropping: [isolatedAppVariable])
+                let left = apart.body["sync_status"] as? [String: Any] ?? [:]
+                facts["sync_sentence_recorded"] = left
+                check("status_reports_the_recorded_sentence_when_no_app_runs", apart.code == 0 && apart.body["app_running"] as? Bool == false
+                      && apart.body["sync_enabled"] as? Bool == true && left["from"] as? String == "record" && left["live"] as? Bool == false
+                      && left["at"] is String && (left["text"] as? String).map { !$0.isEmpty && $0 != off } == true)
             }
             let offResult = sync(false)
             check("round\(round)_command_switches_off", offResult.code == 0 && offResult.body["changed"] as? Bool == true && offResult.body["sync_enabled"] as? Bool == false)
             check("round\(round)_app_follows_off", follows(false))
             check("round\(round)_off_is_not_written_back", holds(false, 1.2))
+            if round == 1 {
+                let closed = run("config", "status").body["sync_status"] as? [String: Any]
+                check("status_reports_the_closed_sentence_after_off", closed?["text"] as? String == off && closed?["text"] as? String == statusLine?.stringValue
+                      && closed?["live"] as? Bool == true)
+            }
         }
 
         // Back to back: the second command lands while the App is still about to act on the first. From the moment
@@ -383,8 +441,59 @@ extension ProductLifecycle {
         check("usage_error_exit_2_json_and_stderr", usage.code == 2 && (usage.body["error"] as? [String: Any])?["code"] as? String == "usage"
               && usage.body["ok"] as? Bool == false && usage.stderr.contains("用 --help 查看用法"))
         let text = CLI.help(help)
-        check("help_lists_every_lifecycle_subcommand", ["\n  config status", "\n  config export", "\n  update check", "\n  config import", "\n  config sync on|off"].allSatisfy(text.contains)
-              && text.components(separatedBy: "暂无命令").last?.contains("升级到新版") == true && CLI.windowOnly.allSatisfy { text.contains($0.name) })
+        check("help_lists_every_lifecycle_subcommand", ["\n  config status", "\n  config export", "\n  update check", "\n  config import", "\n  config sync on|off",
+                                                        "\n  update install --yes"].allSatisfy(text.contains)
+              && !text.contains("暂无命令") && text.contains("开关下面那句同步状态") && CLI.windowOnly.allSatisfy { text.contains($0.name) })
+
+        // Updates, on a throwaway channel inside this run's "cloud" folder: no network, no iCloud Drive. Nothing here
+        // passes --yes, so whatever the record says the app under test is never replaced and no App is asked to quit.
+        let bundle = hostBundle.bundleURL
+        func underTest() -> [String] { [stamp(executable), stamp(bundle.appendingPathComponent("Contents/Info.plist"))] }
+        let appBefore = underTest()
+        let installed = ["version": hostBundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+                         "build": hostBundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""]
+        let feed = cloud.appendingPathComponent("TianliApps/Updates/\(AppIdentity.bundleID)/\(channel)", isDirectory: true)
+        func publish(_ version: String, _ build: String) {
+            try? files.createDirectory(at: feed, withIntermediateDirectories: true)
+            let record: [String: Any] = ["version": version, "build": build, "bundle_id": AppIdentity.bundleID, "channel": channel,
+                                         "filename": "LiteGauge-\(version).zip", "sha256": String(repeating: "a", count: 64), "size_bytes": 10]
+            try? JSONSerialization.data(withJSONObject: record, options: [.sortedKeys]).write(to: feed.appendingPathComponent("release.json"), options: .atomic)
+        }
+        check("update_channel_is_public_outside_an_isolated_run", updateChannel(isolated: false, requested: channel) == nil
+              && updateChannel(isolated: true, requested: "default") == nil && updateChannel(isolated: true, requested: nil) == nil
+              && updateChannel(isolated: true, requested: channel) == channel)
+        let unpublished = run("update", "install", "--dry-run")
+        check("update_install_without_a_release_record_is_reported", unpublished.code == 1 && errorCode(unpublished) == "check_incomplete"
+              && unpublished.body["current"] as? [String: String] == installed)
+        publish(installed["version"] ?? "", installed["build"] ?? "")
+        let same = run("update", "install")
+        check("update_install_with_no_newer_release_exits_0_and_installs_nothing", same.code == 0 && same.body["ok"] as? Bool == true
+              && same.body["installed"] as? Bool == false && same.body["state"] as? String == "up_to_date"
+              && same.body["current"] as? [String: String] == installed && same.body["app_running"] as? Bool == true)
+        let current = run("update", "check")
+        check("update_check_up_to_date_offers_no_command", current.code == 0 && current.body["state"] as? String == "up_to_date"
+              && (current.body["upgrade"] as? [String: Any])?["command"] is NSNull)
+        publish("99.0", "1")
+        let newer = run("update", "check"), upgrade = newer.body["upgrade"] as? [String: Any] ?? [:], how = upgrade["how"] as? String ?? ""
+        check("update_check_names_the_command_and_the_window_entry", newer.code == 0 && newer.body["state"] as? String == "update_available"
+              && Set(newer.body.keys) == ["ok", "command", "current", "source", "latest", "update_available", "state", "message", "upgrade"]
+              && Set(upgrade.keys) == ["in_app", "button", "how", "download_url", "command"]
+              && upgrade["command"] as? String == "litegauge update install --yes" && upgrade["button"] as? String == "升级到新版…"
+              && how.contains("litegauge update install --yes") && how.contains("「\(windowEntry)」") && !how.contains("配置与更新"))
+        let dry = run("update", "install", "--dry-run"), plan = dry.body["would_install"] as? [String: Any]
+        check("update_install_dry_run_says_what_it_would_do", dry.code == 0 && dry.body["dry_run"] as? Bool == true && dry.body["installed"] as? Bool == false
+              && plan?["from"] as? [String: String] == installed && plan?["to"] as? [String: String] == ["version": "99.0", "build": "1"]
+              && dry.body["installation"] as? String == "bundle" && dry.body["will_quit_app"] as? Bool == true && dry.body["will_relaunch"] as? Bool == true)
+        let unconfirmed = run("update", "install")
+        check("update_install_needs_yes", unconfirmed.code == 2 && errorCode(unconfirmed) == "confirmation_required" && unconfirmed.body["ok"] as? Bool == false
+              && unconfirmed.stderr.contains("用 --help 查看用法"))
+        let stray = run("update", "install", "extra")
+        check("update_install_usage_error_exit_2", stray.code == 2 && errorCode(stray) == "usage")
+        check("update_commands_download_and_replace_nothing", underTest() == appBefore
+              && ((try? files.contentsOfDirectory(atPath: feed.path)) ?? []) == ["release.json"]
+              && !files.fileExists(atPath: String(bundle.path.dropLast(".app".count)) + ".upgrade-0.app")
+              && !files.fileExists(atPath: support.appendingPathComponent("backups").path) && !files.fileExists(atPath: support.appendingPathComponent("trash").path))
+        facts["update_channel"] = channel
 
         check("owner_policy_preferences_and_sync_state_untouched", owned.map(stamp) == ownedBefore)
         facts["not_followed"] = unfollowed
@@ -396,7 +505,9 @@ extension ProductLifecycle {
         let passed = !checks.isEmpty && checks.values.allSatisfy { $0 }
         var result: [String: Any] = ["ok": passed, "checks": checks, "failed": order.filter { checks[$0] == false }, "count": checks.count,
                                      "screenshots": ["lifecycle-settings.png"],
-                                     "not_covered": ["the owner's real iCloud Drive and preference domain", "update check (reads the network)",
+                                     "not_covered": ["the owner's real iCloud Drive and preference domain",
+                                                     "the public release channel (GitHub): the run reads a throwaway local channel instead",
+                                                     "update install --yes replacing an app (the shared layer's own test does it on a fixture app)",
                                                      "a physical click on the window's switch", "AppKit menu tracking"]]
         facts.forEach { result[$0.key] = $0.value }
         if let data = try? JSONSerialization.data(withJSONObject: result, options: .sortedKeys) { print(String(decoding: data, as: UTF8.self)) }

@@ -1,8 +1,10 @@
 #!/bin/bash
 # Lifecycle check: the App's own offscreen self-test (`--lifecycle-self-test`). The process under test is the running
-# App (the production wiring, no status item, no visible window, no Dock icon); the real `litegauge config …`
-# commands are run against it. It checks that the App follows `config sync on|off` and `config import`, and that the
-# stored switch is never written back, including two commands back to back.
+# App (the production wiring, no status item, no visible window, no Dock icon); the real `litegauge config …` and
+# `litegauge update …` commands are run against it. It checks that the App follows `config sync on|off` and
+# `config import`, that the stored switch is never written back (including two commands back to back), that
+# `config status` reports the sentence under the window's switch, and `update check` / `update install` on a
+# throwaway release channel inside the run's own folder: never with --yes, so the app under test is never replaced.
 #
 #   bash scripts/accept/lifecycle.sh [path/to/LiteGauge.app] [output dir]
 #

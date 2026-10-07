@@ -1,5 +1,55 @@
 # 轻仪 LiteGauge · 当前交付
 
+## 2026-10-07 18:40 · Agent 命令入口第二轮：「升级到新版」与同步状态那句有命令，0.5.5 (18) 公证装机
+
+来源：全产品「每项功能都能不点界面完成」第二轮。共用层定稿后「升级到新版」和「配置同步状态那句话」都有命令，轻仪的帮助、测试、自检、登记跟上并装机。声明会话 `agentcli2-litegauge`。这个单元由两个执行者接力：前一个 17:46 开工，18:05 随主会话重启被结束，没有留下回报；本节由接续者写，前任留下的每处改动都读过、测试都重跑过才沿用。
+
+结果：
+
+- 装上了。0.5.5 (17) → 0.5.5 (18)，装前装后 `spctl -a -vv` 都是 accepted / Notarized Developer ID，`stapler validate` 通过。可执行 SHA256 `f9e5752f72363008…` → `c9c64e456d5d79e7…`。菜单栏实例后台重启，pid 87514 → 55540，装机前后最前面的应用都是 Ghostty。
+- 换下的 0.5.5 (17) 在 `~/.Trash/litegauge-0.5.5-20261007-183441/LiteGauge.app`（安装脚本自己放的）。
+- `chapter agent-cli`：上次验收（12:03）未通过，35 项 = 命令 30、仅在窗口 3、暂缺 2；现在 `passed`，37 项 = 命令 34、仅在窗口 3、暂缺 0（多出的 2 项是下午 D 布局那轮加的 AI 会话摘要与跳转，不是本轮加的）。
+
+新命令（都来自共用层，轻仪只接线）：
+
+- `litegauge update install --yes [--dry-run] [--json]`：设置窗口「升级到新版…」那条路。没有新版退出 0、`installed:false`；`--dry-run` 报 `would_install{from,to}`；有新版缺 `--yes` 退出 2（`confirmation_required`）；窗口里是「下载新版…」的情形退出 1（`manual_install`，带安装包地址）；成功时旧 App 移到废纸篓（`old_app_cleanup:"trashed"`、`backup` 为 null）。
+- `litegauge config status` 多了 `sync_status{text, at, from, live}`：开关下面那句同步状态。原有字段没变。
+- `update check` 的 `upgrade` 多了 `command`。
+
+改了什么：
+
+- `Sources/CLI.swift`：顶层帮助删掉「暂无命令」两行，加 `update install` 的用法、`--json` 形状、error.code（`manual_install`、`needs_product_installer`、`upgrade_failed`、`app_busy`、`replace_failed`、`cleanup_failed`）和退出码说明；`update install --yes` 列进「有真实后果的写命令」。
+- `Sources/ProductLifecycle.swift`：帮助直接拼共用层的 `helpRead` / `helpWrite`；`runningApp` 交给共用层（升级前退出的就是它）；隔离运行（设了 `APP_LIFECYCLE_SUPPORT_DIR`）且 `LITEGAUGE_UPDATE_CHANNEL` 以 `test.` 开头时才换成一次性的本地渠道，其余情况一律是 GitHub 正式发行；隔离运行只认 `LITEGAUGE_LIFECYCLE_APP_PID` 指的那个进程，不看也不退出本人正在运行的实例。
+- 生命周期自检 `--lifecycle-self-test` 从 43 项加到 56 项：同步状态那句（初值、运行中的 App 此刻那句与窗口逐字相同、App 没在运行时取记录、关闭后回到「已关闭」）；`update install` 没有发行记录、没有新版、`--dry-run`、缺 `--yes`、多余参数；`update check` 的 `upgrade.command` 与窗口入口名；全程不带 `--yes`，核对被测 App 没被替换、没有下载任何东西。
+- `Tests/main.swift`：核心测试 276 → 278 项（帮助不再有「暂无命令」、登记里没有 missing、新形状与 error.code）。
+- `project.yaml` `sop.agent_cli`：「升级到新版… / 下载新版…」改 `command: litegauge update install`，「同步状态那句话」改 `command: litegauge config status`，「设置…」的说明去掉「暂缺的两项另列」。
+- `Info.plist` 构建号 17 → 18（版本号 0.5.5 没动；没有跑发版脚本）。
+- README 中英文、CHANGELOG、`scripts/accept/lifecycle.sh` 的说明同步。
+- 四份共用副本（AppLifecycle / AppConfiguration / AppLifecycleUI / AppLifecycleCLI）与总部现版逐字节相同（`3033bc6f… / ba4d6aa1… / fb946d73… / f33393d9…`，开工时、构建后各核一次），没有产品自己的本地改动。
+
+怎么验的：
+
+- `CODE_SIGN_IDENTITY=Developer ID Application… bash build.sh`：核心测试 278 项通过。
+- 对构建产物：`bash scripts/accept/lifecycle.sh` 56 项通过，背靠背回退 0 次，共跑命令 417 条；`--ui-self-test` 108 项通过。两个都是离屏，没有窗口上屏、没有状态栏图标。
+- 另在隔离环境里手工跑了一遍公证过的那份（临时策略目录、测试偏好域、临时「云」目录里的一次性渠道，没有联网）：`config status --json` 带 `sync_status`、退出 0；没有发行记录退出 1（`check_incomplete`）；同版本退出 0、`installed:false`；更高版本 `--dry-run` 退出 0 并给出 `would_install`，缺 `--yes` 退出 2（`confirmation_required`），`--no-such` 与多余参数退出 2（`usage`）；被测 App 的可执行前后哈希相同。
+- 公证：另存一份提交，提交号 `3e24145b-0fc8-495c-975e-e748738ec416`，Accepted，装订后 `spctl` 与 `stapler validate` 通过，可执行与跑过自检的构建逐字节相同。只做了提交与装订，没有跑 `scripts/package-release.sh`；`build/release/`、`release/latest.json`、GitHub、官网都没动。
+- 装机：`bash scripts/install.sh --restart <公证过的副本>`，18:34。装前（18:34:39）装后比对：`defaults export cyou.tianli.litegauge` 相同（空域）；`~/Library/Application Support/LiteGauge/` 141 个文件内容、修改时间、大小全部相同；`care status` 的策略与历史、`care budget status` 的设置、`care protect list` 的 20 条规则全部相同；`~/.local/bin/litegauge` 与 keys.d 软链未变；`TianliApps/Configuration` 下仍没有轻仪的目录。系统后台项列表（`sfltool dumpbtm`）与 LaunchAgents 里装前装后都没有轻仪：产品不自动加登录项。
+- 装机版只读验证：`--help` 有 `update install` 各行、没有「暂无命令」；`config status --json` 有 `sync_status`（同步关着：`text` 为「iCloud 配置同步已关闭」）；`update install --no-such --json` 退出 2、`error.code` 为 `usage`。17 条只读或错误参数调用的退出码 18 与 17 逐条相同，其中 15 条 JSON 输出的键也逐条相同（另两条是帮助与不带参数的用法）。
+- `chapter sop accept --app litegauge --check agent_cli`：passed。
+
+冲突副本：共 18 个，全部是 10-05 的旧版，当前文件都比它们新，没有「新内容只在冲突副本里」的。落在编译或打包路径里的 13 个由前任移到 `handoffs/sync-conflicts-20261007/`（保留相对路径，不提交）；其余 5 个（CHANGELOG、两份 README、CLAUDE、本文件的冲突副本）没动。
+
+没做或没验证：
+
+- 没有对装机版跑过 `update install --yes`，也没有跑联网的 `update check`。真实替换一次 App 只有共用层自己在夹具 App 上的测试；轻仪这边验的是到替换之前的每一步。GitHub 上的正式发行还是 0.4.1，现在跑 `update install` 只会回「不需要升级」。
+- 同步开着时装机版的 `sync_status`（`from: app` 那句）只在离屏自检里验过，没有对本人真实的 iCloud Drive 拨过开关。
+- 没跑性能测量，`perf/lightweight.json`、构建与装机回执都没动；`scripts/accept/*` 里会重新构建的四个（functionality、recovery、privacy、native_ui）没跑。
+- `scripts/accept/lifecycle.sh` 仍没有登记进 `sop.accept`。
+
+留在磁盘上的：留底与日志在 `build/agentcli2-20261007/`（`before-2/`、`before-3/`、`after/`、`isolated-manual/`、构建与公证记录）；`build/LiteGauge.app` 是签过名、未装订的 18（可执行与装机版相同）；公证过的那份装完后移到了 `~/.Trash/litegauge-agentcli2-notarized-copy-0.5.5-18-20261007-183623/`；前任开工时把上一轮留在 build 里的 0.5.5 (17) 移到了 `~/.Trash/litegauge-build-0.5.5-17-20261007-175920/`。
+
+提交（本机，未推送）：一次提交，信息以 `Agent CLI round 2:` 开头。提交里有登记的两项改动与「设置…」那行、`Sources/ProductLifecycle.swift`、三份有变化的共用副本、`scripts/accept/lifecycle.sh`、agent_cli 验收记录和本节。`Sources/CLI.swift`、`Tests/main.swift`、`Info.plist`、两份 README、`CHANGELOG.md` 带着 0.4.4 到 0.5.5 别的轮次的未提交改动，本轮的修改叠在上面，仍未提交，留给发版流程；`project.yaml` 里 D 布局那轮加的两行 AI 会话登记和本文件里它的 16:42 一节同样没有带进这次提交。
+
 ## 2026-10-05 · 0.4.3 关闭浏览器已装机；实际内存目标仍未达到
 
 - 用户明确纠正：Dia 等浏览器直接关闭即可，不要恢复重启；最终标准是实际释放内存，并由 LiteGauge 一次处理，无需逐个点击。该约束覆盖 GUI、CLI、规划、动作、策略、结果、测试和当前说明；aTrust 保留。旧重启模式停止使用。
