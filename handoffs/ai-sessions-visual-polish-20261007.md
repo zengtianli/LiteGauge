@@ -1,6 +1,6 @@
 # LiteGauge 视觉收尾：统一整个弹出层
 
-状态：方案和设计小样阶段；App 改造、完整生产浮层视觉验收未执行。当前调度会话只负责方案、交接和回读，具体实现由本目录的独立 Codex 主会话承接。
+状态：已完成并实装 **LiteGauge 0.5.4 (16)**。完整生产浮层正常/部分来源/过期/缺失的浅深色 8 图已目视；265 项核心、70 项 UI 检查通过。原独立 D 会话完成改造与公证装机后，用户要求关闭它、由本会话接管收尾；原 turn 已 interrupted，最后已装回读、设置保留与交接由本会话完成。范围与实际未覆盖项见末尾。
 
 进入目录：`cd /Users/tianli/Apps/litegauge`。阅读本文件、原项目指导、`handoffs/ai-sessions-entry-20261007.md` 的既有功能回执及 `/Users/tianli/Apps/cadence/docs/ai-sessions-prd.md`。
 
@@ -57,3 +57,17 @@
 ## 其他原任务复核
 
 A 核心/SOP、B Cadence 功能和链接回调、C Chapter 边界、E 工具授权回执已复核；本次视觉纠正只重新打开 D 的整个浮层视觉交付。额度监控仍沿既有入口，多个独立 Claude/Codex 主会话与两机协作的原架构不变。
+
+## 执行回执 · 2026-10-07
+
+- 改造完整 `GaugePanelView`，实际 `NSPopover`、`--snapshot`、UI 自检和媒体入口均用这一生产视图；资源、AI 会话及全部底部操作共用 popover 材质。菜单栏仍 56 pt，浮层 360 × 650 pt。系统强调色主按钮有真实可用/不可用差别，普通操作为清楚的 labelColor，页脚弱一级。
+- 新增 `Sources/PanelUI.swift`；适配 `App.swift`、`SessionSummaryUI.swift`、原入口与必要编译/媒体清单，更新词表、Info 版本。采集、缓存读取语义、内存策略和其他 App 源码未因视觉改造而重写。
+- **265 项核心、70 项 UI 检查通过**。完整正常/partial/stale/missing × 浅深色 8 图已由原负责人逐图目视，并由当前会话及只读核验分组目视；原背景断层、灰色主入口和二级操作像禁用的问题均已修正。7 个原动作截图前后 enabled=true、target=AppDelegate、selector 可响应，隔离 probe 派发通过；未执行真实退出或打开其他 App。
+- 证据 `build/full-panel-final/result.json`、`receipt.json` 与 `native-ui-full-*.png`；binary、8 项源码、8 图 SHA 已独立重算匹配。公证流程正常重签/重构建后产生最终安装包，当前源码 8 项 hash 仍与该 UI 验收绑定，原图未冒充最终已装二进制。
+- App 与 DMG 公证 Accepted：`238713e2-cd3b-436e-a0be-61a16e310205`、`950c9133-655b-46b8-a71b-9ab6498bd651`。`package-result.json` exit 0；本地 ZIP/DMG 在 `build/release/`，未发布 GitHub Release 或部署官网。
+- `/Applications/LiteGauge.app` 已为 **0.5.4 (16)**，后台实例 pid 95323；安装脚本通过原 CLI 正常结束旧 0.5.3 并 `open -g -j` 后台重启。旧包在 `~/.Trash/litegauge-0.5.3-20261007-155033/LiteGauge.app`。已装与最终候选 executable SHA 同为 **5a2dbc193ef25f2d445f2a304762fa8826a2ffb1fc869724a94478ed3896a7a5**。
+- 当前会话实际执行并通过 codesign 严格核验、stapler validate、spctl assess，输出 Notarized Developer ID。比对装前记录：**141 个原支持文件无缺失、无内容变化，原 defaults 哈希相同**。
+- 已装 `--snapshot` exit 0，完整生产图 `build/full-panel-final/installed-panel.png` 已目视，统一背景、正常可读动作及真实白名单缓存读数均在同一图。该图 SHA **336392bc8d52012e75d565e779db0a00de1731a6ef3555563d4d4d9dd84d2185**；结构化最终回读为 `installed-readback.json`。图上动态数量仅代表采样时刻，不作固定配置。
+- 未覆盖：真实物理点击、系统 popover 箭头/外阴影及实际桌面背后材质；自动步骤保持离屏，未抢焦点或合成输入。完整生产内容与实际 view 接线已覆盖，此限制不得写成真实前台点击通过。
+- 原离线全局 SOP 查询被范围外 `Apps/lumen` 缺 project.yaml 阻断；没有更改该项目，也没有用此替代本任务的实际构建/核心/UI/公证/已装证据。
+- 版本保存边界：全新 `Sources/PanelUI.swift` 与独立交接可限定提交；`App.swift/main.swift` 等已有工作树差异包含此前其他 owner 的改动，未整文件夹带提交或撤销。8 项实际验收输入另存 `build/full-panel-final/source-snapshot.zip`，逐项校验与 receipt hash 一致；该归档是当前构建输入快照（包含既有工作树状态），不是 UI-only patch，不应直接覆盖他人源码。原闭合 D 会话的归档仍保留完整操作证据。已装产品和完整视觉核验均有效，不冒称整个源仓工作树已干净。
