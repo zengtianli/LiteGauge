@@ -17,7 +17,8 @@ fi
 # DEVELOPER_DIR works too; no files outside this checkout are needed.
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
 mkdir -p build
-COMPILER=(xcrun swiftc -swift-version 5 -O -whole-module-optimization -target arm64-apple-macos14.0 -sdk "$SDK")
+BUILD_JOBS="${SOP_BUILD_JOBS:-$(sysctl -n hw.ncpu)}"
+COMPILER=(xcrun swiftc -j "$BUILD_JOBS" -num-threads "$BUILD_JOBS" -swift-version 5 -O -whole-module-optimization -target arm64-apple-macos14.0 -sdk "$SDK")
 "${COMPILER[@]}" Sources/Metrics.swift Sources/Diagnostics.swift Sources/ResourceCare.swift Sources/BrowserRecovery.swift Sources/CLI.swift Tests/main.swift -o build/tests
 build/tests
 if [ "${1:-}" = '--test-only' ]; then exit 0; fi

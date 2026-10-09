@@ -17,6 +17,9 @@ key_scripts:
 - build.sh
 - scripts/install.sh
 sop:
+  account:
+    mode: none
+    rationale: 本机菜单栏与命令行工具，无注册、登录或产品账号；资源与策略留在本机，可选配置同步沿系统已登录的 Apple ID。
   platforms:
     mac: {}
     iphone:

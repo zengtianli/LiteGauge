@@ -186,7 +186,7 @@ litegauge --help                   # 也可用 -h、help；任一命令或参数
 
 原生 AppKit；无第三方运行依赖和网络请求；CPU/内存共用2秒采样器，磁盘容量缓存60秒；数值变化时才重绘。
 
-<sub>v0.1.2 (3) · Mac16,12 / Apple M4 / macOS 27.2 · 公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；测量已连续运行约13小时的常驻实例（非刚启动），M4/16 GiB 日常负载 · 2026-10-01。数字来自所列设备实测，版本更新后重新测量。内存口径为 phys_footprint；CPU 为 60 秒采样窗内 CPU 时间 ÷ 墙钟；大小按十进制 MB。原始数据见 [perf/lightweight.json](perf/lightweight.json)。</sub>
+<sub>v0.1.2 (3) · Mac16,12 / Apple M4 / macOS 27.2 · 公证发行版；菜单收起，CPU/内存每2秒、磁盘每60秒；测量已连续运行约13小时的常驻实例（非刚启动），M4/16 GiB 日常负载 · 2026-10-01。数字来自所列版本与设备的测量记录；当前版本与测量范围以本页说明为准。内存口径为 phys_footprint；CPU 为 60 秒采样窗内 CPU 时间 ÷ 墙钟；大小按十进制 MB。原始数据见 [perf/lightweight.json](perf/lightweight.json)。</sub>
 <!-- lightweight:end -->
 
 这组数据来自所列设备和刷新设置，并不保证每台 Mac 都相同。首个 CPU 数值的耗时包含采样等待，不等于完整冷启动耗时。
@@ -219,6 +219,8 @@ open build/LiteGauge.app
 ```
 
 构建脚本先运行测试，再生成 `build/LiteGauge.app`，默认使用本机 ad-hoc 签名；源码构建不是已公证发行包。脚本使用标准 `xcrun` 工具链，不依赖开发者的其他目录。需要指定 Xcode 时可设置 `DEVELOPER_DIR`。
+
+完成当前源码的功能验收后，`python3 scripts/build-fast.py` 会校验全部构建输入与产物哈希，复用已通过的核心测试，再按 `build.sh` 原配方编译和本机签名；输入或产物变化时拒绝复用。构建默认使用本机核数，可用 `SOP_BUILD_JOBS` 指定并行数。
 
 ```sh
 bash build.sh --test-only
