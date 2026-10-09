@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Build LiteGauge's portable, dependency-free product website.
+"""Build LiteGauge's static product website into dist/site.
 
-Release values come from build/release/release.json; resource measurements come
-only from perf/lightweight.json. The small local renderer follows the shared
-app-lightweight metric contract without importing a machine-local workspace.
-facts.json (the portal's published numbers) comes from the shared generator in
-the apps-portal checkout when present; a bare clone builds the page without it.
+Release values come from the published release record (release/latest.json, the
+file project.yaml registers as sop.release); the matching ZIP is copied into the
+site so the page's download, release.json and site-manifest.json describe the
+same bytes. Resource numbers come only from perf/lightweight.json and are
+rendered by the shared perf_block in the apps-portal checkout, which also
+supplies facts.json (the portal's published numbers). The output directory is
+replaced as a whole and ends with site-manifest.json listing every public file.
 """
 from __future__ import annotations
 
@@ -13,100 +15,112 @@ import argparse
 import hashlib
 from html import escape
 import json
-import os
 from pathlib import Path
 import re
 import shutil
+import struct
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE_URL = "https://litegauge.tianli.cyou"
 GITHUB_URL = "https://github.com/zengtianli/LiteGauge"
-MEDIA = ("menubar.png", "panel.png", "diagnosis.png", "demo.mp4", "demo-poster.jpg", "demo.zh.vtt")
+# The 36 px tall menu-bar strip is below the page's minimum screenshot size; the demo video shows it enlarged.
+MEDIA = ("panel.png", "diagnosis.png", "demo.mp4", "demo-poster.jpg", "demo.zh.vtt")
 PORTAL_SITE = Path.home() / "Apps/apps-portal/site"
 PRODUCT_ID = "litegauge"  # products.yaml id / portal card data-product
+MANIFEST = "site-manifest.json"
 
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def decimal_mb(data: dict, name: str) -> float | None:
-    if data.get(name + "_bytes") is not None:
-        return float(data[name + "_bytes"]) / 1_000_000
-    if data.get(name + "_mb") is not None:
-        return float(data[name + "_mb"]) * 1024 * 1024 / 1_000_000
-    return None
+def shared(module: str):
+    """Import the shared portal module; the page's numbers are never formatted locally."""
+    if not (PORTAL_SITE / (module + ".py")).is_file():
+        raise ValueError("shared renderer unavailable: " + str(PORTAL_SITE / (module + ".py")))
+    if str(PORTAL_SITE) not in sys.path:
+        sys.path.insert(0, str(PORTAL_SITE))
+    return __import__(module)
 
 
-def mb(value: float | None) -> str:
-    return "未测" if value is None else f"{value:.1f}"
+def sha256(path: Path) -> str:
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def performance_section(perf: dict, release: dict) -> str:
-    size, idle = perf.get("size", {}), perf.get("idle", {})
-    download = decimal_mb(size, "download")
-    installed = decimal_mb(size, "installed")
-    footprint = idle.get("footprint_mb")
-    memory = None if footprint is None else float(footprint) * 1024 * 1024 / 1_000_000
-    cpu = idle.get("cpu_pct")
-    speeds = perf.get("speed_gui", []) + perf.get("speed_cli", [])
-    speed = next((item for item in speeds if item.get("headline")), next(iter(speeds), {}))
-    ms = speed.get("median_ms")
-    speed_value = "未测" if ms is None else f"{float(ms) / 1000:.1f}" if float(ms) >= 1000 else f"{float(ms):.0f}"
-    speed_unit = "" if ms is None else "s" if float(ms) >= 1000 else "ms"
-    speed_label = speed.get("label", "启动或关键操作")
-    speed_note = speed.get("method", "未提供本版本的速度测量。")
-    if speed.get("key") == "first_sample":
-        speed_label = "首个 CPU 读数"
-        speed_note = "应用初始化后首次有效读数，含采样等待；单次记录，不代表完整冷启动。"
-    cards = [
-        ("download", mb(download), "MB" if download is not None else "", "安装包", f"下载文件；安装后占用 {mb(installed)} MB。"),
-        ("memory", mb(memory), "MB" if memory is not None else "", "空闲内存", "phys_footprint，活动监视器内存列同口径。"),
-        ("cpu", "未测" if cpu is None else f"{float(cpu):.2f}".rstrip("0").rstrip("."), "%" if cpu is not None else "", "空闲 CPU", f"菜单收起，{idle.get('window_s', '未知')} 秒采样窗平均占用。"),
-        ("speed", speed_value, speed_unit, speed_label, speed_note),
-    ]
-    def card_note(metric: str, note: str) -> str:
-        result = escape(note)
-        if metric == "download" and installed is not None:
-            value = escape(mb(installed) + " MB")
-            result = result.replace(value, "<span data-perf-metric='installed'>" + value + "</span>")
-        return result
+def release_label(release: dict) -> str:
+    return "v" + str(release["version"]) + (f" ({release['build']})" if release.get("build") else "")
 
-    rendered = "".join(
-        "<article><p class='perf-value' data-perf-metric='" + metric + "'><strong>" + escape(value) + "</strong> " + escape(unit) + "</p>"
-        "<h3>" + escape(label) + "</h3><p>" + card_note(metric, note) + "</p></article>"
-        for metric, value, unit, label, note in cards
-    )
-    method = " · ".join(str(perf[key]) for key in ("device", "measured_at") if perf.get(key))
-    description = str(perf.get("data", ""))
-    limit = perf.get("speed_cold_start", {})
-    limit_text = "完整冷启动尚未测量；上方速度是进程内首次有效 CPU 数值，含采样等待。" if limit.get("status") == "未测" else ""
-    return (
-        "<section id='light' class='lw-perf wrap' aria-labelledby='light-title'><div class='section-title'>"
-        "<p class='eyebrow'>轻量，有数字可查</p><h2 id='light-title'>只做需要的事，也看自己的占用。</h2><p>"
-        + escape(str(perf.get("why", ""))) + "</p></div><div class='perf-grid'>" + rendered + "</div>"
-        "<p class='fine'>v" + escape(str(perf["version"])) + " · " + escape(method) + " · " + escape(description)
-        + "。内存含主进程与辅助进程；CPU 为进程 CPU 时间增量 ÷ 墙钟，100% 代表一个核心。MB 按十进制显示。"
-        "<a href='lightweight.json'>查看实测证据</a>。</p>"
-        + ("<p class='measurement-limit'>" + escape(limit_text) + "</p>" if limit_text else "")
-        + ("<p class='measurement-limit'>以上为 v" + escape(str(perf['version'])) + " 的历史实测，包括该版本的包大小；不代表当前 v" + escape(str(release['version'])) + "。当前下载大小见下载入口，本轮未重复运行性能采样。</p>" if str(perf['version']).split(' ')[0] != str(release['version']) else "") + "</section>"
-    )
+
+def same_version(perf: dict, release: dict) -> bool:
+    return str(perf.get("version", "")).split(" ")[0] == str(release["version"])
+
+
+def png_size(path: Path) -> tuple[int, int]:
+    with path.open("rb") as stream:
+        header = stream.read(24)
+    if not header.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError(f"{path.name} is not a PNG")
+    return struct.unpack(">II", header[16:24])
+
+
+def performance_section(perf_path: Path, raw: dict, release: dict) -> str:
+    perf_block = shared("perf_block")
+    perf = perf_block.load({"perf": str(perf_path)})
+    if perf is None:
+        raise ValueError("perf/lightweight.json cannot be read by the shared renderer")
+    body = perf_block.section(perf).replace("class='section wrap perf'", "class='lw-perf wrap'")
+    if "class='lw-perf wrap'" not in body or not body.endswith("</section>"):
+        raise ValueError("shared perf_block.section changed its markup; adapt the site build")
+    notes = ["<p class='fine'><a href='lightweight.json'>查看实测证据</a>。MB 按十进制显示；CPU 的 100% 代表一个核心。</p>"]
+    cold = raw.get("speed_cold_start", {})
+    if cold.get("status") == "未测":
+        notes.append("<p class='measurement-limit'>完整冷启动：未测。" + escape(str(cold.get("reason", "没有记录原因。")))
+                     + "上方速度是进程内首次有效 CPU 数值，含采样等待。</p>")
+    if not same_version(raw, release):
+        current = escape(release_label(release))
+        notes.append(
+            "<p class='measurement-limit'>以上是 v" + escape(str(raw["version"])) + " 的历史实测，包括该版本的包大小，不代表当前公开下载的 "
+            + current + "。" + current + " 的下载包为 " + escape(perf_block.size_mb(int(release["bytes"])))
+            + "；它的安装后大小、内存、CPU 与速度未测：perf/lightweight.json 里还没有该版本的采样记录。</p>")
+    return body[:-len("</section>")] + "".join(notes) + "</section>"
+
+
+def media_scope(release: dict) -> tuple[str, str]:
+    """Say which build the screenshots and video were recorded from (docs/media/manifest.json)."""
+    record = ROOT / "docs/media/manifest.json"
+    recorded = str(read_json(record).get("version", "")).split(" ")[0] if record.is_file() else ""
+    if not recorded:
+        return "录制版本未登记", "<p class='measurement-limit'>截图与视频的录制版本未登记，界面以实际下载的版本为准。</p>"
+    if recorded == str(release["version"]):
+        return "录自 v" + escape(recorded), ""
+    return ("录自 v" + escape(recorded) + " 本地构建",
+            "<p class='measurement-limit'>本页截图与视频录自 v" + escape(recorded) + " 本地构建，与当前公开下载的 "
+            + escape(release_label(release)) + " 不是同一版本；画面和下载到的界面可能不同，各版本的变化见"
+            "<a href='" + escape(GITHUB_URL + "/releases", quote=True) + "'>更新记录</a>。</p>")
+
+
+def find_archive(release_path: Path, release: dict, explicit: Path | None) -> Path:
+    """The published ZIP, byte-checked against the release record before it is offered on the page."""
+    candidates = [explicit] if explicit else [release_path.parent / release["filename"], ROOT / "build/release" / release["filename"]]
+    archive = next((path for path in candidates if path and path.is_file()), None)
+    if archive is None:
+        raise ValueError(f"{release['filename']} not found; download {release['download_url']} into build/release/ or pass --archive")
+    if archive.stat().st_size != release["bytes"] or sha256(archive) != str(release["sha256"]).lower():
+        raise ValueError(f"{archive} differs from the release record (bytes or SHA-256)")
+    return archive
 
 
 def write_facts(output: Path, release: dict) -> None:
     """Publish facts.json at the homepage root so it deploys with this page."""
-    if not (PORTAL_SITE / "product_facts.py").is_file():
-        print("facts.json not written — shared generator unavailable: " + str(PORTAL_SITE), file=sys.stderr)
-        return
-    sys.path.insert(0, str(PORTAL_SITE))
-    import product_facts
+    product_facts = shared("product_facts")
     version = str(release['version'])
     facts = product_facts.from_repo(ROOT, product_id=PRODUCT_ID, icon="assets/AppIcon.png")
     if facts["version"] != version:
         raise ValueError(f"facts.json version {facts['version']} (sop.release) differs from the page's v{version}")
     measured = read_json(ROOT / 'perf/lightweight.json')
-    if str(measured['version']).split(' ')[0] != version and os.environ.get('APP_RELEASE_KEEP_HISTORY') == '1':
+    if not same_version(measured, release):
         facts.update(download_bytes=release['bytes'], measured_version=measured['version'],
                      historical_reference=True, download_source='verified current release ZIP')
         facts['card_line'] = f"当前下载 {release['bytes'] / 1_000_000:.1f} MB · 历史实测 {escape(measured['version'])}（{escape(measured['measured_at'])}）：" + facts['card_line']
@@ -122,20 +136,15 @@ def build(args: argparse.Namespace) -> None:
     for key in ("version", "filename", "sha256", "bytes", "notarized", "minimum_macos", "architecture", "download_url"):
         if key not in release:
             raise ValueError(f"release metadata missing {key}")
-    if str(perf.get("version", "")).split(" ")[0] != str(release["version"]) and os.environ.get("APP_RELEASE_KEEP_HISTORY") != "1":
-        raise ValueError("Release and performance versions differ; measure this release first")
     if Path(release["filename"]).name != release["filename"] or not str(release["filename"]).endswith(".zip"):
         raise ValueError("Release filename must be a plain ZIP filename")
     if not re.fullmatch(r"[0-9a-fA-F]{64}", str(release["sha256"])):
         raise ValueError("Release SHA-256 must have 64 hexadecimal characters")
     if not str(release["download_url"]).startswith(GITHUB_URL + "/releases/download/"):
         raise ValueError("Download URL must point at this product's GitHub release")
-    if perf.get("size", {}).get("download_bytes") != release["bytes"] and os.environ.get("APP_RELEASE_KEEP_HISTORY") != "1":
+    if same_version(perf, release) and perf.get("size", {}).get("download_bytes") != release["bytes"]:
         raise ValueError("perf/lightweight.json size.download_bytes must match this release's bytes")
-    archive = release_path.parent / release["filename"]
-    if archive.exists():
-        if archive.stat().st_size != release["bytes"] or hashlib.sha256(archive.read_bytes()).hexdigest() != str(release["sha256"]).lower():
-            raise ValueError("Release archive differs from its metadata")
+    archive = find_archive(release_path, release, args.archive.resolve() if args.archive else None)
     missing = [name for name in MEDIA if not (ROOT / "docs/media" / name).is_file()]
     if missing and not args.allow_missing_media:
         raise ValueError("Missing real media: " + ", ".join(missing))
@@ -154,42 +163,47 @@ def build(args: argparse.Namespace) -> None:
             "系统可能要求 Mac 登录密码或 Touch ID。轻仪不需要辅助功能、屏幕录制或完全磁盘访问权限。"
             "<a href='https://support.apple.com/zh-cn/102445'>查看 Apple 的说明 ↗</a></p>"
         )
-    schema = {
-        "@context": "https://schema.org", "@type": "SoftwareApplication", "name": "轻仪 LiteGauge",
-        "applicationCategory": "UtilitiesApplication", "operatingSystem": requirement,
-        "softwareVersion": str(release["version"]), "url": SITE_URL, "downloadUrl": release["download_url"],
-        "description": "56 点宽度的原生 macOS 菜单栏 CPU、内存与启动磁盘监控工具。",
-        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
-        "author": {"@type": "Person", "name": "Tianli", "url": "https://github.com/zengtianli"},
-    }
+    download_path = "downloads/" + release["filename"]
+    media_label, media_note = media_scope(release)
+    panel = ROOT / "docs/media/panel.png"
+    panel_width, panel_height = png_size(panel) if panel.is_file() else (360, 736)
     replacements = {
         "SITE_URL": SITE_URL, "GITHUB_URL": GITHUB_URL, "VERSION": release["version"],
-        "DOWNLOAD_URL": release["download_url"], "RELEASE_URL": GITHUB_URL + "/releases/tag/v" + str(release["version"]),
-        "DOWNLOAD_MB": mb(float(release["bytes"]) / 1_000_000), "FILENAME": release["filename"],
+        "DOWNLOAD_PATH": download_path, "RELEASE_URL": GITHUB_URL + "/releases/tag/v" + str(release["version"]),
+        "DOWNLOAD_SIZE": shared("perf_block").size_mb(int(release["bytes"])), "FILENAME": release["filename"],
         "SHA256": release["sha256"], "SYSTEM_REQUIREMENT": requirement, "SIGNING_NOTE": signing_note,
         "MENU_WIDTH": perf.get("menu_bar", {}).get("width_points", 56),
+        "PANEL_WIDTH": panel_width, "PANEL_HEIGHT": panel_height, "MEDIA_VERSION_LABEL": media_label,
     }
     html = (ROOT / "site/index.html").read_text(encoding="utf-8")
     for key, value in replacements.items():
         html = html.replace("{{" + key + "}}", escape(str(value), quote=True))
-    html = html.replace("{{PERFORMANCE_SECTION}}", performance_section(perf, release))
+    html = html.replace("{{PERFORMANCE_SECTION}}", performance_section(perf_path, perf, release))
     html = html.replace("{{FIRST_OPEN_HTML}}", first_open)
-    html = html.replace("{{SCHEMA_JSON}}", json.dumps(schema, ensure_ascii=False).replace("<", "\\u003c"))
+    html = html.replace("{{MEDIA_SCOPE_HTML}}", media_note)
     if re.search(r"\{\{[A-Z_]+\}\}", html):
         raise ValueError("Unresolved template fields in the site")
-    output = args.out.resolve()
-    if output == ROOT or output == ROOT / "site" or ROOT not in output.parents:
+    target = args.out.resolve()
+    if target == ROOT or target == ROOT / "site" or ROOT not in target.parents:
         raise ValueError("Build output must be a separate directory inside this repository")
-    (output / "media").mkdir(parents=True, exist_ok=True)
-    (output / "assets").mkdir(parents=True, exist_ok=True)
+    # Build beside the target and swap, so files from an earlier build never reach the manifest.
+    output = target.with_name(target.name + ".building")
+    if output.exists():
+        shutil.rmtree(output)
+    (output / "media").mkdir(parents=True)
+    (output / "assets").mkdir()
+    (output / "downloads").mkdir()
     (output / "index.html").write_text(html, encoding="utf-8")
     shutil.copy2(ROOT / "site/style.css", output / "style.css")
     shutil.copy2(ROOT / "icon/AppIcon.png", output / "assets/AppIcon.png")
+    shutil.copyfile(archive, output / download_path)
     for name in MEDIA:
         source = ROOT / "docs/media" / name
         if source.is_file():
             shutil.copy2(source, output / "media" / name)
     public_release = {key: release[key] for key in ("version", "filename", "sha256", "bytes", "notarized", "minimum_macos", "architecture", "download_url")}
+    if release.get("build"):
+        public_release["build"] = str(release["build"])
     if release.get("dmg"):
         public_release["dmg"] = {key: release["dmg"][key] for key in ("filename", "sha256", "bytes", "download_url")}
     (output / "release.json").write_text(json.dumps(public_release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -197,14 +211,24 @@ def build(args: argparse.Namespace) -> None:
     write_facts(output, release)
     (output / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n", encoding="utf-8")
     (output / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>{SITE_URL}/</loc></url></urlset>\n', encoding="utf-8")
-    print(f"Built {output.relative_to(ROOT)}/index.html for v{release['version']}")
+    files = [{"path": path.relative_to(output).as_posix(), "sha256": sha256(path), "bytes": path.stat().st_size}
+             for path in sorted(output.rglob("*")) if path.is_file()]
+    manifest = {"schema": 1, "product": PRODUCT_ID, "domain": SITE_URL.removeprefix("https://"), "preview": bool(missing),
+                "version": str(release["version"]), "measured_version": str(perf["version"]), "files": files}
+    (output / MANIFEST).write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if target.exists():
+        shutil.rmtree(target)
+    output.rename(target)
+    print(f"Built {target.relative_to(ROOT)}/index.html for v{release['version']}; {len(files)} public files in {MANIFEST}")
     if missing:
         print("PREVIEW ONLY — missing media: " + ", ".join(missing), file=sys.stderr)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--release", type=Path, default=ROOT / "build/release/release.json")
+    parser.add_argument("--release", type=Path, default=ROOT / "release/latest.json",
+                        help="Published release record; pass build/release/release.json only to preview an unpublished package")
+    parser.add_argument("--archive", type=Path, help="Release ZIP, when it is not beside the record or in build/release/")
     parser.add_argument("--out", type=Path, default=ROOT / "dist/site")
     parser.add_argument("--allow-missing-media", action="store_true", help="Local layout preview only; never deploy this incomplete output")
     args = parser.parse_args()
